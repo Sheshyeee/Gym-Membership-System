@@ -121,6 +121,11 @@ class PaymongoWebhookController extends Controller
 
     protected function verifySignature(Request $request): bool
     {
+        Log::info('Webhook debug', [
+            'header' => $request->header('Paymongo-Signature'),
+            'secret_present' => (bool) config('services.paymongo.webhook_secret'),
+            'secret_last4' => substr((string) config('services.paymongo.webhook_secret'), -4),
+        ]);
         $signatureHeader = $request->header('Paymongo-Signature');
         $secret = config('services.paymongo.webhook_secret');
 
