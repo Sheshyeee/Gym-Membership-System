@@ -141,7 +141,7 @@ class PaymongoWebhookController extends Controller
             });
 
         $timestamp = $parts->get('t');
-        $expectedSignature = $parts->get(app()->environment('production') ? 'li' : 'te');
+        $expectedSignature = $parts->get('te');
 
         if (! $timestamp || ! $expectedSignature) {
             return false;
