@@ -22,6 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/onboarding/payment/return', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');
 
+
+    Route::get('/onboarding/invoices/{invoice}/status', [OnboardingController::class, 'invoiceStatus'])
+        ->name('onboarding.invoice.status');
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });

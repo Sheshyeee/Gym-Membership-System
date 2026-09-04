@@ -114,6 +114,17 @@ class OnboardingController extends Controller
         ]);
     }
 
+    public function invoiceStatus(Invoice $invoice)
+    {
+        if ($invoice->user_id !== request()->user()->id) {
+            abort(403);
+        }
+
+        return response()->json([
+            'status' => $invoice->status,
+        ]);
+    }
+
     /**
      * Where GCash/Maya redirect the user back to after they approve/decline.
      * This does NOT confirm payment — the webhook does that. This just shows

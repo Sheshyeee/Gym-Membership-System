@@ -1,30 +1,36 @@
-import { Head } from "@inertiajs/react";
-import { useEffect, useState } from "react";
-import { router } from "@inertiajs/react";
+import { Head, router } from "@inertiajs/react";
+import { useEffect, useState, useCallback } from "react";
 
 export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
-    const [attempts, setAttempts] = useState(0);
+    const [checking, setChecking] = useState(false);
+
+    const checkStatus = useCallback(async () => {
+        setChecking(true);
+        try {
+            const res = await fetch(
+                `/onboarding/invoices/${invoice_id}/status`,
+            );
+            const json = await res.json();
+
+            if (json.status === "paid") {
+                router.visit("/dashboard");
+            } else if (json.status === "failed") {
+                router.visit("/onboarding", { data: { failed: 1 } });
+            }
+        } finally {
+            setChecking(false);
+        }
+    }, [invoice_id]);
 
     useEffect(() => {
-        // Poll the dashboard route; once the webhook activates the
-        // subscription, the `subscribed` middleware will let this through.
-        const interval = setInterval(() => {
-            setAttempts((a) => a + 1);
-            router.reload({
-                only: [],
-                onSuccess: () => {},
-            });
-            router.visit("/dashboard", { preserveState: false });
-        }, 3000);
-
-        // Give up after ~30s and let the user check manually.
-        const timeout = setTimeout(() => clearInterval(interval), 30000);
+        const interval = setInterval(checkStatus, 3000);
+        const timeout = setTimeout(() => clearInterval(interval), 60000);
 
         return () => {
             clearInterval(interval);
             clearTimeout(timeout);
         };
-    }, []);
+    }, [checkStatus]);
 
     return (
         <>
@@ -34,9 +40,17 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
                 <h1 className="text-2xl font-bold mb-2">
                     Confirming your payment
                 </h1>
-                <p className="text-neutral-400 text-center max-w-sm">
-                    This usually takes a few seconds. Don't close this page.
+                <p className="text-neutral-400 text-center max-w-sm mb-6">
+                    If you cancelled or your GCash/Maya session expired, you can
+                    safely close that tab and check your status here.
                 </p>
+                <button
+                    onClick={checkStatus}
+                    disabled={checking}
+                    className="text-amber-400 text-sm underline underline-offset-2 disabled:opacity-50"
+                >
+                    {checking ? "Checking..." : "Check status now"}
+                </button>
             </div>
         </>
     );
