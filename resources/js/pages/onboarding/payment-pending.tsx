@@ -1,14 +1,25 @@
 import { Head, router } from "@inertiajs/react";
-import { useEffect, useState, useCallback } from "react";
+import { useEffect, useState, useCallback, useRef } from "react";
+
+const FAST_INTERVAL_MS = 3000;
+const SLOW_INTERVAL_MS = 10000;
+const BACKOFF_AFTER_MS = 60000; // switch to slow polling after this long
+const GIVE_UP_AFTER_MS = 5 * 60000; // stop polling entirely after this long
 
 export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
     const [checking, setChecking] = useState(false);
+    const [error, setError] = useState<string | null>(null);
+    const [slowMode, setSlowMode] = useState(false);
+    const [gaveUp, setGaveUp] = useState(false);
 
     const checkStatus = useCallback(async () => {
         setChecking(true);
         try {
             const res = await fetch(
                 `/onboarding/invoices/${invoice_id}/status`,
+                {
+                    headers: { Accept: "application/json" },
+                },
             );
 
             if (!res.ok) {
@@ -22,28 +33,55 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
             } else if (json.status === "failed") {
                 router.visit("/onboarding", { data: { failed: 1 } });
             }
+            // still pending — clear any stale error and keep polling
+            setError(null);
         } catch (err) {
             console.error("Payment status check failed", err);
-            // swallow — next interval tick or manual "Check status now" retries
+            setError(
+                "Having trouble checking your payment status. You can try again below.",
+            );
         } finally {
             setChecking(false);
         }
     }, [invoice_id]);
 
-    const [timedOut, setTimedOut] = useState(false);
+    // Ref so the interval callback always sees the latest checkStatus
+    // without having to recreate the interval on every render.
+    const checkStatusRef = useRef(checkStatus);
+    checkStatusRef.current = checkStatus;
 
     useEffect(() => {
-        const interval = setInterval(checkStatus, 3000);
-        const timeout = setTimeout(() => {
-            clearInterval(interval);
-            setTimedOut(true);
-        }, 60000);
+        let elapsed = 0;
+        let currentIntervalMs = FAST_INTERVAL_MS;
 
-        return () => {
-            clearInterval(interval);
-            clearTimeout(timeout);
+        const tick = () => {
+            elapsed += currentIntervalMs;
+            checkStatusRef.current();
+
+            if (elapsed >= GIVE_UP_AFTER_MS) {
+                setGaveUp(true);
+                clearInterval(intervalId);
+                return;
+            }
+
+            if (!slowMode && elapsed >= BACKOFF_AFTER_MS) {
+                setSlowMode(true);
+            }
         };
-    }, [checkStatus]);
+
+        let intervalId = setInterval(tick, currentIntervalMs);
+
+        // When we cross into slow mode, tear down and restart the
+        // interval at the slower cadence.
+        if (slowMode) {
+            clearInterval(intervalId);
+            currentIntervalMs = SLOW_INTERVAL_MS;
+            intervalId = setInterval(tick, currentIntervalMs);
+        }
+
+        return () => clearInterval(intervalId);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [slowMode]);
 
     return (
         <>
@@ -53,11 +91,18 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
                 <h1 className="text-2xl font-bold mb-2">
                     Confirming your payment
                 </h1>
-                <p className="text-neutral-400 text-center max-w-sm mb-6">
-                    {timedOut
-                        ? "This is taking longer than expected. You can check again, or come back later — your membership will activate automatically once payment is confirmed."
-                        : "If you cancelled or your GCash/Maya session expired, you can safely close that tab and check your status here."}
+                <p className="text-neutral-400 text-center max-w-sm mb-2">
+                    {gaveUp
+                        ? "This is taking much longer than usual. Your membership will still activate automatically once payment is confirmed — check back later, or check now."
+                        : slowMode
+                          ? "Still waiting on confirmation — this can take a little longer under load."
+                          : "If you cancelled or your GCash/Maya session expired, you can safely close that tab and check your status here."}
                 </p>
+                {error && (
+                    <p className="text-red-400 text-sm text-center max-w-sm mb-4">
+                        {error}
+                    </p>
+                )}
                 <button
                     onClick={checkStatus}
                     disabled={checking}
