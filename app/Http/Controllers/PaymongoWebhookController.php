@@ -42,12 +42,26 @@ class PaymongoWebhookController extends Controller
 
         $resource = $event['attributes']['data'] ?? null;
 
-        match ($eventType) {
-            'source.chargeable' => $this->handleSourceChargeable($resource),
-            'payment.paid' => $this->handlePaymentPaid($resource),
-            'payment.failed' => $this->handlePaymentFailed($resource),
-            default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
-        };
+        try {
+            match ($eventType) {
+                'source.chargeable' => $this->handleSourceChargeable($resource),
+                'payment.paid' => $this->handlePaymentPaid($resource),
+                'payment.failed' => $this->handlePaymentFailed($resource),
+                default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
+            };
+        } catch (\Throwable $e) {
+            // Un-mark so PayMongo's retry can actually reprocess this event
+            // instead of us silently swallowing it forever.
+            DB::table('processed_webhook_events')->where('event_id', $eventId)->delete();
+
+            Log::error('PayMongo webhook handler threw', [
+                'event_id' => $eventId,
+                'event_type' => $eventType,
+                'error' => $e->getMessage(),
+            ]);
+
+            return response()->json(['message' => 'Processing error'], 500);
+        }
 
         return response()->json(['message' => 'ok']);
     }
@@ -104,7 +118,13 @@ class PaymongoWebhookController extends Controller
                 'paid_at' => now(),
             ]);
 
-            $subscription = $invoice->subscription;
+            $subscription = $invoice->subscription; // relies on Invoice::subscription()
+
+            if (! $subscription) {
+                Log::error('Paid invoice has no subscription', ['invoice_id' => $invoice->id]);
+                return;
+            }
+
             $periodEnd = $subscription->billing_cycle === 'annual'
                 ? now()->addYear()
                 : now()->addMonth();

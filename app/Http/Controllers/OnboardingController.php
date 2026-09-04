@@ -187,12 +187,11 @@ class OnboardingController extends Controller
             abort(403);
         }
 
-        if ($invoice->status !== 'paid' && $invoice->subscription->status === 'active') {
-            return response()->json(['status' => 'paid']);
-        }
+        $isPaid = $invoice->status === 'paid'
+            || $invoice->subscription?->status === 'active';
 
         return response()->json([
-            'status' => $invoice->status,
+            'status' => $isPaid ? 'paid' : $invoice->status,
         ]);
     }
     /**
