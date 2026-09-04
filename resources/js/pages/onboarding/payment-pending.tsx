@@ -10,6 +10,11 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
             const res = await fetch(
                 `/onboarding/invoices/${invoice_id}/status`,
             );
+
+            if (!res.ok) {
+                throw new Error(`Status check failed: ${res.status}`);
+            }
+
             const json = await res.json();
 
             if (json.status === "paid") {
@@ -17,14 +22,22 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
             } else if (json.status === "failed") {
                 router.visit("/onboarding", { data: { failed: 1 } });
             }
+        } catch (err) {
+            console.error("Payment status check failed", err);
+            // swallow — next interval tick or manual "Check status now" retries
         } finally {
             setChecking(false);
         }
     }, [invoice_id]);
 
+    const [timedOut, setTimedOut] = useState(false);
+
     useEffect(() => {
         const interval = setInterval(checkStatus, 3000);
-        const timeout = setTimeout(() => clearInterval(interval), 60000);
+        const timeout = setTimeout(() => {
+            clearInterval(interval);
+            setTimedOut(true);
+        }, 60000);
 
         return () => {
             clearInterval(interval);
@@ -41,8 +54,9 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
                     Confirming your payment
                 </h1>
                 <p className="text-neutral-400 text-center max-w-sm mb-6">
-                    If you cancelled or your GCash/Maya session expired, you can
-                    safely close that tab and check your status here.
+                    {timedOut
+                        ? "This is taking longer than expected. You can check again, or come back later — your membership will activate automatically once payment is confirmed."
+                        : "If you cancelled or your GCash/Maya session expired, you can safely close that tab and check your status here."}
                 </p>
                 <button
                     onClick={checkStatus}

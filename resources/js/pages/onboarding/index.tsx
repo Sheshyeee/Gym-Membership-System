@@ -2,6 +2,13 @@ import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
 import { useState } from "react";
 import { OnboardingStepper } from "@/components/OnboardingStepper";
 
+type PricingBreakdown = {
+    base_amount: number;
+    tax_amount: number;
+    total_amount: number; // what's actually charged today
+    per_month_equivalent: number;
+};
+
 type Plan = {
     id: number;
     name: string;
@@ -11,6 +18,10 @@ type Plan = {
     annual_price: number | null;
     features: string[];
     highlighted?: boolean;
+    pricing: {
+        monthly: PricingBreakdown;
+        annual: PricingBreakdown;
+    };
 };
 
 type Step = 1 | 2 | 3 | 4;
@@ -51,16 +62,6 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
         });
     }
 
-    const price = selectedPlan
-        ? cycle === "monthly"
-            ? selectedPlan.monthly_price
-            : Math.round(
-                  (selectedPlan.annual_price ??
-                      selectedPlan.monthly_price * 12) / 12,
-              )
-        : 0;
-    const tax = Math.round(price * 0.12);
-    const total = price + tax;
     const fmt = (n: number) => `₱${(n / 100).toLocaleString()}`;
 
     const nextBillingLabel = (() => {
@@ -74,6 +75,7 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
             day: "numeric",
         });
     })();
+    const pricing = selectedPlan?.pricing[cycle];
 
     return (
         <>
@@ -164,12 +166,7 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                         <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
                             {plans.map((plan) => {
                                 const p =
-                                    cycle === "monthly"
-                                        ? plan.monthly_price
-                                        : Math.round(
-                                              (plan.annual_price ??
-                                                  plan.monthly_price * 12) / 12,
-                                          );
+                                    plan.pricing[cycle].per_month_equivalent;
 
                                 return (
                                     <div
@@ -262,9 +259,8 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                             ← Back
                         </button>
 
-                        {selectedPlan && (
+                        {selectedPlan && pricing && (
                             <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
-                                {/* Order summary */}
                                 <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
                                     <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">
                                         Order summary
@@ -284,12 +280,21 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
 
                                     <div className="border-t border-neutral-800 pt-4 space-y-2 text-sm">
                                         <div className="flex justify-between text-neutral-300">
-                                            <span>Plan price</span>
-                                            <span>{fmt(price)}</span>
+                                            <span>
+                                                Plan price
+                                                {cycle === "annual"
+                                                    ? " (annual)"
+                                                    : ""}
+                                            </span>
+                                            <span>
+                                                {fmt(pricing.base_amount)}
+                                            </span>
                                         </div>
                                         <div className="flex justify-between text-neutral-300">
                                             <span>Tax (12% VAT)</span>
-                                            <span>{fmt(tax)}</span>
+                                            <span>
+                                                {fmt(pricing.tax_amount)}
+                                            </span>
                                         </div>
                                     </div>
 
@@ -299,11 +304,13 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                                 Total due today
                                             </span>
                                             <span className="text-2xl font-bold text-amber-400">
-                                                {fmt(total)}
+                                                {fmt(pricing.total_amount)}
                                             </span>
                                         </div>
                                         <p className="text-xs text-neutral-500 mt-1">
-                                            Renews {cycle} at {fmt(price)}
+                                            {cycle === "annual"
+                                                ? `Renews annually at ${fmt(pricing.total_amount)} (≈ ${fmt(pricing.per_month_equivalent)}/mo)`
+                                                : `Renews monthly at ${fmt(pricing.total_amount)}`}
                                         </p>
                                     </div>
                                 </div>
@@ -409,7 +416,7 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                     >
                                         {processing
                                             ? "Redirecting..."
-                                            : `Pay ${fmt(total)} via ${data.payment_method_type === "gcash" ? "GCash" : data.payment_method_type === "paymaya" ? "Maya" : "..."} →`}
+                                            : `Pay ${fmt(pricing.total_amount)} via ${data.payment_method_type === "gcash" ? "GCash" : data.payment_method_type === "paymaya" ? "Maya" : "..."} →`}
                                     </button>
                                 </form>
                             </div>

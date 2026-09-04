@@ -65,7 +65,11 @@ class PaymongoWebhookController extends Controller
         }
 
         try {
-            $this->payments->createPaymentFromSource($sourceId, $invoice->amount);
+            $this->payments->createPaymentFromSource(
+                $sourceId,
+                $invoice->amount,
+                idempotencyKey: "payment-create-{$invoice->id}",
+            );
             // Don't mark paid here — wait for the payment.paid event, which
             // carries the actual Payment ID and is the true source of truth.
         } catch (\Throwable $e) {
@@ -77,13 +81,19 @@ class PaymongoWebhookController extends Controller
     protected function handlePaymentPaid(?array $resource): void
     {
         $sourceId = $resource['attributes']['source']['id'] ?? null;
-        if (! $sourceId) {
-            return;
-        }
+        $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
 
-        $invoice = Invoice::where('processor_source_id', $sourceId)->first();
+        $invoice = match (true) {
+            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
+            $paymentIntentId !== null => Invoice::where('processor_payment_intent_id', $paymentIntentId)->first(),
+            default => null,
+        };
+
         if (! $invoice) {
-            Log::warning('payment.paid webhook with no matching invoice', ['source_id' => $sourceId]);
+            Log::warning('payment.paid webhook with no matching invoice', [
+                'source_id' => $sourceId,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
             return;
         }
 
@@ -121,29 +131,36 @@ class PaymongoWebhookController extends Controller
 
     protected function verifySignature(Request $request): bool
     {
-        Log::info('Webhook debug', [
-            'header' => $request->header('Paymongo-Signature'),
-            'secret_present' => (bool) config('services.paymongo.webhook_secret'),
-            'secret_last4' => substr((string) config('services.paymongo.webhook_secret'), -4),
-        ]);
         $signatureHeader = $request->header('Paymongo-Signature');
         $secret = config('services.paymongo.webhook_secret');
 
         if (! $signatureHeader || ! $secret) {
+            Log::warning('PayMongo webhook missing signature header or secret configured');
             return false;
         }
 
         // Header format: t=timestamp,te=test_signature,li=live_signature
         $parts = collect(explode(',', $signatureHeader))
             ->mapWithKeys(function ($part) {
-                [$key, $value] = explode('=', $part, 2);
+                [$key, $value] = array_pad(explode('=', $part, 2), 2, null);
                 return [$key => $value];
             });
 
         $timestamp = $parts->get('t');
-        $expectedSignature = $parts->get('te');
+
+        // Pick the signature that matches how the secret key is configured, not
+        // hardcoded to test mode. PayMongo secret keys are prefixed sk_test_ / sk_live_
+        // (and webhook secrets whsec_test_ / whsec_live_ depending on dashboard mode);
+        // use whichever your config denotes as the active mode.
+        $isLiveMode = config('services.paymongo.mode', 'test') === 'live';
+        $signatureKey = $isLiveMode ? 'li' : 'te';
+        $expectedSignature = $parts->get($signatureKey);
 
         if (! $timestamp || ! $expectedSignature) {
+            Log::warning('PayMongo webhook signature header malformed', [
+                'has_timestamp' => (bool) $timestamp,
+                'mode' => $isLiveMode ? 'live' : 'test',
+            ]);
             return false;
         }
 

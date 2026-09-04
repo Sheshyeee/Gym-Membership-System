@@ -5,19 +5,29 @@ namespace App\Http\Controllers;
 use App\Models\Invoice;
 use App\Models\Plan;
 use App\Services\PaymentService;
+use App\Services\PricingService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
+use Illuminate\Validation\Rule;
 use Inertia\Inertia;
 use RuntimeException;
 
 class OnboardingController extends Controller
 {
-    public function __construct(protected PaymentService $payments) {}
+    public function __construct(
+        protected PaymentService $payments,
+        protected PricingService $pricing,
+    ) {}
 
     public function index()
     {
+        $plans = Plan::where('is_active', true)->get();
+
         return Inertia::render('onboarding/index', [
-            'plans' => Plan::where('is_active', true)->get(),
+            'plans' => $plans->map(fn(Plan $plan) => [
+                ...$plan->toArray(),
+                'pricing' => $this->pricing->breakdown($plan),
+            ]),
         ]);
     }
 
@@ -30,8 +40,16 @@ class OnboardingController extends Controller
 
     public function complete(Request $request)
     {
+        $user = $request->user();
+
+        if ($user->hasActiveSubscription()) {
+            return redirect()->route('dashboard');
+        }
         $data = $request->validate([
-            'plan_id' => ['required', 'exists:plans,id'],
+            'plan_id' => [
+                'required',
+                Rule::exists('plans', 'id')->where('is_active', true),
+            ],
             'billing_cycle' => ['required', 'in:monthly,annual'],
             'payment_method_type' => ['required', 'in:gcash,paymaya,card'],
         ]);
@@ -39,9 +57,7 @@ class OnboardingController extends Controller
         $plan = Plan::findOrFail($data['plan_id']);
         $user = $request->user();
 
-        $amount = $data['billing_cycle'] === 'annual'
-            ? (int) round(($plan->annual_price ?? $plan->monthly_price * 12))
-            : $plan->monthly_price;
+        $amount = $this->pricing->amountDueToday($plan, $data['billing_cycle']);
 
         // Annual is charged as a lump sum, not divided into monthly amounts.
         // (Frontend shows a per-month equivalent, but the actual charge is the full period.)
@@ -86,7 +102,9 @@ class OnboardingController extends Controller
             type: $type,
             redirectSuccessUrl: route('onboarding.payment.return', ['invoice' => $invoice->id]),
             redirectFailedUrl: route('onboarding.payment.return', ['invoice' => $invoice->id, 'failed' => 1]),
+            idempotencyKey: "source-create-{$invoice->id}",
         );
+
 
         $invoice->update(['processor_source_id' => $source['id']]);
 
@@ -99,7 +117,10 @@ class OnboardingController extends Controller
 
     protected function handleCardPayment(Invoice $invoice, int $amount)
     {
-        $intent = $this->payments->createPaymentIntent($amount);
+        $intent = $this->payments->createPaymentIntent(
+            amount: $amount,
+            idempotencyKey: "intent-create-{$invoice->id}",
+        );
 
         $invoice->update(['processor_payment_intent_id' => $intent['id']]);
 
