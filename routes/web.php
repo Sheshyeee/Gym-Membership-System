@@ -19,7 +19,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin/dashboard', [OverviewController::class, 'index'])->name('overview')
         ->middleware('role:admin');
 
-    Route::get('/onboarding/payment/return', [OnboardingController::class, 'paymentReturn'])
+    Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');
 
 

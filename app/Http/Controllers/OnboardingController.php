@@ -199,8 +199,13 @@ class OnboardingController extends Controller
      * This does NOT confirm payment — the webhook does that. This just shows
      * the user a "processing" screen while we wait for the webhook.
      */
+
     public function paymentReturn(Request $request, Invoice $invoice)
     {
+        if ($invoice->user_id !== $request->user()->id) {
+            abort(403);
+        }
+
         if ($request->boolean('failed')) {
             $invoice->update(['status' => 'failed']);
 
