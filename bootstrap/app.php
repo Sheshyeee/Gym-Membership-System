@@ -22,6 +22,8 @@ return Application::configure(basePath: dirname(__DIR__))
             'webhooks/paymongo',
         ]);
 
+        $middleware->appendToGroup('web', \App\Http\Middleware\EnsureAccountIsActive::class);
+
 
 
         $middleware->web(append: [
