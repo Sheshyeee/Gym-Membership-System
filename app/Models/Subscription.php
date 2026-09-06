@@ -19,6 +19,13 @@ class Subscription extends Model
         'cancelled_at',
     ];
 
+    protected $casts = [
+        'current_period_start' => 'datetime',
+        'current_period_end' => 'datetime',
+        'next_billing_at' => 'datetime',
+        'cancelled_at' => 'datetime',
+    ];
+
     public function user(): BelongsTo
     {
         return $this->belongsTo(User::class);

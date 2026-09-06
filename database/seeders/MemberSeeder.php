@@ -2,9 +2,12 @@
 
 namespace Database\Seeders;
 
+use App\Models\Invoice;
 use App\Models\Plan;
+use App\Models\Subscription;
 use App\Models\User;
 use Illuminate\Database\Seeder;
+use Illuminate\Support\Facades\Schema;
 use Spatie\Permission\Models\Role;
 
 class MemberSeeder extends Seeder
@@ -16,6 +19,8 @@ class MemberSeeder extends Seeder
             return;
         }
 
+        $this->clearPreviousFakeMembers();
+
         Role::firstOrCreate(['name' => 'user', 'guard_name' => 'web']);
 
         $plans = collect([
@@ -24,7 +29,6 @@ class MemberSeeder extends Seeder
             ['name' => 'Elite', 'slug' => 'elite', 'monthly_price' => 249900, 'annual_price' => 2499900],
         ])->map(fn($p) => Plan::firstOrCreate(['slug' => $p['slug']], [...$p, 'is_active' => true]));
 
-        // 8 active (healthy), 4 expiring soon, 5 expired, 3 pending/never paid
         $scenarios = [
             ...array_fill(0, 8, 'active'),
             ...array_fill(0, 4, 'expiring_soon'),
@@ -32,8 +36,10 @@ class MemberSeeder extends Seeder
             ...array_fill(0, 3, 'pending'),
         ];
 
-        foreach ($scenarios as $i => $scenario) {
-            $user = User::factory()->create();
+        foreach ($scenarios as $scenario) {
+            $user = User::factory()->create([
+                'email' => 'fakemember+' . uniqid() . '@example.test', // tagged so we can find + wipe these later
+            ]);
             $user->assignRole('user');
 
             $plan = $plans->random();
@@ -71,5 +77,20 @@ class MemberSeeder extends Seeder
         }
 
         $this->command->info('Seeded ' . count($scenarios) . ' fake members with varied subscription states.');
+    }
+
+    private function clearPreviousFakeMembers(): void
+    {
+        $fakeUserIds = User::where('email', 'like', 'fakemember+%@example.test')->pluck('id');
+
+        if ($fakeUserIds->isEmpty()) {
+            return;
+        }
+
+        Invoice::whereIn('user_id', $fakeUserIds)->delete();
+        Subscription::whereIn('user_id', $fakeUserIds)->delete();
+        User::whereIn('id', $fakeUserIds)->delete();
+
+        $this->command->info("Cleared {$fakeUserIds->count()} previously seeded fake members.");
     }
 }
