@@ -1,6 +1,7 @@
 <?php
 
 use App\Http\Controllers\AdminMemberController;
+use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberHomeController;
@@ -41,6 +42,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
     });
+
+    Route::get('/admin/plans', [AdminPlansController::class, 'index'])
+        ->middleware('role:admin')
+        ->name('admin.plans.index');
+
+    Route::patch('/admin/plans/{plan}', [AdminPlansController::class, 'update'])
+        ->middleware('role:admin')
+        ->name('admin.plans.update');
 
     Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])
         ->middleware('role:staff')

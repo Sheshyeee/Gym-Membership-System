@@ -14,8 +14,11 @@ class PlanSeeder extends Seeder
                 'name' => 'Basic',
                 'slug' => 'basic',
                 'tagline' => 'Train on your terms',
+                'description' => 'A flexible membership built for consistent progress and an elevated gym experience.',
                 'monthly_price' => 79900,
                 'annual_price' => 767040,
+                'color' => 'blue',
+                'sort_order' => 1,
                 'highlighted' => false,
                 'features' => [
                     'Full gym floor access',
@@ -29,8 +32,11 @@ class PlanSeeder extends Seeder
                 'name' => 'Premium',
                 'slug' => 'premium',
                 'tagline' => 'The best way to build momentum',
+                'description' => 'Everything in Basic, plus classes and recovery access for members who train often.',
                 'monthly_price' => 149900,
                 'annual_price' => 1439040,
+                'color' => 'orange',
+                'sort_order' => 2,
                 'highlighted' => true,
                 'features' => [
                     'Everything in Basic',
@@ -45,8 +51,11 @@ class PlanSeeder extends Seeder
                 'name' => 'Elite',
                 'slug' => 'elite',
                 'tagline' => 'Your strongest year starts here',
+                'description' => 'The full FitFlow experience, with unlimited coaching support and recovery access.',
                 'monthly_price' => 249900,
                 'annual_price' => 2399040,
+                'color' => 'green',
+                'sort_order' => 3,
                 'highlighted' => false,
                 'features' => [
                     'Everything in Premium',
@@ -60,7 +69,7 @@ class PlanSeeder extends Seeder
         ];
 
         foreach ($plans as $plan) {
-            Plan::create($plan);
+            Plan::updateOrCreate(['slug' => $plan['slug']], $plan);
         }
     }
 }
