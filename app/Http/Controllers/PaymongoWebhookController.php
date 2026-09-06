@@ -159,7 +159,6 @@ class PaymongoWebhookController extends Controller
             return false;
         }
 
-        // Header format: t=timestamp,te=test_signature,li=live_signature
         $parts = collect(explode(',', $signatureHeader))
             ->mapWithKeys(function ($part) {
                 [$key, $value] = array_pad(explode('=', $part, 2), 2, null);
@@ -168,10 +167,6 @@ class PaymongoWebhookController extends Controller
 
         $timestamp = $parts->get('t');
 
-        // Pick the signature that matches how the secret key is configured, not
-        // hardcoded to test mode. PayMongo secret keys are prefixed sk_test_ / sk_live_
-        // (and webhook secrets whsec_test_ / whsec_live_ depending on dashboard mode);
-        // use whichever your config denotes as the active mode.
         $isLiveMode = config('services.paymongo.mode', 'test') === 'live';
         $signatureKey = $isLiveMode ? 'li' : 'te';
         $expectedSignature = $parts->get($signatureKey);
@@ -181,6 +176,13 @@ class PaymongoWebhookController extends Controller
                 'has_timestamp' => (bool) $timestamp,
                 'mode' => $isLiveMode ? 'live' : 'test',
             ]);
+            return false;
+        }
+
+        // Reject stale/replayed requests — a captured valid signature must not
+        // stay valid forever. 5 minutes is PayMongo's own documented tolerance.
+        if (abs(time() - (int) $timestamp) > 300) {
+            Log::warning('PayMongo webhook timestamp outside tolerance', ['timestamp' => $timestamp]);
             return false;
         }
 

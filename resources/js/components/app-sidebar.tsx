@@ -44,6 +44,11 @@ export function AppSidebar() {
                       href: "/overview",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Members",
+                      href: "/members",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
         ...(isStaff

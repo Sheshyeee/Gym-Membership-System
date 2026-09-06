@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminMemberController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberHomeController;
 use App\Http\Controllers\OnboardingController;
@@ -18,6 +19,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/admin/dashboard', [OverviewController::class, 'index'])->name('overview')
         ->middleware('role:admin');
+    Route::get('/members', [AdminMemberController::class, 'index'])
+        ->middleware('role:admin')
+        ->name('members.index');
+
 
     Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');

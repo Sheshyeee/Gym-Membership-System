@@ -7,6 +7,7 @@ use App\Models\Plan;
 use App\Services\PaymentService;
 use App\Services\PricingService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Cache;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Validation\Rule;
 use Inertia\Inertia;
@@ -38,6 +39,8 @@ class OnboardingController extends Controller
         return redirect()->route('dashboard');
     }
 
+
+
     public function complete(Request $request)
     {
         $user = $request->user();
@@ -52,76 +55,77 @@ class OnboardingController extends Controller
                 Rule::exists('plans', 'id')->where('is_active', true),
             ],
             'billing_cycle' => ['required', 'in:monthly,annual'],
-            'payment_method_type' => ['required', 'in:gcash,paymaya,card'],
+            'payment_method_type' => ['required', 'in:gcash,paymaya'], // 'card' dropped until frontend exists
         ]);
 
         $plan = Plan::findOrFail($data['plan_id']);
 
-        // Reuse an existing pending subscription/invoice for this plan+cycle
-        // instead of minting a new one on every submit. Without this, a user
-        // who retries checkout (slow redirect, browser back, etc.) ends up
-        // with multiple invoices — and if a LATER one is the one that gets
-        // paid, the tab polling the FIRST invoice's status spins forever.
-        $subscription = $user->subscriptions()
-            ->where('plan_id', $plan->id)
-            ->where('billing_cycle', $data['billing_cycle'])
-            ->where('status', 'pending')
-            ->latest()
-            ->first();
-
-        $invoice = $subscription
-            ?->invoices()
-            ->where('status', 'pending')
-            ->latest()
-            ->first();
-
-        if (! $subscription || ! $invoice) {
-            $amount = $this->pricing->amountDueToday($plan, $data['billing_cycle']);
-
-            // Annual is charged as a lump sum, not divided into monthly amounts.
-            // (Frontend shows a per-month equivalent, but the actual charge is the full period.)
-
-            [$subscription, $invoice] = DB::transaction(function () use ($user, $plan, $data, $amount) {
-                $subscription = $user->subscriptions()->create([
-                    'plan_id' => $plan->id,
-                    'billing_cycle' => $data['billing_cycle'],
-                    'status' => 'pending', // becomes 'active' only once webhook confirms payment
-                ]);
-
-                $invoice = $subscription->invoices()->create([
-                    'user_id' => $user->id,
-                    'plan_id' => $plan->id,
-                    'amount' => $amount,
-                    'currency' => 'PHP',
-                    'payment_method_type' => $data['payment_method_type'],
-                    'status' => 'pending',
-                    'due_at' => now(),
-                ]);
-
-                return [$subscription, $invoice];
-            });
-        } elseif ($invoice->payment_method_type !== $data['payment_method_type']) {
-            // They switched payment methods on retry (e.g. GCash -> Maya).
-            // The old source/intent is stale and must not be reused.
-            $invoice->update([
-                'payment_method_type' => $data['payment_method_type'],
-                'processor_source_id' => null,
-                'processor_payment_intent_id' => null,
-            ]);
-        }
-
-        $amount = $invoice->amount;
+        // Atomic per-user lock so two concurrent submits (double-click, two tabs,
+        // retried request) can't both pass the "no pending invoice" check and
+        // each mint their own subscription/invoice/source -> two live charges.
+        $lock = Cache::lock("onboarding-complete:{$user->id}", 10);
 
         try {
-            if (in_array($data['payment_method_type'], ['gcash', 'paymaya'], true)) {
-                return $this->handleWalletPayment($invoice, $data['payment_method_type'], $amount);
+            $lock->block(5);
+        } catch (\Illuminate\Contracts\Cache\LockTimeoutException) {
+            return back()->withErrors(['payment' => 'Your previous request is still processing. Please wait a moment and try again.']);
+        }
+
+        try {
+            $subscription = $user->subscriptions()
+                ->where('plan_id', $plan->id)
+                ->where('billing_cycle', $data['billing_cycle'])
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+
+            $invoice = $subscription
+                ?->invoices()
+                ->where('status', 'pending')
+                ->latest()
+                ->first();
+
+            if (! $subscription || ! $invoice) {
+                $amount = $this->pricing->amountDueToday($plan, $data['billing_cycle']);
+
+                [$subscription, $invoice] = DB::transaction(function () use ($user, $plan, $data, $amount) {
+                    $subscription = $user->subscriptions()->create([
+                        'plan_id' => $plan->id,
+                        'billing_cycle' => $data['billing_cycle'],
+                        'status' => 'pending',
+                    ]);
+
+                    $invoice = $subscription->invoices()->create([
+                        'user_id' => $user->id,
+                        'plan_id' => $plan->id,
+                        'amount' => $amount,
+                        'currency' => 'PHP',
+                        'payment_method_type' => $data['payment_method_type'],
+                        'status' => 'pending',
+                        'due_at' => now(),
+                    ]);
+
+                    return [$subscription, $invoice];
+                });
+            } elseif ($invoice->payment_method_type !== $data['payment_method_type']) {
+                $invoice->update([
+                    'payment_method_type' => $data['payment_method_type'],
+                    'processor_source_id' => null,
+                    'processor_payment_intent_id' => null,
+                ]);
             }
 
-            return $this->handleCardPayment($invoice, $amount);
-        } catch (RuntimeException $e) {
-            $invoice->update(['status' => 'failed']);
+            $amount = $invoice->amount;
 
-            return back()->withErrors(['payment' => $e->getMessage()]);
+            try {
+                return $this->handleWalletPayment($invoice, $data['payment_method_type'], $amount);
+            } catch (RuntimeException $e) {
+                $invoice->update(['status' => 'failed']);
+
+                return back()->withErrors(['payment' => $e->getMessage()]);
+            }
+        } finally {
+            $lock->release();
         }
     }
 
