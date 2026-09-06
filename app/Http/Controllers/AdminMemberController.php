@@ -100,4 +100,55 @@ class AdminMemberController extends Controller
             ])->values(),
         ];
     }
+    public function show(User $user): \Illuminate\Http\JsonResponse
+    {
+        $user->load(['subscriptions.plan', 'subscriptions.invoices']);
+
+        $latestSubscription = $user->subscriptions->sortByDesc('created_at')->first();
+
+        $payments = $user->subscriptions
+            ->flatMap(fn($sub) => $sub->invoices)
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(fn($invoice) => [
+                'id' => $invoice->id,
+                'txn_id' => $invoice->processor_payment_id
+                    ?? $invoice->processor_source_id
+                    ?? ('INV-' . str_pad((string) $invoice->id, 5, '0', STR_PAD_LEFT)),
+                'amount' => number_format($invoice->amount / 100, 2),
+                'status' => $invoice->status,
+                'date' => optional($invoice->paid_at ?? $invoice->due_at)->format('M j, Y'),
+            ]);
+
+        $planHistory = $user->subscriptions
+            ->sortByDesc('created_at')
+            ->values()
+            ->map(fn($sub) => [
+                'id' => $sub->id,
+                'plan' => $sub->plan?->name,
+                'price' => $sub->plan
+                    ? number_format(
+                        ($sub->billing_cycle === 'annual'
+                            ? $sub->plan->annual_price
+                            : $sub->plan->monthly_price) / 100,
+                        2
+                    )
+                    : null,
+                'started_at' => optional($sub->current_period_start ?? $sub->created_at)->format('M j, Y'),
+            ]);
+
+        return response()->json([
+            'id' => $user->id,
+            'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
+            'name' => $user->name,
+            'email' => $user->email,
+            'phone' => null,
+            'joined_at' => $user->created_at->format('M j, Y'),
+            'plan' => $latestSubscription?->plan?->name,
+            'status' => $this->resolveStatus($latestSubscription),
+            'valid_until' => optional($latestSubscription?->current_period_end)->format('M j, Y'),
+            'plan_history' => $planHistory,
+            'payments' => $payments,
+        ]);
+    }
 }

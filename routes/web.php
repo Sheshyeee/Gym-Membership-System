@@ -22,6 +22,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/members', [AdminMemberController::class, 'index'])
         ->middleware('role:admin')
         ->name('members.index');
+    Route::get('/members/{user}', [AdminMemberController::class, 'show'])
+        ->middleware('role:admin')
+        ->name('members.show');
 
 
     Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
