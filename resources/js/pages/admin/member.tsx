@@ -1,5 +1,6 @@
+import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import { Head, Link, router } from "@inertiajs/react";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 
 type MemberStatus = "active" | "expiring_soon" | "expired";
 type PaymentStatus = "paid" | "pending" | "failed" | null;
@@ -65,19 +66,27 @@ export default function Member({
     filters: { search: string | null };
 }) {
     const [search, setSearch] = useState(filters.search ?? "");
+    const searchTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    useEffect(() => {
-        const timeout = setTimeout(() => {
+    const [selectedMemberId, setSelectedMemberId] = useState<number | null>(
+        null,
+    );
+    const [sheetOpen, setSheetOpen] = useState(false);
+    function handleSearchChange(value: string) {
+        setSearch(value);
+
+        if (searchTimeout.current) {
+            clearTimeout(searchTimeout.current);
+        }
+
+        searchTimeout.current = setTimeout(() => {
             router.get(
                 "/members",
-                { search: search || undefined },
+                { search: value || undefined },
                 { preserveState: true, replace: true, preserveScroll: true },
             );
         }, 350);
-
-        return () => clearTimeout(timeout);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, [search]);
+    }
 
     const maxSignups = Math.max(
         1,
@@ -104,7 +113,7 @@ export default function Member({
                 <div className="flex flex-wrap items-center gap-3">
                     <input
                         value={search}
-                        onChange={(e) => setSearch(e.target.value)}
+                        onChange={(e) => handleSearchChange(e.target.value)}
                         placeholder="Search by name or email..."
                         className="h-10 min-w-[260px] flex-1 rounded-lg border border-border bg-muted/50 px-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
                     />
@@ -279,8 +288,18 @@ export default function Member({
                                                     </span>
                                                 )}
                                             </td>
-                                            <td className="px-4 py-3 text-right text-muted-foreground">
-                                                &gt;
+                                            <td className="px-4 py-3 text-right">
+                                                <button
+                                                    onClick={() => {
+                                                        setSelectedMemberId(
+                                                            member.id,
+                                                        );
+                                                        setSheetOpen(true);
+                                                    }}
+                                                    className="text-muted-foreground hover:text-foreground"
+                                                >
+                                                    &gt;
+                                                </button>
                                             </td>
                                         </tr>
                                     ))}
@@ -320,6 +339,11 @@ export default function Member({
                     </div>
                 </div>
             </div>
+            <MemberProfileSheet
+                userId={selectedMemberId}
+                open={sheetOpen}
+                onOpenChange={setSheetOpen}
+            />
         </>
     );
 }
