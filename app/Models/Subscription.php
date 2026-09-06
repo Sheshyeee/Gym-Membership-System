@@ -8,7 +8,16 @@ use Illuminate\Database\Eloquent\Relations\HasMany;
 
 class Subscription extends Model
 {
-    protected $fillable = ['user_id', 'plan_id', 'billing_cycle', 'status'];
+    protected $fillable = [
+        'user_id',
+        'plan_id',
+        'billing_cycle',
+        'status',
+        'current_period_start',
+        'current_period_end',
+        'next_billing_at',
+        'cancelled_at',
+    ];
 
     public function user(): BelongsTo
     {
