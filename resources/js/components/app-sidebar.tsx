@@ -73,13 +73,28 @@ export function AppSidebar() {
                       href: "/staff/members",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "QR Check-In",
+                      href: "/staff/qr-checkin",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
+                  {
+                      title: "Attendance",
+                      href: "/staff/attendance",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
         ...(isUser
             ? [
                   {
                       title: "Home",
-                      href: "/dashbaord",
+                      href: "/dashboard",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
+                  {
+                      title: "QR Access",
+                      href: "/qraccess",
                       icon: LayoutGrid,
                   } satisfies NavItem,
               ]

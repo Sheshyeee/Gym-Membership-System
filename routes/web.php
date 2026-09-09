@@ -8,6 +8,9 @@ use App\Http\Controllers\MemberHomeController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\PaymongoWebhookController;
+use App\Http\Controllers\QRAccessController;
+use App\Http\Controllers\StaffAttendanceController;
+use App\Http\Controllers\StaffCheckInsController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\StaffMemberController;
 use Illuminate\Support\Facades\Route;
@@ -32,6 +35,15 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staffs', [AdminStaffController::class, 'index'])
         ->middleware('role:admin');
 
+    Route::get('/staff/qr-checkin', [StaffCheckInsController::class, 'index'])
+        ->middleware('role:staff')
+        ->name('staff.qr-checkin');
+    Route::post('/staff/checkin/scan', [StaffCheckInsController::class, 'scan'])
+        ->middleware('role:staff')
+        ->name('staff.checkin.scan');
+    Route::get('/staff/attendance', [StaffAttendanceController::class, 'index'])
+        ->middleware('role:staff')
+        ->name('staff.attendance');
 
     Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');
@@ -39,8 +51,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
     Route::get('/onboarding/invoices/{invoice}/status', [OnboardingController::class, 'invoiceStatus'])
         ->name('onboarding.invoice.status');
+
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
+        Route::get('/qraccess', [QRAccessController::class, 'index'])->name('qraccess');
+
+        Route::get('/qraccess', [QRAccessController::class, 'index'])->name('qraccess');
+        Route::post('/qraccess/regenerate', [QRAccessController::class, 'regenerate'])->name('qraccess.regenerate');
     });
 
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])

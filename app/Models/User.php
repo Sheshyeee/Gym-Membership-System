@@ -31,7 +31,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'onboarding_skipped_at', 'staff_role', 'phone', 'deactivated_at'])]
+#[Fillable(['name', 'email', 'password', 'onboarding_skipped_at', 'staff_role', 'phone', 'deactivated_at', 'qr_token'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
@@ -51,6 +51,20 @@ class User extends Authenticatable
             'two_factor_confirmed_at' => 'datetime',
             'deactivated_at' => 'datetime',
         ];
+    }
+    protected static function booted(): void
+    {
+        static::creating(function (User $user) {
+            if (empty($user->qr_token)) {
+                $user->qr_token = \Illuminate\Support\Str::random(40);
+            }
+        });
+    }
+
+    public function regenerateQrToken(): void
+    {
+        $this->qr_token = \Illuminate\Support\Str::random(40);
+        $this->save();
     }
 
     public function isActive(): bool
@@ -75,5 +89,10 @@ class User extends Authenticatable
     public function latestSubscription(): HasOne
     {
         return $this->hasOne(Subscription::class)->latestOfMany();
+    }
+
+    public function attendances(): HasMany
+    {
+        return $this->hasMany(Attendance::class);
     }
 }
