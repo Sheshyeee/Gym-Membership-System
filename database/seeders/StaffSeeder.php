@@ -11,10 +11,7 @@ class StaffSeeder extends Seeder
 {
   public function run(): void
   {
-    if (app()->environment('production')) {
-      $this->command->error('Refusing to run fake staff seeder in production.');
-      return;
-    }
+
 
     Role::firstOrCreate(['name' => 'staff', 'guard_name' => 'web']);
 
