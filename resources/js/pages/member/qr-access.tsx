@@ -154,13 +154,7 @@ export default function QrAccess({ member }: { member: Member }) {
                                     <RefreshCw className="h-4 w-4" />
                                     Regenerate code
                                 </button>
-                                <button
-                                    onClick={handleShare}
-                                    className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800/60 px-4 py-2.5 text-sm font-medium text-neutral-200 hover:bg-neutral-800 transition-colors"
-                                >
-                                    <Share2 className="h-4 w-4" />
-                                    Share pass
-                                </button>
+                               
                                 <button
                                     onClick={handleDownload}
                                     className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800/60 px-4 py-2.5 text-sm font-medium text-neutral-200 hover:bg-neutral-800 transition-colors"
