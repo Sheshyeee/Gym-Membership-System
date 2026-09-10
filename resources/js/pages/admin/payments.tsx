@@ -122,18 +122,26 @@ export default function Payments({
     const [retrying, setRetrying] = useState(false);
     const [copied, setCopied] = useState(false);
 
-    // inside Payments component, after existing state
     useEffect(() => {
-        const hasTransient = invoices.some(
-            (i) => i.status === "pending" || i.status === "refunding",
+        const channel = window.Echo.private("admin.payments").listen(
+            ".invoice.status.updated",
+            () => {
+                // Just re-fetch the invoices prop; cheap, and avoids drift
+                // between partial payloads and full server state.
+                router.reload({ only: ["invoices"] });
+            },
         );
-        if (!hasTransient) return;
 
-        const interval = setInterval(() => {
-            router.reload({ only: ["invoices"] });
-        }, 4000);
+        return () => {
+            window.Echo.leave("admin.payments");
+        };
+    }, []);
 
-        return () => clearInterval(interval);
+    // keep the open sheet's data fresh when invoices refreshes
+    useEffect(() => {
+        if (!selected) return;
+        const updated = invoices.find((i) => i.id === selected.id);
+        if (updated) setSelected(updated);
     }, [invoices]);
 
     // keep the open sheet's data fresh when invoices refreshes

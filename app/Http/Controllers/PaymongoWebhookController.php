@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Events\InvoiceStatusUpdated;
 use App\Models\Invoice;
 use App\Services\PaymentService;
 use Illuminate\Http\Request;
@@ -88,14 +89,12 @@ class PaymongoWebhookController extends Controller
                 'refund_amount' => $resource['attributes']['amount'] ?? $invoice->amount,
                 'refunded_at' => now(),
             ]);
-            // Open question (see notes above): does the subscription need to be
-            // downgraded/cancelled here? Not doing that automatically for now.
+            InvoiceStatusUpdated::dispatch($invoice);
         } elseif ($status === 'failed') {
-            // Refund didn't go through — the invoice is still genuinely paid.
             $invoice->update(['status' => 'paid']);
+            InvoiceStatusUpdated::dispatch($invoice);
             Log::error('PayMongo refund failed', ['invoice_id' => $invoice->id, 'refund_id' => $refundId]);
         }
-        // 'pending' -> no-op, invoice is already sitting in 'refunding'.
     }
 
     protected function handleSourceChargeable(?array $resource): void
