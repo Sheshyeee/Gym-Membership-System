@@ -1,18 +1,34 @@
-import { useEffect, useRef, useState } from "react";
+import {
+  JSX,
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ReactElement,
+} from "react";
 import { Head } from "@inertiajs/react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
-import { ShieldCheck, XCircle, Camera } from "lucide-react";
+import {
+    ShieldCheck,
+    XCircle,
+    AlertTriangle,
+    Camera,
+    RotateCw,
+} from "lucide-react";
 import { dashboard } from "@/routes";
 
 type ScanResult = {
-    result: "success" | "denied";
+    result: "success" | "denied" | "duplicate";
     reason?: string;
     message?: string;
     member?: { name: string; initials: string; plan?: string };
     scannedAt?: string;
 };
 
+type CameraOption = { id: string; label: string };
+
 const SCANNER_ID = "qr-reader";
+const DECODE_COOLDOWN_MS = 3000;
 
 function csrfToken() {
     return (
@@ -22,72 +38,27 @@ function csrfToken() {
     );
 }
 
+// Rough heuristic to start on the rear camera when labels are available.
+function pickInitialCameraIndex(cameras: CameraOption[]) {
+    const backIndex = cameras.findIndex((c) =>
+        /back|rear|environment/i.test(c.label),
+    );
+    return backIndex >= 0 ? backIndex : 0;
+}
+
 export default function QRCheckIn() {
     const [scanning, setScanning] = useState(false);
     const [lastResult, setLastResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
+    const [cameras, setCameras] = useState<CameraOption[]>([]);
+    const [cameraIndex, setCameraIndex] = useState(0);
+    const [switching, setSwitching] = useState(false);
+
+    const scannerRef = useRef<Html5Qrcode | null>(null);
     const cooldownRef = useRef(false);
+    const mountedRef = useRef(true);
 
-    useEffect(() => {
-        const scanner = new Html5Qrcode(SCANNER_ID);
-        let cancelled = false;
-
-        const safeStop = () => {
-            try {
-                if (
-                    scanner.getState() === Html5QrcodeScannerState.SCANNING ||
-                    scanner.getState() === Html5QrcodeScannerState.PAUSED
-                ) {
-                    scanner.stop().catch(() => {});
-                }
-            } catch {
-                // Not in a stoppable state — ignore.
-            }
-        };
-
-        scanner
-            .start(
-                { facingMode: "environment" },
-                {
-                    fps: 10,
-                    qrbox: (
-                        viewfinderWidth: number,
-                        viewfinderHeight: number,
-                    ) => {
-                        const minEdge = Math.min(
-                            viewfinderWidth,
-                            viewfinderHeight,
-                        );
-                        const size = Math.floor(minEdge * 0.7);
-                        return { width: size, height: size };
-                    },
-                },
-                (decodedText) => handleDecoded(decodedText),
-                () => {},
-            )
-            .then(() => {
-                if (cancelled) {
-                    safeStop();
-                    return;
-                }
-                setScanning(true);
-            })
-            .catch(() => {
-                if (!cancelled) {
-                    setError(
-                        "Could not access camera. Check browser permissions.",
-                    );
-                }
-            });
-
-        return () => {
-            cancelled = true;
-            safeStop();
-        };
-        // eslint-disable-next-line react-hooks/exhaustive-deps
-    }, []);
-
-    const handleDecoded = async (token: string) => {
+    const handleDecoded = useCallback(async (token: string) => {
         if (cooldownRef.current) return;
         cooldownRef.current = true;
 
@@ -109,8 +80,156 @@ export default function QRCheckIn() {
                 message: "Network error — try again.",
             });
         } finally {
-            setTimeout(() => (cooldownRef.current = false), 3000);
+            setTimeout(() => (cooldownRef.current = false), DECODE_COOLDOWN_MS);
         }
+    }, []);
+
+    const safeStop = useCallback(async () => {
+        const scanner = scannerRef.current;
+        if (!scanner) return;
+        try {
+            const state = scanner.getState();
+            if (
+                state === Html5QrcodeScannerState.SCANNING ||
+                state === Html5QrcodeScannerState.PAUSED
+            ) {
+                await scanner.stop();
+            }
+        } catch {
+            // Not in a stoppable state — ignore.
+        }
+    }, []);
+
+    const startWithCamera = useCallback(
+        async (cameraId: string) => {
+            const scanner = scannerRef.current;
+            if (!scanner) return;
+
+            await scanner.start(
+                cameraId,
+                {
+                    fps: 10,
+                    qrbox: (
+                        viewfinderWidth: number,
+                        viewfinderHeight: number,
+                    ) => {
+                        const minEdge = Math.min(
+                            viewfinderWidth,
+                            viewfinderHeight,
+                        );
+                        const size = Math.floor(minEdge * 0.7);
+                        return { width: size, height: size };
+                    },
+                },
+                (decodedText) => handleDecoded(decodedText),
+                () => {},
+            );
+        },
+        [handleDecoded],
+    );
+
+    useEffect(() => {
+        mountedRef.current = true;
+        const scanner = new Html5Qrcode(SCANNER_ID);
+        scannerRef.current = scanner;
+
+        (async () => {
+            try {
+                const devices = await Html5Qrcode.getCameras();
+                if (!mountedRef.current) return;
+
+                if (devices && devices.length > 0) {
+                    const options = devices.map((d) => ({
+                        id: d.id,
+                        label: d.label || "Camera",
+                    }));
+                    const initialIndex = pickInitialCameraIndex(options);
+                    setCameras(options);
+                    setCameraIndex(initialIndex);
+                    await startWithCamera(options[initialIndex].id);
+                } else {
+                    // Fallback if enumeration returns nothing (some browsers
+                    // require this facingMode form before permission is granted).
+                    await scanner.start(
+                        { facingMode: "environment" },
+                        {
+                            fps: 10,
+                            qrbox: (w: number, h: number) => {
+                                const size = Math.floor(Math.min(w, h) * 0.7);
+                                return { width: size, height: size };
+                            },
+                        },
+                        (decodedText) => handleDecoded(decodedText),
+                        () => {},
+                    );
+                }
+
+                if (mountedRef.current) setScanning(true);
+            } catch {
+                if (mountedRef.current) {
+                    setError(
+                        "Could not access camera. Check browser permissions.",
+                    );
+                }
+            }
+        })();
+
+        return () => {
+            mountedRef.current = false;
+            safeStop();
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, []);
+
+    const handleFlipCamera = useCallback(async () => {
+        if (cameras.length < 2 || switching) return;
+
+        setSwitching(true);
+        const nextIndex = (cameraIndex + 1) % cameras.length;
+
+        try {
+            await safeStop();
+            await startWithCamera(cameras[nextIndex].id);
+            setCameraIndex(nextIndex);
+            setScanning(true);
+        } catch {
+            setError("Could not switch camera.");
+        } finally {
+            setSwitching(false);
+        }
+    }, [cameras, cameraIndex, switching, safeStop, startWithCamera]);
+
+    const statusStyles: Record<
+        ScanResult["result"],
+        {
+            border: string;
+            bg: string;
+            text: string;
+            icon: JSX.Element;
+            label: string;
+        }
+    > = {
+        success: {
+            border: "border-emerald-800",
+            bg: "bg-emerald-950/40",
+            text: "text-emerald-400",
+            icon: <ShieldCheck className="h-5 w-5 text-emerald-400" />,
+            label: "Access Granted",
+        },
+        denied: {
+            border: "border-red-900",
+            bg: "bg-red-950/40",
+            text: "text-red-400",
+            icon: <XCircle className="h-5 w-5 text-red-400" />,
+            label: "Access Denied",
+        },
+        duplicate: {
+            border: "border-amber-900",
+            bg: "bg-amber-950/40",
+            text: "text-amber-400",
+            icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
+            label: "Already Scanned",
+        },
     };
 
     return (
@@ -149,9 +268,22 @@ export default function QRCheckIn() {
                                         ? "Scanner ready"
                                         : "Starting camera…"}
                                 </span>
-                                <span className="text-neutral-500">
-                                    Camera 01
-                                </span>
+
+                                {cameras.length > 1 && (
+                                    <button
+                                        type="button"
+                                        onClick={handleFlipCamera}
+                                        disabled={switching}
+                                        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 bg-neutral-800/80 px-3 py-1 text-neutral-300 hover:bg-neutral-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
+                                    >
+                                        <RotateCw
+                                            className={`h-3.5 w-3.5 ${switching ? "animate-spin" : ""}`}
+                                        />
+                                        {switching
+                                            ? "Switching…"
+                                            : "Flip camera"}
+                                    </button>
+                                )}
                             </div>
 
                             <div className="relative aspect-square rounded-xl border border-amber-600/30 bg-black overflow-hidden">
@@ -197,24 +329,16 @@ export default function QRCheckIn() {
 
                             {lastResult && (
                                 <div
-                                    className={`rounded-2xl border p-6 ${
-                                        lastResult.result === "success"
-                                            ? "border-emerald-800 bg-emerald-950/40"
-                                            : "border-red-900 bg-red-950/40"
-                                    }`}
+                                    className={`rounded-2xl border p-6 ${statusStyles[lastResult.result].border} ${statusStyles[lastResult.result].bg}`}
                                 >
                                     <div className="flex items-center gap-2 mb-2">
-                                        {lastResult.result === "success" ? (
-                                            <ShieldCheck className="h-5 w-5 text-emerald-400" />
-                                        ) : (
-                                            <XCircle className="h-5 w-5 text-red-400" />
-                                        )}
+                                        {statusStyles[lastResult.result].icon}
                                         <p
-                                            className={`text-sm font-semibold ${lastResult.result === "success" ? "text-emerald-400" : "text-red-400"}`}
+                                            className={`text-sm font-semibold ${statusStyles[lastResult.result].text}`}
                                         >
-                                            {lastResult.result === "success"
-                                                ? "Access Granted"
-                                                : "Access Denied"}
+                                            {lastResult.reason ??
+                                                statusStyles[lastResult.result]
+                                                    .label}
                                         </p>
                                     </div>
                                     {lastResult.member && (
@@ -223,11 +347,6 @@ export default function QRCheckIn() {
                                             {lastResult.member.plan
                                                 ? ` · ${lastResult.member.plan}`
                                                 : ""}
-                                        </p>
-                                    )}
-                                    {lastResult.reason && (
-                                        <p className="text-sm text-neutral-300 mt-1">
-                                            {lastResult.reason}
                                         </p>
                                     )}
                                     {lastResult.message && (

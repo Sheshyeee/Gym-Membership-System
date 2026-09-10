@@ -38,6 +38,22 @@ class StaffCheckInsController extends Controller
             ]);
         }
 
+        // Prevent duplicate scans of the same member within a 5-minute window.
+        $recentScan = Attendance::where('user_id', $user->id)
+            ->where('scanned_at', '>=', now()->subMinutes(5))
+            ->orderByDesc('scanned_at')
+            ->first();
+
+        if ($recentScan) {
+            return response()->json([
+                'result' => 'duplicate',
+                'reason' => 'Already Scanned',
+                'message' => 'Scanned ' . $recentScan->scanned_at->diffForHumans() . '. Please wait before scanning again.',
+                'member' => $this->memberPayload($user),
+                'scannedAt' => $recentScan->scanned_at->format('g:i A'),
+            ]);
+        }
+
         if (! $user->isActive()) {
             Attendance::create([
                 'user_id' => $user->id,
