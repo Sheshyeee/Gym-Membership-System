@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\User;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -93,7 +94,7 @@ class AdminAttendanceController extends Controller
         ];
     }
 
-    private function hourlyData(Carbon $date): array
+    private function hourlyData(CarbonInterface $date): array
     {
         $rows = Attendance::where('status', 'success')
             ->whereBetween('scanned_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
@@ -108,7 +109,7 @@ class AdminAttendanceController extends Controller
         ])->values()->all();
     }
 
-    private function heatmapData(Carbon $weekStart, Carbon $weekEnd): array
+    private function heatmapData(CarbonInterface $weekStart, CarbonInterface $weekEnd): array
     {
         $rows = Attendance::where('status', 'success')
             ->whereBetween('scanned_at', [$weekStart, $weekEnd])
