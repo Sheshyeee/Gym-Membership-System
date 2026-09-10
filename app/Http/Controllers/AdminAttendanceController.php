@@ -32,6 +32,10 @@ class AdminAttendanceController extends Controller
         $weekStart = now()->startOfWeek(Carbon::MONDAY)->addWeeks($weekOffset);
         $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SUNDAY);
 
+        $recordDate = $request->filled('record_date')
+            ? $request->string('record_date')->toString()
+            : null;
+
         return Inertia::render('admin/attendance', [
             'stats' => fn() => $this->stats(),
             'hourly' => fn() => [
@@ -44,7 +48,8 @@ class AdminAttendanceController extends Controller
                 'isCurrentWeek' => $weekOffset === 0,
                 'buckets' => $this->heatmapData($weekStart, $weekEnd),
             ],
-            'recentRecords' => fn() => $this->recentRecords(),
+            'recordDate' => $recordDate,
+            'recentRecords' => fn() => $this->recentRecords($recordDate),
         ]);
     }
 
@@ -52,25 +57,23 @@ class AdminAttendanceController extends Controller
     {
         $rangeStart = now()->subDays(30);
 
-        $totalCheckIns = Attendance::where('status', 'success')
-            ->where('scanned_at', '>=', $rangeStart)
-            ->count();
+        $rows = Attendance::where('status', 'success')
+            ->where('scanned_at', '>=', $rangeStart->copy()->utc())
+            ->get(['id', 'user_id', 'scanned_at']);
 
-        $peakHourRow = Attendance::where('status', 'success')
-            ->where('scanned_at', '>=', $rangeStart)
-            ->selectRaw('HOUR(scanned_at) as hour, COUNT(*) as total')
-            ->groupBy('hour')
-            ->orderByDesc('total')
+        $totalCheckIns = $rows->count();
+
+        // Group in PHP using the timezone-corrected Carbon instance (Eloquent's
+        // datetime cast already converts UTC -> app timezone here).
+        $peak = $rows
+            ->groupBy(fn($a) => (int) $a->scanned_at->format('G'))
+            ->map(fn($group, $hour) => [
+                'hour' => $hour,
+                'count' => $group->count(),
+                'members' => $group->pluck('user_id')->unique()->count(),
+            ])
+            ->sortByDesc('count')
             ->first();
-
-        $peakHourMembers = 0;
-        if ($peakHourRow) {
-            $peakHourMembers = Attendance::where('status', 'success')
-                ->where('scanned_at', '>=', $rangeStart)
-                ->whereRaw('HOUR(scanned_at) = ?', [$peakHourRow->hour])
-                ->distinct('user_id')
-                ->count('user_id');
-        }
 
         $activeMembers = User::role('user')
             ->with('latestSubscription')
@@ -86,44 +89,46 @@ class AdminAttendanceController extends Controller
 
         return [
             'totalCheckIns' => $totalCheckIns,
-            'peakHour' => $peakHourRow
-                ? Carbon::createFromTime((int) $peakHourRow->hour)->format('g A')
-                : '—',
-            'peakHourMembers' => $peakHourMembers,
+            'peakHour' => $peak ? Carbon::createFromTime($peak['hour'])->format('g A') : '—',
+            'peakHourMembers' => $peak['members'] ?? 0,
             'activeMembers' => $activeMembers,
         ];
     }
 
     private function hourlyData(CarbonInterface $date): array
     {
+        // Convert the local-day boundaries to UTC for the query, since the
+        // scanned_at column is stored in UTC.
+        $start = $date->copy()->startOfDay()->utc();
+        $end = $date->copy()->endOfDay()->utc();
+
         $rows = Attendance::where('status', 'success')
-            ->whereBetween('scanned_at', [$date->copy()->startOfDay(), $date->copy()->endOfDay()])
-            ->selectRaw('HOUR(scanned_at) as hour, COUNT(*) as total')
-            ->groupBy('hour')
-            ->get()
-            ->keyBy('hour');
+            ->whereBetween('scanned_at', [$start, $end])
+            ->get(['scanned_at']);
+
+        $counts = $rows->countBy(fn($a) => (int) $a->scanned_at->format('G'));
 
         return collect(range(0, 23))->map(fn($hour) => [
             'label' => Carbon::createFromTime($hour)->format('gA'),
-            'total' => (int) ($rows->get($hour)->total ?? 0),
+            'total' => (int) ($counts[$hour] ?? 0),
         ])->values()->all();
     }
 
     private function heatmapData(CarbonInterface $weekStart, CarbonInterface $weekEnd): array
     {
         $rows = Attendance::where('status', 'success')
-            ->whereBetween('scanned_at', [$weekStart, $weekEnd])
-            ->selectRaw('DAYOFWEEK(scanned_at) as dow, HOUR(scanned_at) as hour, COUNT(*) as total')
-            ->groupBy('dow', 'hour')
-            ->get();
+            ->whereBetween('scanned_at', [$weekStart->copy()->utc(), $weekEnd->copy()->utc()])
+            ->get(['scanned_at']);
 
-        // MySQL DAYOFWEEK: 1=Sun..7=Sat. Convert to Mon-first index 0..6.
         $counts = [];
         foreach ($rows as $row) {
-            $dayIndex = ((int) $row->dow + 5) % 7;
+            $local = $row->scanned_at; // already app-timezone Carbon via cast
+            $dayIndex = $local->dayOfWeekIso - 1; // Mon=0 ... Sun=6
+            $hour = (int) $local->format('G');
+
             foreach (self::HEATMAP_BUCKETS as $bIndex => $bucket) {
-                if ($row->hour >= $bucket['start'] && $row->hour < $bucket['end']) {
-                    $counts[$dayIndex][$bIndex] = ($counts[$dayIndex][$bIndex] ?? 0) + $row->total;
+                if ($hour >= $bucket['start'] && $hour < $bucket['end']) {
+                    $counts[$dayIndex][$bIndex] = ($counts[$dayIndex][$bIndex] ?? 0) + 1;
                 }
             }
         }
@@ -149,12 +154,18 @@ class AdminAttendanceController extends Controller
         })->values()->all();
     }
 
-    private function recentRecords(): array
+    private function recentRecords(?string $date = null): array
     {
-        return Attendance::with('user.activeSubscription.plan')
-            ->orderByDesc('scanned_at')
-            ->limit(25)
-            ->get()
+        $query = Attendance::with('user.activeSubscription.plan')
+            ->orderByDesc('scanned_at');
+
+        if ($date) {
+            $start = Carbon::parse($date)->startOfDay()->utc();
+            $end = Carbon::parse($date)->endOfDay()->utc();
+            $query->whereBetween('scanned_at', [$start, $end]);
+        }
+
+        return $query->limit(25)->get()
             ->map(fn(Attendance $a) => [
                 'id' => $a->id,
                 'name' => $a->user?->name ?? 'Unknown',

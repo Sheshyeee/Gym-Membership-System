@@ -19,57 +19,67 @@ class StaffAttendanceController extends Controller
             default => [now()->startOfDay(), now()->endOfDay()],
         };
 
-        $scoped = fn() => Attendance::whereBetween('scanned_at', [$rangeStart, $rangeEnd]);
+        // Column is stored in UTC, so convert the local range boundaries to UTC
+        // before querying, then work with the already-timezone-corrected
+        // scanned_at Carbon instances for any hour/day grouping.
+        $utcStart = $rangeStart->copy()->utc();
+        $utcEnd = $rangeEnd->copy()->utc();
+
+        $scoped = fn() => Attendance::whereBetween('scanned_at', [$utcStart, $utcEnd]);
 
         $totalVisits = $scoped()->where('status', 'success')->count();
         $deniedCount = $scoped()->where('status', 'denied')->count();
 
-        $busiest = $scoped()->where('status', 'success')
-            ->selectRaw('DATE(scanned_at) as day, COUNT(*) as total')
-            ->groupBy('day')
-            ->orderByDesc('total')
+        $successRows = $scoped()->where('status', 'success')->get(['id', 'scanned_at']);
+
+        $busiest = $successRows
+            ->groupBy(fn($a) => $a->scanned_at->toDateString())
+            ->map(fn($group, $day) => ['day' => $day, 'total' => $group->count()])
+            ->sortByDesc('total')
             ->first();
 
-        $hourly = $scoped()->where('status', 'success')
-            ->selectRaw('HOUR(scanned_at) as hour, COUNT(*) as total')
-            ->groupBy('hour')
-            ->orderByDesc('total')
-            ->limit(3)
-            ->get()
-            ->map(fn($row) => [
-                'hour' => Carbon::createFromTime((int) $row->hour)->format('g A'),
-                'total' => $row->total,
-            ]);
+        $hourly = $successRows
+            ->groupBy(fn($a) => (int) $a->scanned_at->format('G'))
+            ->map(fn($group, $hour) => [
+                'hour' => Carbon::createFromTime($hour)->format('g A'),
+                'total' => $group->count(),
+            ])
+            ->sortByDesc('total')
+            ->take(3)
+            ->values();
 
         if ($range === 'today') {
-            $chartData = $scoped()->where('status', 'success')
-                ->selectRaw('HOUR(scanned_at) as bucket, COUNT(*) as total')
-                ->groupBy('bucket')
-                ->orderBy('bucket')
-                ->get()
-                ->map(fn($row) => [
-                    'label' => Carbon::createFromTime((int) $row->bucket)->format('g A'),
-                    'total' => $row->total,
-                ]);
+            $counts = $successRows->countBy(fn($a) => (int) $a->scanned_at->format('G'));
+
+            $chartData = collect(range(0, 23))->map(fn($hour) => [
+                'label' => Carbon::createFromTime($hour)->format('gA'),
+                'total' => (int) ($counts[$hour] ?? 0),
+            ])->values();
         } else {
-            $chartData = $scoped()->where('status', 'success')
-                ->selectRaw('DATE(scanned_at) as bucket, COUNT(*) as total')
-                ->groupBy('bucket')
-                ->orderBy('bucket')
-                ->get()
-                ->map(fn($row) => [
-                    'label' => Carbon::parse($row->bucket)->format('M j'),
-                    'total' => $row->total,
+            $counts = $successRows->countBy(fn($a) => $a->scanned_at->toDateString());
+
+            $chartData = collect();
+            $cursor = $rangeStart->copy()->startOfDay();
+            $end = $rangeEnd->copy()->startOfDay();
+            while ($cursor->lte($end)) {
+                $key = $cursor->toDateString();
+                $chartData->push([
+                    'label' => $cursor->format('M j'),
+                    'total' => (int) ($counts[$key] ?? 0),
                 ]);
+                $cursor->addDay();
+            }
         }
 
         $recentQuery = Attendance::with(['user.activeSubscription.plan'])
             ->orderByDesc('scanned_at');
 
         if ($date) {
-            $recentQuery->whereDate('scanned_at', $date);
+            $dayStart = Carbon::parse($date)->startOfDay()->utc();
+            $dayEnd = Carbon::parse($date)->endOfDay()->utc();
+            $recentQuery->whereBetween('scanned_at', [$dayStart, $dayEnd]);
         } else {
-            $recentQuery->whereBetween('scanned_at', [$rangeStart, $rangeEnd]);
+            $recentQuery->whereBetween('scanned_at', [$utcStart, $utcEnd]);
         }
 
         $recentVisits = $recentQuery->limit(25)->get()->map(fn($v) => [
@@ -93,8 +103,8 @@ class StaffAttendanceController extends Controller
             'stats' => [
                 'totalVisits' => $totalVisits,
                 'deniedCount' => $deniedCount,
-                'busiestDay' => $busiest ? Carbon::parse($busiest->day)->format('l') : '—',
-                'busiestDayCount' => $busiest->total ?? 0,
+                'busiestDay' => $busiest ? Carbon::parse($busiest['day'])->format('l') : '—',
+                'busiestDayCount' => $busiest['total'] ?? 0,
                 'peakHour' => $hourly->first()['hour'] ?? '—',
                 'peakHours' => $hourly,
             ],

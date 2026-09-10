@@ -6,6 +6,7 @@ import {
     Users,
     ChevronLeft,
     ChevronRight,
+    Filter,
 } from "lucide-react";
 import {
     BarChart,
@@ -59,6 +60,7 @@ export default function Attendance({
     stats,
     hourly,
     heatmap,
+    recordDate,
     recentRecords,
 }: {
     stats: Stats;
@@ -69,15 +71,22 @@ export default function Attendance({
         isCurrentWeek: boolean;
         buckets: HeatmapBucket[];
     };
+    recordDate: string | null;
     recentRecords: Record_[];
 }) {
     const [hourlyDate, setHourlyDate] = useState(hourly.date);
+    const [showFilter, setShowFilter] = useState(false);
+    const [dateInput, setDateInput] = useState(recordDate ?? "");
 
     const applyHourlyDate = (date: string) => {
         setHourlyDate(date);
         router.get(
             "/attendance",
-            { hourly_date: date, week_offset: heatmap.weekOffset },
+            {
+                hourly_date: date,
+                week_offset: heatmap.weekOffset,
+                record_date: recordDate,
+            },
             { preserveState: true, preserveScroll: true, only: ["hourly"] },
         );
     };
@@ -88,9 +97,41 @@ export default function Attendance({
             {
                 hourly_date: hourlyDate,
                 week_offset: heatmap.weekOffset + direction,
+                record_date: recordDate,
             },
             { preserveState: true, preserveScroll: true, only: ["heatmap"] },
         );
+    };
+
+    const applyRecordDate = () => {
+        router.get(
+            "/attendance",
+            {
+                hourly_date: hourlyDate,
+                week_offset: heatmap.weekOffset,
+                record_date: dateInput || undefined,
+            },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ["recentRecords"],
+            },
+        );
+        setShowFilter(false);
+    };
+
+    const clearRecordDate = () => {
+        setDateInput("");
+        router.get(
+            "/attendance",
+            { hourly_date: hourlyDate, week_offset: heatmap.weekOffset },
+            {
+                preserveState: true,
+                preserveScroll: true,
+                only: ["recentRecords"],
+            },
+        );
+        setShowFilter(false);
     };
 
     return (
@@ -261,12 +302,54 @@ export default function Attendance({
                     </div>
 
                     <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                        <p className="font-semibold text-white">
-                            Recent attendance records
-                        </p>
-                        <p className="text-xs text-neutral-500 mb-4">
-                            Click a record to view details
-                        </p>
+                        <div>
+                            <p className="font-semibold text-white">
+                                Recent attendance records
+                            </p>
+                            <p className="text-xs text-neutral-500">
+                                {recordDate
+                                    ? `Showing ${recordDate}`
+                                    : "Click a record to view details"}
+                            </p>
+                        </div>
+                        <div className="relative">
+                            <button
+                                onClick={() => setShowFilter((s) => !s)}
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-neutral-700 bg-neutral-800/60 px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800"
+                            >
+                                <Filter className="h-3.5 w-3.5" />
+                                Filter
+                            </button>
+                            {showFilter && (
+                                <div className="absolute right-0 mt-2 w-64 rounded-xl border border-neutral-800 bg-neutral-900 p-4 shadow-xl z-10">
+                                    <label className="block text-xs text-neutral-500 mb-2">
+                                        Select date
+                                    </label>
+                                    <input
+                                        type="date"
+                                        value={dateInput}
+                                        onChange={(e) =>
+                                            setDateInput(e.target.value)
+                                        }
+                                        className="w-full rounded-lg border border-neutral-700 bg-neutral-800 px-3 py-1.5 text-sm text-white mb-3"
+                                    />
+                                    <div className="flex gap-2">
+                                        <button
+                                            onClick={applyRecordDate}
+                                            className="flex-1 rounded-lg bg-amber-600 px-3 py-1.5 text-sm font-medium text-white hover:bg-amber-500"
+                                        >
+                                            Apply
+                                        </button>
+                                        <button
+                                            onClick={clearRecordDate}
+                                            className="rounded-lg border border-neutral-700 px-3 py-1.5 text-sm text-neutral-300 hover:bg-neutral-800"
+                                        >
+                                            Clear
+                                        </button>
+                                    </div>
+                                </div>
+                            )}
+                        </div>
 
                         {recentRecords.length === 0 ? (
                             <p className="py-6 text-sm text-neutral-500 text-center">
