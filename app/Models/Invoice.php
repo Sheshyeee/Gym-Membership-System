@@ -18,13 +18,17 @@ class Invoice extends Model
         'processor_source_id',
         'processor_payment_intent_id',
         'processor_payment_id',
+        'processor_refund_id',
+        'refund_amount',
         'due_at',
         'paid_at',
+        'refunded_at',
     ];
 
     protected $casts = [
         'due_at' => 'datetime',
         'paid_at' => 'datetime',
+        'refunded_at' => 'datetime',
     ];
 
     public function user(): BelongsTo

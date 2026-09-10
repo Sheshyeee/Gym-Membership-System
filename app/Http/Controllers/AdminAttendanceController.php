@@ -17,13 +17,18 @@ class AdminAttendanceController extends Controller
     private const DISPLAY_TZ = 'Asia/Manila';
 
     private const HEATMAP_BUCKETS = [
-        ['label' => '6–8 AM', 'start' => 6, 'end' => 8],
-        ['label' => '8–10 AM', 'start' => 8, 'end' => 10],
+        ['label' => '12–2 AM', 'start' => 0,  'end' => 2],
+        ['label' => '2–4 AM',  'start' => 2,  'end' => 4],
+        ['label' => '4–6 AM',  'start' => 4,  'end' => 6],
+        ['label' => '6–8 AM',  'start' => 6,  'end' => 8],
+        ['label' => '8–10 AM', 'start' => 8,  'end' => 10],
         ['label' => '10–12 PM', 'start' => 10, 'end' => 12],
         ['label' => '12–2 PM', 'start' => 12, 'end' => 14],
-        ['label' => '2–4 PM', 'start' => 14, 'end' => 16],
-        ['label' => '4–6 PM', 'start' => 16, 'end' => 18],
-        ['label' => '6–8 PM', 'start' => 18, 'end' => 20],
+        ['label' => '2–4 PM',  'start' => 14, 'end' => 16],
+        ['label' => '4–6 PM',  'start' => 16, 'end' => 18],
+        ['label' => '6–8 PM',  'start' => 18, 'end' => 20],
+        ['label' => '8–10 PM', 'start' => 20, 'end' => 22],
+        ['label' => '10–12 AM', 'start' => 22, 'end' => 24],
     ];
 
     public function index(Request $request): Response

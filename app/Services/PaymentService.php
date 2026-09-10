@@ -148,4 +148,26 @@ class PaymentService
 
     return $response->json('data');
   }
+
+  public function createRefund(string $paymentId, int $amount, string $idempotencyKey, string $reason = 'requested_by_customer'): array
+  {
+    $response = $this->client()
+      ->withHeaders(['Idempotency-Key' => $idempotencyKey])
+      ->post('/refunds', [
+        'data' => [
+          'attributes' => [
+            'amount' => $amount,
+            'payment_id' => $paymentId,
+            'reason' => $reason,
+          ],
+        ],
+      ]);
+
+    if ($response->failed()) {
+      Log::error('PayMongo createRefund failed', ['payment_id' => $paymentId, 'body' => $response->json()]);
+      throw new RuntimeException('Unable to issue refund.');
+    }
+
+    return $response->json('data');
+  }
 }

@@ -46,6 +46,7 @@ class PaymongoWebhookController extends Controller
             match ($eventType) {
                 'source.chargeable' => $this->handleSourceChargeable($resource),
                 'payment.paid' => $this->handlePaymentPaid($resource),
+                'refund.updated' => $this->handleRefundUpdated($resource),
                 'payment.failed' => $this->handlePaymentFailed($resource),
                 default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
             };
@@ -64,6 +65,37 @@ class PaymongoWebhookController extends Controller
         }
 
         return response()->json(['message' => 'ok']);
+    }
+    protected function handleRefundUpdated(?array $resource): void
+    {
+        $refundId = $resource['id'] ?? null;
+        $status = $resource['attributes']['status'] ?? null;
+
+        if (! $refundId) {
+            return;
+        }
+
+        $invoice = Invoice::where('processor_refund_id', $refundId)->first();
+
+        if (! $invoice) {
+            Log::warning('refund.updated webhook with no matching invoice', ['refund_id' => $refundId]);
+            return;
+        }
+
+        if ($status === 'succeeded') {
+            $invoice->update([
+                'status' => 'refunded',
+                'refund_amount' => $resource['attributes']['amount'] ?? $invoice->amount,
+                'refunded_at' => now(),
+            ]);
+            // Open question (see notes above): does the subscription need to be
+            // downgraded/cancelled here? Not doing that automatically for now.
+        } elseif ($status === 'failed') {
+            // Refund didn't go through — the invoice is still genuinely paid.
+            $invoice->update(['status' => 'paid']);
+            Log::error('PayMongo refund failed', ['invoice_id' => $invoice->id, 'refund_id' => $refundId]);
+        }
+        // 'pending' -> no-op, invoice is already sitting in 'refunding'.
     }
 
     protected function handleSourceChargeable(?array $resource): void

@@ -60,6 +60,11 @@ export function AppSidebar() {
                       icon: LayoutGrid,
                   } satisfies NavItem,
                   {
+                      title: "Payments",
+                      href: "/payments",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
+                  {
                       title: "Membership Plans",
                       href: "/admin/plans",
                       icon: LayoutGrid,

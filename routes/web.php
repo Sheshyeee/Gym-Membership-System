@@ -2,6 +2,7 @@
 
 use App\Http\Controllers\AdminAttendanceController;
 use App\Http\Controllers\AdminMemberController;
+use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\DashboardController;
@@ -37,6 +38,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:admin');
     Route::get('/attendance', [AdminAttendanceController::class, 'index'])
         ->middleware('role:admin');
+    Route::get('/payments', [AdminPaymentController::class, 'index'])
+        ->middleware('role:admin');
 
     Route::get('/staff/qr-checkin', [StaffCheckInsController::class, 'index'])
         ->middleware('role:staff')
@@ -66,6 +69,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
         ->middleware('role:admin')
         ->name('admin.plans.index');
+
+    Route::post('/admin/payments/{invoice}/refund', [AdminPaymentController::class, 'refund'])
+        ->middleware('role:admin')
+        ->name('admin.payments.refund');
+    Route::post('/admin/payments/{invoice}/retry', [AdminPaymentController::class, 'retry'])
+        ->middleware('role:admin')
+        ->name('admin.payments.retry');
 
     Route::patch('/admin/plans/{plan}', [AdminPlansController::class, 'update'])
         ->middleware('role:admin')
