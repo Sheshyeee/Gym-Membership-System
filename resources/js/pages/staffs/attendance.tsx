@@ -19,6 +19,7 @@ type Visit = {
     denialReason?: string | null;
     plan?: string | null;
     time: string;
+    date: string;
 };
 
 type Stats = {
@@ -213,12 +214,12 @@ export default function Attendance({
                         <div className="flex items-center justify-between mb-4">
                             <div>
                                 <p className="font-semibold text-white">
-                                    Recent visits
+                                    Recent attendance records
                                 </p>
                                 <p className="text-xs text-neutral-500">
                                     {filterDate
                                         ? `Showing ${filterDate}`
-                                        : "Live activity"}
+                                        : "Click a record to view details"}
                                 </p>
                             </div>
                             <div className="relative">
@@ -261,54 +262,81 @@ export default function Attendance({
                             </div>
                         </div>
 
-                        <div className="divide-y divide-neutral-800">
-                            {recentVisits.length === 0 && (
-                                <p className="py-6 text-sm text-neutral-500 text-center">
-                                    No visits recorded for this period.
-                                </p>
-                            )}
-                            {recentVisits.map((v) => (
-                                <div
-                                    key={v.id}
-                                    className="flex items-center justify-between py-3"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div
-                                            className={`flex h-9 w-9 items-center justify-center rounded-full text-xs font-semibold ${v.status === "denied" ? "bg-red-500/10 text-red-400" : "bg-amber-600/20 text-amber-400"}`}
-                                        >
-                                            {v.initials}
-                                        </div>
-                                        <div>
-                                            <p className="text-sm font-medium text-white">
-                                                {v.name}
-                                            </p>
-                                            <p className="text-xs text-neutral-500">
-                                                {v.status === "denied"
-                                                    ? (v.denialReason ??
-                                                      "Access denied")
-                                                    : `Checked in · ${v.time}`}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <div className="flex items-center gap-2">
-                                        {v.plan && (
-                                            <span
-                                                className={`rounded-full px-2.5 py-1 text-xs font-medium ${PLAN_STYLES[v.plan] ?? "bg-neutral-500/10 text-neutral-400"}`}
+                        {recentVisits.length === 0 ? (
+                            <p className="py-6 text-sm text-neutral-500 text-center">
+                                No visits recorded for this period.
+                            </p>
+                        ) : (
+                            <div className="overflow-x-auto">
+                                <table className="w-full text-sm">
+                                    <thead>
+                                        <tr className="border-b border-neutral-800 text-left">
+                                            <th className="pb-3 pr-4 font-medium text-neutral-500 text-xs tracking-wide">
+                                                Record ID
+                                            </th>
+                                            <th className="pb-3 pr-4 font-medium text-neutral-500 text-xs tracking-wide">
+                                                Member
+                                            </th>
+                                            <th className="pb-3 pr-4 font-medium text-neutral-500 text-xs tracking-wide">
+                                                Type
+                                            </th>
+                                            <th className="pb-3 pr-4 font-medium text-neutral-500 text-xs tracking-wide">
+                                                Time
+                                            </th>
+                                            <th className="pb-3 font-medium text-neutral-500 text-xs tracking-wide">
+                                                Date
+                                            </th>
+                                        </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-neutral-800">
+                                        {recentVisits.map((v) => (
+                                            <tr
+                                                key={v.id}
+                                                className="cursor-pointer hover:bg-neutral-800/40"
                                             >
-                                                {v.plan}
-                                            </span>
-                                        )}
-                                        <span
-                                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${v.status === "denied" ? "bg-red-500/10 text-red-400" : "bg-emerald-500/10 text-emerald-400"}`}
-                                        >
-                                            {v.status === "denied"
-                                                ? "Denied"
-                                                : "Success"}
-                                        </span>
-                                    </div>
-                                </div>
-                            ))}
-                        </div>
+                                                <td className="py-3 pr-4 font-semibold text-white">
+                                                    ATT-
+                                                    {String(v.id).padStart(
+                                                        4,
+                                                        "0",
+                                                    )}
+                                                </td>
+                                                <td className="py-3 pr-4 text-neutral-300">
+                                                    {v.name}
+                                                </td>
+                                                <td className="py-3 pr-4">
+                                                    {v.status === "denied" ? (
+                                                        <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-xs font-medium text-red-400">
+                                                            Denied
+                                                        </span>
+                                                    ) : (
+                                                        <span
+                                                            className={`rounded-full px-2.5 py-1 text-xs font-medium ${
+                                                                v.plan
+                                                                    ? (PLAN_STYLES[
+                                                                          v.plan
+                                                                      ] ??
+                                                                      "bg-neutral-500/10 text-neutral-400")
+                                                                    : "bg-neutral-500/10 text-neutral-400"
+                                                            }`}
+                                                        >
+                                                            {v.plan ??
+                                                                "No plan"}
+                                                        </span>
+                                                    )}
+                                                </td>
+                                                <td className="py-3 pr-4 text-neutral-400">
+                                                    {v.time}
+                                                </td>
+                                                <td className="py-3 text-neutral-400">
+                                                    {v.date}
+                                                </td>
+                                            </tr>
+                                        ))}
+                                    </tbody>
+                                </table>
+                            </div>
+                        )}
                     </div>
                 </div>
             </div>

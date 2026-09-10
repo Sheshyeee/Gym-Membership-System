@@ -82,6 +82,9 @@ class StaffAttendanceController extends Controller
             'denialReason' => $v->denial_reason,
             'plan' => $v->user?->activeSubscription?->plan?->name,
             'time' => $v->scanned_at->format('g:i A'),
+            'date' => $v->scanned_at->isToday()
+                ? 'Today'
+                : ($v->scanned_at->isYesterday() ? 'Yesterday' : $v->scanned_at->format('M j')),
         ]);
 
         return inertia('staffs/attendance', [
