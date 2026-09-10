@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\AdminAttendanceController;
 use App\Http\Controllers\AdminMemberController;
 use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
@@ -33,6 +34,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('members.show');
 
     Route::get('/staffs', [AdminStaffController::class, 'index'])
+        ->middleware('role:admin');
+    Route::get('/attendance', [AdminAttendanceController::class, 'index'])
         ->middleware('role:admin');
 
     Route::get('/staff/qr-checkin', [StaffCheckInsController::class, 'index'])
