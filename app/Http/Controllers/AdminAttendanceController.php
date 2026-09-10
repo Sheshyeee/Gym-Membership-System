@@ -12,6 +12,10 @@ use Inertia\Response;
 
 class AdminAttendanceController extends Controller
 {
+    // Display timezone. Storage stays UTC (config('app.timezone')) — only
+    // convert here, at the edges, so historical UTC data stays correct.
+    private const DISPLAY_TZ = 'Asia/Manila';
+
     private const HEATMAP_BUCKETS = [
         ['label' => '6–8 AM', 'start' => 6, 'end' => 8],
         ['label' => '8–10 AM', 'start' => 8, 'end' => 10],
@@ -25,11 +29,11 @@ class AdminAttendanceController extends Controller
     public function index(Request $request): Response
     {
         $hourlyDate = $request->filled('hourly_date')
-            ? Carbon::parse($request->string('hourly_date')->toString())->startOfDay()
-            : now()->startOfDay();
+            ? Carbon::parse($request->string('hourly_date')->toString(), self::DISPLAY_TZ)->startOfDay()
+            : Carbon::now(self::DISPLAY_TZ)->startOfDay();
 
         $weekOffset = (int) $request->integer('week_offset', 0);
-        $weekStart = now()->startOfWeek(Carbon::MONDAY)->addWeeks($weekOffset);
+        $weekStart = Carbon::now(self::DISPLAY_TZ)->startOfWeek(Carbon::MONDAY)->addWeeks($weekOffset);
         $weekEnd = (clone $weekStart)->endOfWeek(Carbon::SUNDAY);
 
         $recordDate = $request->filled('record_date')
@@ -55,18 +59,16 @@ class AdminAttendanceController extends Controller
 
     private function stats(): array
     {
-        $rangeStart = now()->subDays(30);
+        $rangeStart = Carbon::now(self::DISPLAY_TZ)->subDays(30)->utc();
 
         $rows = Attendance::where('status', 'success')
-            ->where('scanned_at', '>=', $rangeStart->copy()->utc())
+            ->where('scanned_at', '>=', $rangeStart)
             ->get(['id', 'user_id', 'scanned_at']);
 
         $totalCheckIns = $rows->count();
 
-        // Group in PHP using the timezone-corrected Carbon instance (Eloquent's
-        // datetime cast already converts UTC -> app timezone here).
         $peak = $rows
-            ->groupBy(fn($a) => (int) $a->scanned_at->format('G'))
+            ->groupBy(fn($a) => (int) $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('G'))
             ->map(fn($group, $hour) => [
                 'hour' => $hour,
                 'count' => $group->count(),
@@ -97,8 +99,7 @@ class AdminAttendanceController extends Controller
 
     private function hourlyData(CarbonInterface $date): array
     {
-        // Convert the local-day boundaries to UTC for the query, since the
-        // scanned_at column is stored in UTC.
+        // $date is already a Manila-local start-of-day; convert to UTC for the query.
         $start = $date->copy()->startOfDay()->utc();
         $end = $date->copy()->endOfDay()->utc();
 
@@ -106,7 +107,9 @@ class AdminAttendanceController extends Controller
             ->whereBetween('scanned_at', [$start, $end])
             ->get(['scanned_at']);
 
-        $counts = $rows->countBy(fn($a) => (int) $a->scanned_at->format('G'));
+        $counts = $rows->countBy(
+            fn($a) => (int) $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('G')
+        );
 
         return collect(range(0, 23))->map(fn($hour) => [
             'label' => Carbon::createFromTime($hour)->format('gA'),
@@ -122,7 +125,7 @@ class AdminAttendanceController extends Controller
 
         $counts = [];
         foreach ($rows as $row) {
-            $local = $row->scanned_at; // already app-timezone Carbon via cast
+            $local = $row->scanned_at->setTimezone(self::DISPLAY_TZ);
             $dayIndex = $local->dayOfWeekIso - 1; // Mon=0 ... Sun=6
             $hour = (int) $local->format('G');
 
@@ -160,23 +163,26 @@ class AdminAttendanceController extends Controller
             ->orderByDesc('scanned_at');
 
         if ($date) {
-            $start = Carbon::parse($date)->startOfDay()->utc();
-            $end = Carbon::parse($date)->endOfDay()->utc();
+            $start = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay()->utc();
+            $end = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay()->utc();
             $query->whereBetween('scanned_at', [$start, $end]);
         }
 
         return $query->limit(25)->get()
-            ->map(fn(Attendance $a) => [
-                'id' => $a->id,
-                'name' => $a->user?->name ?? 'Unknown',
-                'status' => $a->status,
-                'denialReason' => $a->denial_reason,
-                'plan' => $a->user?->activeSubscription?->plan?->name,
-                'time' => $a->scanned_at->format('g:i A'),
-                'date' => $a->scanned_at->isToday()
-                    ? 'Today'
-                    : ($a->scanned_at->isYesterday() ? 'Yesterday' : $a->scanned_at->format('M j')),
-            ])
+            ->map(function (Attendance $a) {
+                $local = $a->scanned_at->setTimezone(self::DISPLAY_TZ);
+                return [
+                    'id' => $a->id,
+                    'name' => $a->user?->name ?? 'Unknown',
+                    'status' => $a->status,
+                    'denialReason' => $a->denial_reason,
+                    'plan' => $a->user?->activeSubscription?->plan?->name,
+                    'time' => $local->format('g:i A'),
+                    'date' => $local->isToday()
+                        ? 'Today'
+                        : ($local->isYesterday() ? 'Yesterday' : $local->format('M j')),
+                ];
+            })
             ->values()
             ->all();
     }

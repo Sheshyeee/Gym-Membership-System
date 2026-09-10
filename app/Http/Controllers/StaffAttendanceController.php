@@ -8,20 +8,19 @@ use Illuminate\Support\Carbon;
 
 class StaffAttendanceController extends Controller
 {
+    private const DISPLAY_TZ = 'Asia/Manila';
+
     public function index(Request $request)
     {
         $range = $request->get('range', 'today');
         $date = $request->get('date');
 
         [$rangeStart, $rangeEnd] = match ($range) {
-            'week' => [now()->startOfWeek(), now()->endOfWeek()],
-            'month' => [now()->startOfMonth(), now()->endOfMonth()],
-            default => [now()->startOfDay(), now()->endOfDay()],
+            'week' => [Carbon::now(self::DISPLAY_TZ)->startOfWeek(), Carbon::now(self::DISPLAY_TZ)->endOfWeek()],
+            'month' => [Carbon::now(self::DISPLAY_TZ)->startOfMonth(), Carbon::now(self::DISPLAY_TZ)->endOfMonth()],
+            default => [Carbon::now(self::DISPLAY_TZ)->startOfDay(), Carbon::now(self::DISPLAY_TZ)->endOfDay()],
         };
 
-        // Column is stored in UTC, so convert the local range boundaries to UTC
-        // before querying, then work with the already-timezone-corrected
-        // scanned_at Carbon instances for any hour/day grouping.
         $utcStart = $rangeStart->copy()->utc();
         $utcEnd = $rangeEnd->copy()->utc();
 
@@ -33,13 +32,13 @@ class StaffAttendanceController extends Controller
         $successRows = $scoped()->where('status', 'success')->get(['id', 'scanned_at']);
 
         $busiest = $successRows
-            ->groupBy(fn($a) => $a->scanned_at->toDateString())
+            ->groupBy(fn($a) => $a->scanned_at->setTimezone(self::DISPLAY_TZ)->toDateString())
             ->map(fn($group, $day) => ['day' => $day, 'total' => $group->count()])
             ->sortByDesc('total')
             ->first();
 
         $hourly = $successRows
-            ->groupBy(fn($a) => (int) $a->scanned_at->format('G'))
+            ->groupBy(fn($a) => (int) $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('G'))
             ->map(fn($group, $hour) => [
                 'hour' => Carbon::createFromTime($hour)->format('g A'),
                 'total' => $group->count(),
@@ -49,14 +48,18 @@ class StaffAttendanceController extends Controller
             ->values();
 
         if ($range === 'today') {
-            $counts = $successRows->countBy(fn($a) => (int) $a->scanned_at->format('G'));
+            $counts = $successRows->countBy(
+                fn($a) => (int) $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('G')
+            );
 
             $chartData = collect(range(0, 23))->map(fn($hour) => [
                 'label' => Carbon::createFromTime($hour)->format('gA'),
                 'total' => (int) ($counts[$hour] ?? 0),
             ])->values();
         } else {
-            $counts = $successRows->countBy(fn($a) => $a->scanned_at->toDateString());
+            $counts = $successRows->countBy(
+                fn($a) => $a->scanned_at->setTimezone(self::DISPLAY_TZ)->toDateString()
+            );
 
             $chartData = collect();
             $cursor = $rangeStart->copy()->startOfDay();
@@ -75,27 +78,30 @@ class StaffAttendanceController extends Controller
             ->orderByDesc('scanned_at');
 
         if ($date) {
-            $dayStart = Carbon::parse($date)->startOfDay()->utc();
-            $dayEnd = Carbon::parse($date)->endOfDay()->utc();
+            $dayStart = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay()->utc();
+            $dayEnd = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay()->utc();
             $recentQuery->whereBetween('scanned_at', [$dayStart, $dayEnd]);
         } else {
             $recentQuery->whereBetween('scanned_at', [$utcStart, $utcEnd]);
         }
 
-        $recentVisits = $recentQuery->limit(25)->get()->map(fn($v) => [
-            'id' => $v->id,
-            'name' => $v->user?->name ?? 'Unknown',
-            'initials' => $v->user
-                ? collect(explode(' ', $v->user->name))->map(fn($p) => strtoupper(substr($p, 0, 1)))->take(2)->implode('')
-                : '?',
-            'status' => $v->status,
-            'denialReason' => $v->denial_reason,
-            'plan' => $v->user?->activeSubscription?->plan?->name,
-            'time' => $v->scanned_at->format('g:i A'),
-            'date' => $v->scanned_at->isToday()
-                ? 'Today'
-                : ($v->scanned_at->isYesterday() ? 'Yesterday' : $v->scanned_at->format('M j')),
-        ]);
+        $recentVisits = $recentQuery->limit(25)->get()->map(function ($v) {
+            $local = $v->scanned_at->setTimezone(self::DISPLAY_TZ);
+            return [
+                'id' => $v->id,
+                'name' => $v->user?->name ?? 'Unknown',
+                'initials' => $v->user
+                    ? collect(explode(' ', $v->user->name))->map(fn($p) => strtoupper(substr($p, 0, 1)))->take(2)->implode('')
+                    : '?',
+                'status' => $v->status,
+                'denialReason' => $v->denial_reason,
+                'plan' => $v->user?->activeSubscription?->plan?->name,
+                'time' => $local->format('g:i A'),
+                'date' => $local->isToday()
+                    ? 'Today'
+                    : ($local->isYesterday() ? 'Yesterday' : $local->format('M j')),
+            ];
+        });
 
         return inertia('staffs/attendance', [
             'range' => $range,
