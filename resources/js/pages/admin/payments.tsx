@@ -122,6 +122,27 @@ export default function Payments({
     const [retrying, setRetrying] = useState(false);
     const [copied, setCopied] = useState(false);
 
+    // inside Payments component, after existing state
+    useEffect(() => {
+        const hasTransient = invoices.some(
+            (i) => i.status === "pending" || i.status === "refunding",
+        );
+        if (!hasTransient) return;
+
+        const interval = setInterval(() => {
+            router.reload({ only: ["invoices"] });
+        }, 4000);
+
+        return () => clearInterval(interval);
+    }, [invoices]);
+
+    // keep the open sheet's data fresh when invoices refreshes
+    useEffect(() => {
+        if (!selected) return;
+        const updated = invoices.find((i) => i.id === selected.id);
+        if (updated) setSelected(updated);
+    }, [invoices]);
+
     useEffect(() => {
         setCopied(false);
     }, [flash?.retry_checkout_url]);
