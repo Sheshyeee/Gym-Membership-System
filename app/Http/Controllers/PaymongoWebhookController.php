@@ -46,7 +46,7 @@ class PaymongoWebhookController extends Controller
             match ($eventType) {
                 'source.chargeable' => $this->handleSourceChargeable($resource),
                 'payment.paid' => $this->handlePaymentPaid($resource),
-                'refund.updated' => $this->handleRefundUpdated($resource),
+                'payment.refund.updated' => $this->handleRefundUpdated($resource),   // was 'refund.updated'
                 'payment.failed' => $this->handlePaymentFailed($resource),
                 default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
             };
