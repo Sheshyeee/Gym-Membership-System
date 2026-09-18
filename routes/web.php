@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberHomeController;
+use App\Http\Controllers\MemberPaymentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\PaymongoWebhookController;
@@ -50,6 +51,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staff/attendance', [StaffAttendanceController::class, 'index'])
         ->middleware('role:staff')
         ->name('staff.attendance');
+
+    Route::get('/member/payments', [MemberPaymentController::class, 'index'])
+        ->middleware('role:user')
+        ->name('member.payments');
 
     Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');

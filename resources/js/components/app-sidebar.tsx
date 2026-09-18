@@ -107,6 +107,11 @@ export function AppSidebar() {
                       href: "/qraccess",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Payments",
+                      href: "/member/payments",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
     ];
