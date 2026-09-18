@@ -52,9 +52,7 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:staff')
         ->name('staff.attendance');
 
-    Route::get('/member/payments', [MemberPaymentController::class, 'index'])
-        ->middleware('role:user')
-        ->name('member.payments');
+
 
     Route::get('/onboarding/payment/return/{invoice}', [OnboardingController::class, 'paymentReturn'])
         ->name('onboarding.payment.return');
@@ -69,6 +67,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
 
         Route::get('/qraccess', [QRAccessController::class, 'index'])->name('qraccess');
         Route::post('/qraccess/regenerate', [QRAccessController::class, 'regenerate'])->name('qraccess.regenerate');
+        Route::get('/member/payments', [MemberPaymentController::class, 'index'])
+            ->middleware('role:user')
+            ->name('member.payments');
     });
 
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
