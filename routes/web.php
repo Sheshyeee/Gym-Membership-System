@@ -6,6 +6,7 @@ use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\DashboardController;
+use App\Http\Controllers\MemberActivityController;
 use App\Http\Controllers\MemberHomeController;
 use App\Http\Controllers\MemberPaymentController;
 use App\Http\Controllers\OnboardingController;
@@ -70,6 +71,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/member/payments', [MemberPaymentController::class, 'index'])
             ->middleware('role:user')
             ->name('member.payments');
+        Route::get('/member/activity', [MemberActivityController::class, 'index'])
+            ->middleware('role:user')
+            ->name('member.activity');
     });
 
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
