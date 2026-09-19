@@ -58,29 +58,24 @@ class MemberActivityController extends Controller
             ? (int) round((($visitsThisMonth - $visitsLastMonth) / $visitsLastMonth) * 100)
             : ($visitsThisMonth > 0 ? 100 : 0);
 
-        // ---- Weekly rhythm: last month + selected month, ~4 weeks each ----
+        // ---- Weekly rhythm: rolling 8 weeks (Mon-Sun) ending at the selected month ----
+        $windowEnd = $selected->isSameMonth($today)
+            ? $today->copy()->endOfWeek(Carbon::SUNDAY)
+            : $selected->copy()->endOfMonth()->endOfWeek(Carbon::SUNDAY);
+
         $weeks = [];
-        foreach ([$lastMonth, $selected] as $monthRef) {
-            $wStart = $monthRef->copy()->startOfMonth();
-            $wEnd = $monthRef->copy()->endOfMonth();
-            $weekNum = 1;
-            $wCursor = $wStart->copy();
+        for ($i = 7; $i >= 0; $i--) {
+            $weekStart = $windowEnd->copy()->subWeeks($i)->startOfWeek(Carbon::MONDAY);
+            $weekEnd = $weekStart->copy()->endOfWeek(Carbon::SUNDAY);
 
-            while ($wCursor <= $wEnd) {
-                $chunkEnd = $wCursor->copy()->addDays(6);
-                $chunkEnd = $chunkEnd->greaterThan($wEnd) ? $wEnd->copy() : $chunkEnd;
+            $count = $attendances->filter(
+                fn($a) => $a->scanned_at->between($weekStart->startOfDay(), $weekEnd->endOfDay())
+            )->count();
 
-                $count = $attendances->filter(
-                    fn($a) => $a->scanned_at->between(
-                        $wCursor->copy()->startOfDay(),
-                        $chunkEnd->copy()->endOfDay()
-                    )
-                )->count();
-
-                $weeks[] = ['label' => 'W' . $weekNum, 'visits' => $count];
-                $wCursor->addDays(7);
-                $weekNum++;
-            }
+            $weeks[] = [
+                'label' => $weekStart->format('M j'),
+                'visits' => $count,
+            ];
         }
         $weeks = array_slice($weeks, -8);
 

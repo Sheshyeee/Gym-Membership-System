@@ -237,18 +237,20 @@ export default function Activity({
                             Visits over time
                         </h2>
 
-                        <div className="mt-6 flex h-40 items-end gap-2">
+                        <div className="mt-6 flex h-40 gap-2">
                             {weeklyRhythm.map((w, i) => (
                                 <div
                                     key={i}
-                                    className="flex flex-1 flex-col items-center gap-2"
+                                    className="flex h-full flex-1 flex-col justify-end gap-2"
                                 >
-                                    <div
-                                        className="w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400"
-                                        style={{
-                                            height: `${Math.max(6, (w.visits / maxWeekVisits) * 100)}%`,
-                                        }}
-                                    />
+                                    <div className="flex w-full flex-1 items-end">
+                                        <div
+                                            className="w-full rounded-t-md bg-gradient-to-t from-amber-600 to-amber-400"
+                                            style={{
+                                                height: `${Math.max(4, (w.visits / maxWeekVisits) * 100)}%`,
+                                            }}
+                                        />
+                                    </div>
                                     <span className="text-xs text-muted-foreground">
                                         {w.label}
                                     </span>
