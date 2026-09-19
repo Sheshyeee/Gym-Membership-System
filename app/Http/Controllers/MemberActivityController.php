@@ -125,7 +125,7 @@ class MemberActivityController extends Controller
             });
 
         // ---- Months available for the single month picker ----
-        $availableMonths = $attendances
+        $availableMonths = collect($attendances)
             ->map(fn($a) => $a->scanned_at->format('Y-m'))
             ->push($today->format('Y-m'))
             ->unique()
