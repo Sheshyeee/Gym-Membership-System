@@ -85,9 +85,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/member/payments', [MemberPaymentController::class, 'index'])
             ->middleware('role:user')
             ->name('member.payments');
-        Route::get('/member/activity', [MemberActivityController::class, 'index'])
-            ->middleware('role:user')
-            ->name('member.activity');
 
         Route::get('/member/membership', [MemberMembershipController::class, 'index'])
             ->middleware('role:user')

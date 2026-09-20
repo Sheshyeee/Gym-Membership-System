@@ -102,11 +102,7 @@ export function AppSidebar() {
                       href: "/dashboard",
                       icon: LayoutGrid,
                   } satisfies NavItem,
-                  {
-                      title: "Activity",
-                      href: "/member/activity",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+
                   {
                       title: "QR Access",
                       href: "/qraccess",
