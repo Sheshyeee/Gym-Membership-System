@@ -22,7 +22,7 @@ class MemberPaymentController extends Controller
                 'reference' => 'TXN-' . str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT),
                 'method_key' => $this->methodKey($invoice->payment_method_type),
                 'method_label' => $this->methodLabel($invoice->payment_method_type),
-                'amount' => number_format($invoice->amount),
+                'amount' => number_format($invoice->amount / 100, 2),
                 'currency' => $invoice->currency ?? 'PHP',
                 'status' => $this->status($invoice->status),
                 'date' => $date?->format('F j, Y'),
