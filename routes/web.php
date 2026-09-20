@@ -63,6 +63,19 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/onboarding/invoices/{invoice}/status', [OnboardingController::class, 'invoiceStatus'])
         ->name('onboarding.invoice.status');
 
+    Route::get('/member/membership/checkout', [MemberMembershipController::class, 'checkout'])
+        ->middleware('role:user')
+        ->name('member.membership.checkout');
+    Route::post('/member/membership/checkout', [MemberMembershipController::class, 'pay'])
+        ->middleware('role:user')
+        ->name('member.membership.pay');
+    Route::get('/member/membership/payment/return/{invoice}', [MemberMembershipController::class, 'paymentReturn'])
+        ->middleware('role:user')
+        ->name('member.membership.payment.return');
+    Route::get('/member/membership/invoices/{invoice}/status', [MemberMembershipController::class, 'invoiceStatus'])
+        ->middleware('role:user')
+        ->name('member.membership.invoice.status');
+
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');
         Route::get('/qraccess', [QRAccessController::class, 'index'])->name('qraccess');
@@ -79,18 +92,6 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/member/membership', [MemberMembershipController::class, 'index'])
             ->middleware('role:user')
             ->name('member.membership');
-        Route::get('/member/membership/checkout', [MemberMembershipController::class, 'checkout'])
-            ->middleware('role:user')
-            ->name('member.membership.checkout');
-        Route::post('/member/membership/checkout', [MemberMembershipController::class, 'pay'])
-            ->middleware('role:user')
-            ->name('member.membership.pay');
-        Route::get('/member/membership/payment/return/{invoice}', [MemberMembershipController::class, 'paymentReturn'])
-            ->middleware('role:user')
-            ->name('member.membership.payment.return');
-        Route::get('/member/membership/invoices/{invoice}/status', [MemberMembershipController::class, 'invoiceStatus'])
-            ->middleware('role:user')
-            ->name('member.membership.invoice.status');
     });
 
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
