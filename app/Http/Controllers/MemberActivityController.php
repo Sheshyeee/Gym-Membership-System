@@ -3,6 +3,7 @@
 namespace App\Http\Controllers;
 
 use App\Models\Attendance;
+use App\Models\Subscription;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
@@ -11,6 +12,8 @@ class MemberActivityController extends Controller
     public function index(Request $request)
     {
         $user = $request->user();
+
+        $current = $user->activeSubscription()->with('plan')->first();
 
         $month = (int) $request->input('month', now()->month);
         $year = (int) $request->input('year', now()->year);
@@ -119,7 +122,7 @@ class MemberActivityController extends Controller
                     ? 'Today, ' . $date->format('g:i A')
                     : ($date->isYesterday()
                         ? 'Yesterday, ' . $date->format('g:i A')
-                        : $date->format('M j, g:i A'));     
+                        : $date->format('M j, g:i A'));
 
                 return ['id' => $a->id, 'when' => $when, 'method' => $a->method];
             });
@@ -137,6 +140,16 @@ class MemberActivityController extends Controller
             });
 
         return inertia('member/activity', [
+            'currentMembership' => $current ? [
+                'plan_name' => $current->plan->name,
+                'tagline' => $current->plan->tagline,
+                'status' => $current->status,
+                'valid_until' => $current->current_period_end?->format('F j, Y'),
+                'days_remaining' => $current->current_period_end?->isFuture()
+                    ? (int) now()->diffInDays($current->current_period_end)
+                    : 0,
+                'percent_used' => $this->percentUsed($current),
+            ] : null,
             'selectedMonth' => $selected->format('Y-m'),
             'selectedMonthLabel' => $selected->format('F Y'),
             'availableMonths' => $availableMonths,
@@ -153,6 +166,23 @@ class MemberActivityController extends Controller
             'avgVisitsPerWeek' => $avgVisitsPerWeek,
             'recentCheckIns' => $recent,
         ]);
+    }
+
+    private function percentUsed(Subscription $sub): int
+    {
+        if (! $sub->current_period_start || ! $sub->current_period_end) {
+            return 0;
+        }
+
+        $total = $sub->current_period_start->diffInSeconds($sub->current_period_end);
+
+        if ($total <= 0) {
+            return 100;
+        }
+
+        $elapsed = $sub->current_period_start->diffInSeconds(now());
+
+        return (int) min(100, max(0, round($elapsed / $total * 100)));
     }
 
     private function longestStreak(array $dates): int

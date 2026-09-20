@@ -1,7 +1,25 @@
-import { Head, router } from "@inertiajs/react";
+import { Head, router, Link } from "@inertiajs/react";
 import { useState } from "react";
-import { Calendar, Flame, HeartPulse, QrCode, ChevronDown } from "lucide-react";
+import {
+    Calendar,
+    Flame,
+    HeartPulse,
+    QrCode,
+    CreditCard,
+    Activity as ActivityIcon,
+    ChevronDown,
+    ArrowUpRight,
+} from "lucide-react";
 import { dashboard } from "@/routes";
+
+type CurrentMembership = {
+    plan_name: string;
+    tagline: string;
+    status: string;
+    valid_until: string | null;
+    days_remaining: number;
+    percent_used: number;
+};
 
 type CalendarDay = {
     day: number;
@@ -18,6 +36,7 @@ type CheckIn = { id: number; when: string; method: string | null };
 type MonthOption = { value: string; label: string };
 
 export default function Activity({
+    currentMembership,
     selectedMonth,
     selectedMonthLabel,
     availableMonths = [],
@@ -27,6 +46,7 @@ export default function Activity({
     avgVisitsPerWeek,
     recentCheckIns = [],
 }: {
+    currentMembership: CurrentMembership | null;
     selectedMonth: string;
     selectedMonthLabel: string;
     availableMonths: MonthOption[];
@@ -64,6 +84,150 @@ export default function Activity({
             <Head title="Activity" />
 
             <div className="flex flex-col gap-6 p-4 md:p-6">
+                {/* Current membership + Quick access */}
+                <div className="grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+                    <div className="rounded-2xl border border-orange-900/40 bg-gradient-to-br from-orange-950/40 to-neutral-900 p-6">
+                        {currentMembership ? (
+                            <>
+                                <div className="mb-3 flex items-center justify-between">
+                                    <p className="text-xs font-medium tracking-wide text-orange-300 uppercase">
+                                        Current membership
+                                    </p>
+                                    <span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
+                                        ●{" "}
+                                        {currentMembership.status === "active"
+                                            ? "Active"
+                                            : currentMembership.status}
+                                    </span>
+                                </div>
+
+                                <div className="flex items-start justify-between">
+                                    <div>
+                                        <h2 className="text-2xl font-bold text-white">
+                                            {currentMembership.plan_name} ✨
+                                        </h2>
+                                        <p className="mt-1 text-sm text-neutral-400">
+                                            {currentMembership.tagline}
+                                        </p>
+                                    </div>
+
+                                    <div className="flex h-16 w-16 shrink-0 flex-col items-center justify-center rounded-full border border-orange-800/60">
+                                        <Flame className="h-4 w-4 text-orange-400" />
+                                        <span className="text-sm font-bold text-orange-300">
+                                            {stats.currentStreak}
+                                        </span>
+                                    </div>
+                                </div>
+                                <p className="-mt-1 text-center text-[10px] text-neutral-500">
+                                    day streak
+                                </p>
+
+                                <div className="mt-4 h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+                                    <div
+                                        className="h-full rounded-full bg-orange-500"
+                                        style={{
+                                            width: `${currentMembership.percent_used}%`,
+                                        }}
+                                    />
+                                </div>
+
+                                <div className="mt-4 flex items-center justify-between text-sm">
+                                    <div className="flex gap-8">
+                                        <div>
+                                            <p className="text-neutral-500">
+                                                Valid until
+                                            </p>
+                                            <p className="font-medium text-white">
+                                                {currentMembership.valid_until ??
+                                                    "—"}
+                                            </p>
+                                        </div>
+                                        <div>
+                                            <p className="text-neutral-500">
+                                                Days remaining
+                                            </p>
+                                            <p className="font-medium text-white">
+                                                {
+                                                    currentMembership.days_remaining
+                                                }{" "}
+                                                days
+                                            </p>
+                                        </div>
+                                    </div>
+
+                                    <Link
+                                        href="/member/membership"
+                                        className="flex items-center gap-1 text-sm font-medium text-orange-400 hover:text-orange-300"
+                                    >
+                                        Manage plan{" "}
+                                        <ArrowUpRight className="h-3.5 w-3.5" />
+                                    </Link>
+                                </div>
+                            </>
+                        ) : (
+                            <p className="text-neutral-400">
+                                You don't have an active membership yet.
+                            </p>
+                        )}
+                    </div>
+
+                    <div className="rounded-2xl border border-border bg-card p-6">
+                        <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
+                            Your space
+                        </p>
+                        <h2 className="mt-1 text-lg font-semibold text-amber-400">
+                            Quick access
+                        </h2>
+
+                        <div className="mt-4 grid grid-cols-2 gap-3">
+                            <Link
+                                href="/member/payments"
+                                className="rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50"
+                            >
+                                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
+                                    <CreditCard className="h-4 w-4" />
+                                </div>
+                                <p className="text-sm font-medium text-amber-400">
+                                    Payments
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    View your history
+                                </p>
+                            </Link>
+
+                            <Link
+                                href="/qraccess"
+                                className="rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50"
+                            >
+                                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                                    <QrCode className="h-4 w-4" />
+                                </div>
+                                <p className="text-sm font-medium text-amber-400">
+                                    Show QR code
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    Enter the gym
+                                </p>
+                            </Link>
+
+                            <Link
+                                href="/member/activity"
+                                className="col-span-2 rounded-xl border border-border bg-muted/30 p-4 hover:bg-muted/50"
+                            >
+                                <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
+                                    <ActivityIcon className="h-4 w-4" />
+                                </div>
+                                <p className="text-sm font-medium text-amber-400">
+                                    My activity
+                                </p>
+                                <p className="text-xs text-muted-foreground">
+                                    See your progress
+                                </p>
+                            </Link>
+                        </div>
+                    </div>
+                </div>
+
                 <div className="flex flex-col gap-4 sm:flex-row sm:items-start sm:justify-between">
                     <div>
                         <p className="text-xs font-medium uppercase tracking-widest text-muted-foreground">
