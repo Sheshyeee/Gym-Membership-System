@@ -142,29 +142,46 @@ class PaymongoWebhookController extends Controller
             return;
         }
 
-        DB::transaction(function () use ($invoice, $resource) {
+        DB::transaction(function () use ($invoice) {
             $invoice->update([
                 'status' => 'paid',
-                'processor_payment_id' => $resource['id'] ?? null,
+                'processor_payment_id' => $invoice->processor_payment_id, // unchanged below, see note
                 'paid_at' => now(),
             ]);
 
-            $subscription = $invoice->subscription; // relies on Invoice::subscription()
+            $subscription = $invoice->subscription;
 
             if (! $subscription) {
                 Log::error('Paid invoice has no subscription', ['invoice_id' => $invoice->id]);
                 return;
             }
 
+            // Days left on the OLD cycle if this is an early renewal
+            // (for a switch, current_period_end is still null on the new
+            // pending subscription, so this is just 0).
+            $daysLeftOnOldCycle = ($subscription->current_period_end && $subscription->current_period_end->isFuture())
+                ? now()->diffInDays($subscription->current_period_end)
+                : 0;
+
+            // Days credited from a plan switch (snapshotted in prepareSwitchInvoice).
+            $switchCredit = $subscription->remaining_days_credit ?? 0;
+
+            $bonusDays = $daysLeftOnOldCycle + $switchCredit;
+
             $periodEnd = $subscription->billing_cycle === 'annual'
                 ? now()->addYear()
                 : now()->addMonth();
+
+            if ($bonusDays > 0) {
+                $periodEnd = $periodEnd->addDays($bonusDays);
+            }
 
             $subscription->update([
                 'status' => 'active',
                 'current_period_start' => now(),
                 'current_period_end' => $periodEnd,
                 'next_billing_at' => $periodEnd,
+                'remaining_days_credit' => 0, // consumed — don't let it leak into a future renewal
             ]);
         });
     }
