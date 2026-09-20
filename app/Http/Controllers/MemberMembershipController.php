@@ -52,8 +52,7 @@ class MemberMembershipController extends Controller
                 'slug' => $plan->slug,
                 'tagline' => $plan->tagline,
                 'highlighted' => $plan->highlighted,
-                'monthly_price' => $plan->monthly_price,
-                'annual_price' => $plan->annual_price,
+                'pricing' => $this->pricing->breakdown($plan),
             ]),
         ]);
     }

@@ -23,8 +23,20 @@ type Plan = {
     slug: string;
     tagline: string;
     highlighted: boolean;
-    monthly_price: number; // centavos
-    annual_price: number; // centavos
+    pricing: {
+        monthly: {
+            base_amount: number;
+            tax_amount: number;
+            total_amount: number;
+            per_month_equivalent: number;
+        };
+        annual: {
+            base_amount: number;
+            tax_amount: number;
+            total_amount: number;
+            per_month_equivalent: number;
+        };
+    };
 };
 
 function formatPeso(centavos: number) {
@@ -235,10 +247,7 @@ export default function Membership({
 
                         <div className="space-y-3">
                             {plans.map((plan) => {
-                                const price =
-                                    cycle === "annual"
-                                        ? plan.annual_price
-                                        : plan.monthly_price;
+                                const price = plan.pricing[cycle].total_amount;
                                 const isCurrent =
                                     currentSubscription?.plan_id === plan.id &&
                                     currentSubscription?.billing_cycle ===
@@ -282,6 +291,7 @@ export default function Membership({
                                             <p className="font-semibold text-orange-300">
                                                 {formatPeso(price)}
                                             </p>
+                                            
                                             <p className="text-xs text-neutral-500">
                                                 {cycle === "annual"
                                                     ? "per year"
