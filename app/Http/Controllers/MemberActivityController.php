@@ -119,7 +119,7 @@ class MemberActivityController extends Controller
                     ? 'Today, ' . $date->format('g:i A')
                     : ($date->isYesterday()
                         ? 'Yesterday, ' . $date->format('g:i A')
-                        : $date->format('M j, g:i A'));
+                        : $date->format('M j, g:i A'));     
 
                 return ['id' => $a->id, 'when' => $when, 'method' => $a->method];
             });

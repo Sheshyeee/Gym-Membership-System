@@ -113,6 +113,11 @@ export function AppSidebar() {
                       icon: LayoutGrid,
                   } satisfies NavItem,
                   {
+                      title: "Membership",
+                      href: "/member/membership",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
+                  {
                       title: "Payments",
                       href: "/member/payments",
                       icon: LayoutGrid,

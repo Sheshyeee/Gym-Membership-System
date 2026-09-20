@@ -7,7 +7,8 @@ use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberActivityController;
-use App\Http\Controllers\MemberHomeController;
+
+use App\Http\Controllers\MemberMembershipController;
 use App\Http\Controllers\MemberPaymentController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
@@ -74,6 +75,22 @@ Route::middleware(['auth', 'verified'])->group(function () {
         Route::get('/member/activity', [MemberActivityController::class, 'index'])
             ->middleware('role:user')
             ->name('member.activity');
+
+        Route::get('/member/membership', [MemberMembershipController::class, 'index'])
+            ->middleware('role:user')
+            ->name('member.membership');
+        Route::get('/member/membership/checkout', [MemberMembershipController::class, 'checkout'])
+            ->middleware('role:user')
+            ->name('member.membership.checkout');
+        Route::post('/member/membership/checkout', [MemberMembershipController::class, 'pay'])
+            ->middleware('role:user')
+            ->name('member.membership.pay');
+        Route::get('/member/membership/payment/return/{invoice}', [MemberMembershipController::class, 'paymentReturn'])
+            ->middleware('role:user')
+            ->name('member.membership.payment.return');
+        Route::get('/member/membership/invoices/{invoice}/status', [MemberMembershipController::class, 'invoiceStatus'])
+            ->middleware('role:user')
+            ->name('member.membership.invoice.status');
     });
 
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
