@@ -1,6 +1,7 @@
-import { Head, router } from "@inertiajs/react";
+import { Head, Link, router } from "@inertiajs/react";
 import { useMemo, useState } from "react";
 import { dashboard } from "@/routes";
+import { Button } from "@/components/ui/button";
 
 type BillingCycle = "monthly" | "annual";
 
@@ -75,12 +76,22 @@ export default function Membership({
                 <p className="text-xs font-medium tracking-wide text-orange-400 uppercase">
                     Membership &amp; Plans
                 </p>
-                <h1 className="text-3xl font-bold text-white">
-                    Your membership
-                </h1>
-                <p className="text-sm text-neutral-400">
-                    Keep your access active and make every session count.
-                </p>
+                <div className=" flex justify-between">
+                    <div>
+                        <h1 className="text-3xl font-bold text-white">
+                            Your membership
+                        </h1>
+                        <p className="text-sm text-neutral-400">
+                            Keep your access active and make every session
+                            count.
+                        </p>
+                    </div>
+                    <div>
+                        <Button asChild>
+                            <Link href="/member/payments">Payments</Link>
+                        </Button>
+                    </div>
+                </div>
 
                 <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
                     {/* Current plan */}
