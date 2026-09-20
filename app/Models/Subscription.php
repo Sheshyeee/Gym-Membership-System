@@ -17,6 +17,8 @@ class Subscription extends Model
         'current_period_end',
         'next_billing_at',
         'cancelled_at',
+        'remaining_days_credit',
+        'switched_at',
     ];
 
     protected $casts = [
@@ -24,6 +26,7 @@ class Subscription extends Model
         'current_period_end' => 'datetime',
         'next_billing_at' => 'datetime',
         'cancelled_at' => 'datetime',
+        'switched_at' => 'datetime',
     ];
 
     public function user(): BelongsTo
