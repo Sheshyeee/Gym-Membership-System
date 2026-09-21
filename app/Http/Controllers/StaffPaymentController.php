@@ -72,7 +72,7 @@ class StaffPaymentController extends Controller
         $failed = $monthInvoices->where('status', 'failed');
         $pending = $monthInvoices->where('status', 'pending');
 
-        return Inertia::render('staff/payments', [
+        return Inertia::render('staffs/payments', [
             'invoices' => $paginated,
             'filters' => ['search' => $search ?: null, 'status' => $status],
             'monthLabel' => $now->format('F Y'),
