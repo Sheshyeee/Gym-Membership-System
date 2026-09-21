@@ -17,6 +17,8 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import { MemberSearchDialog } from "@/components/member-search-dialog";
+import { MemberProfileSheet } from "@/components/member-profile-sheet";
+import { StaffMemberProfileSheet } from "@/components/staff-member-profile-sheet";
 import AppearanceToggleTab from "./appearance-tabs";
 import AppearanceTabs from "./appearance-tabs";
 import AppearanceToggleIcon from "./appearance-toggle-icon";
@@ -53,9 +55,14 @@ export function AppSidebarHeader({
     const { notifications, auth } = usePage<PageProps>().props;
     const [open, setOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
+    const [selectedMemberId, setSelectedMemberId] = useState<number | null>(
+        null,
+    );
+    const [profileOpen, setProfileOpen] = useState(false);
 
-    const canSearchMembers =
-        auth.roles?.includes("staff") || auth.roles?.includes("admin");
+    const isAdmin = auth.roles?.includes("admin");
+    const isStaff = auth.roles?.includes("staff");
+    const canSearchMembers = isAdmin || isStaff;
 
     const today = new Date().toLocaleDateString("en-US", {
         weekday: "long",
@@ -79,8 +86,6 @@ export function AppSidebarHeader({
         };
     }, [auth.user?.id]);
 
-    // Keyboard shortcut: Cmd/Ctrl+K opens member search, same convention as
-    // most command-palette-style search dialogs.
     useEffect(() => {
         if (!canSearchMembers) return;
 
@@ -94,6 +99,11 @@ export function AppSidebarHeader({
         window.addEventListener("keydown", handleKeydown);
         return () => window.removeEventListener("keydown", handleKeydown);
     }, [canSearchMembers]);
+
+    function handleSelectMember(id: number) {
+        setSelectedMemberId(id);
+        setProfileOpen(true);
+    }
 
     function markAllRead() {
         router.post(
@@ -147,7 +157,24 @@ export function AppSidebarHeader({
                         <MemberSearchDialog
                             open={searchOpen}
                             onOpenChange={setSearchOpen}
+                            onSelectMember={handleSelectMember}
                         />
+
+                        {isAdmin && (
+                            <MemberProfileSheet
+                                userId={selectedMemberId}
+                                open={profileOpen}
+                                onOpenChange={setProfileOpen}
+                            />
+                        )}
+                        {!isAdmin && isStaff && (
+                            <StaffMemberProfileSheet
+                                userId={selectedMemberId}
+                                open={profileOpen}
+                                onOpenChange={setProfileOpen}
+                                onCheckinSuccess={() => {}}
+                            />
+                        )}
                     </>
                 )}
 

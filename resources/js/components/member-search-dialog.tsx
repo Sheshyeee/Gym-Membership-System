@@ -1,5 +1,4 @@
 import { useEffect, useRef, useState } from "react";
-import { router } from "@inertiajs/react";
 import { Search, User as UserIcon } from "lucide-react";
 import {
     Dialog,
@@ -15,22 +14,22 @@ type MemberResult = {
     name: string;
     email: string;
     plan: string | null;
-    url: string;
 };
 
 export function MemberSearchDialog({
     open,
     onOpenChange,
+    onSelectMember,
 }: {
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onSelectMember: (id: number) => void;
 }) {
     const [query, setQuery] = useState("");
     const [results, setResults] = useState<MemberResult[]>([]);
     const [loading, setLoading] = useState(false);
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
-    // Reset state whenever the dialog closes, so reopening starts fresh.
     useEffect(() => {
         if (!open) {
             setQuery("");
@@ -70,7 +69,7 @@ export function MemberSearchDialog({
 
     function selectMember(member: MemberResult) {
         onOpenChange(false);
-        router.visit(member.url);
+        onSelectMember(member.id);
     }
 
     return (
@@ -102,11 +101,13 @@ export function MemberSearchDialog({
                         </p>
                     )}
 
-                    {!loading && query.trim() !== "" && results.length === 0 && (
-                        <p className="px-4 py-6 text-center text-sm text-muted-foreground">
-                            No members found.
-                        </p>
-                    )}
+                    {!loading &&
+                        query.trim() !== "" &&
+                        results.length === 0 && (
+                            <p className="px-4 py-6 text-center text-sm text-muted-foreground">
+                                No members found.
+                            </p>
+                        )}
 
                     {!loading &&
                         results.map((m) => (
