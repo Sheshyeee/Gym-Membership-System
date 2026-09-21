@@ -4,6 +4,7 @@ use App\Http\Controllers\AdminAttendanceController;
 use App\Http\Controllers\AdminMemberController;
 use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlansController;
+use App\Http\Controllers\AdminRevenueAnalyticsController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
@@ -121,6 +122,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/admin/plans/{plan}', [AdminPlansController::class, 'update'])
         ->middleware('role:admin')
         ->name('admin.plans.update');
+
+    Route::get('/revenue-analytics', [AdminRevenueAnalyticsController::class, 'index'])
+        ->middleware('role:admin')
+        ->name('admin.revenue-analytics.update');
 
     Route::get('/staff/dashboard', [StaffDashboardController::class, 'index'])
         ->middleware('role:staff')
