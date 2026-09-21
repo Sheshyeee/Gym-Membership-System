@@ -16,12 +16,12 @@ class NotificationController extends Controller
   public function markRead(Request $request, string $id)
   {
     $request->user()->notifications()->where('id', $id)->first()?->markAsRead();
-    return response()->noContent();
+    return back();
   }
 
   public function markAllRead(Request $request)
   {
     $request->user()->unreadNotifications->markAsRead();
-    return response()->noContent();
+    return back();
   }
 }

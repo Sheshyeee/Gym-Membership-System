@@ -12,8 +12,10 @@ use Inertia\Response;
 
 class AdminAttendanceController extends Controller
 {
-    // Display timezone. Storage stays UTC (config('app.timezone')) — only
-    // convert here, at the edges, so historical UTC data stays correct.
+    // Display timezone. scanned_at is stored in this same timezone
+    // (APP_TIMEZONE=Asia/Manila) — query boundaries must stay in
+    // Asia/Manila too, never converted to UTC, or they'll drift 8 hours
+    // from what's actually in the column.
     private const DISPLAY_TZ = 'Asia/Manila';
 
     private const HEATMAP_BUCKETS = [
@@ -64,7 +66,7 @@ class AdminAttendanceController extends Controller
 
     private function stats(): array
     {
-        $rangeStart = Carbon::now(self::DISPLAY_TZ)->subDays(30)->utc();
+        $rangeStart = Carbon::now(self::DISPLAY_TZ)->subDays(30);
 
         $rows = Attendance::where('status', 'success')
             ->where('scanned_at', '>=', $rangeStart)
@@ -104,9 +106,10 @@ class AdminAttendanceController extends Controller
 
     private function hourlyData(CarbonInterface $date): array
     {
-        // $date is already a Manila-local start-of-day; convert to UTC for the query.
-        $start = $date->copy()->startOfDay()->utc();
-        $end = $date->copy()->endOfDay()->utc();
+        // $date is already a Manila-local start-of-day; scanned_at is stored
+        // in Manila too, so query directly — no UTC conversion.
+        $start = $date->copy()->startOfDay();
+        $end = $date->copy()->endOfDay();
 
         $rows = Attendance::where('status', 'success')
             ->whereBetween('scanned_at', [$start, $end])
@@ -125,7 +128,7 @@ class AdminAttendanceController extends Controller
     private function heatmapData(CarbonInterface $weekStart, CarbonInterface $weekEnd): array
     {
         $rows = Attendance::where('status', 'success')
-            ->whereBetween('scanned_at', [$weekStart->copy()->utc(), $weekEnd->copy()->utc()])
+            ->whereBetween('scanned_at', [$weekStart, $weekEnd])
             ->get(['scanned_at']);
 
         $counts = [];
@@ -168,8 +171,8 @@ class AdminAttendanceController extends Controller
             ->orderByDesc('scanned_at');
 
         if ($date) {
-            $start = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay()->utc();
-            $end = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay()->utc();
+            $start = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay();
+            $end = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay();
             $query->whereBetween('scanned_at', [$start, $end]);
         }
 
