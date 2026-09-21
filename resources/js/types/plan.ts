@@ -14,4 +14,5 @@ export interface Plan {
     is_active: boolean;
     color: PlanColor | null;
     active_members_count: number;
+    net_revenue: number;
 }

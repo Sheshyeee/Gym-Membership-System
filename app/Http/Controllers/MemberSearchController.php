@@ -28,7 +28,7 @@ class MemberSearchController extends Controller
                     $q->orWhere('id', (int) $m[1]);
                 }
             })
-            ->limit(8)
+        ->limit(8)
             ->get();
 
         $isAdmin = $request->user()->hasRole('admin');
