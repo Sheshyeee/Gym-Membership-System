@@ -181,8 +181,10 @@ class PaymongoWebhookController extends Controller
                 'current_period_start' => now(),
                 'current_period_end' => $periodEnd,
                 'next_billing_at' => $periodEnd,
-                'remaining_days_credit' => 0, // consumed — don't let it leak into a future renewal
+                'remaining_days_credit' => 0,
             ]);
+
+            $subscription->user->notify(new \App\Notifications\MembershipActivated($subscription));
         });
     }
 

@@ -11,3 +11,7 @@ Artisan::command('inspire', function () {
 Schedule::command('payments:check-stale-sources')
     ->everyFiveMinutes()
     ->withoutOverlapping();
+
+Schedule::command('subscriptions:check-expiry')
+    ->daily()
+    ->withoutOverlapping();

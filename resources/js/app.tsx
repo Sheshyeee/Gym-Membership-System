@@ -6,6 +6,7 @@ import AppLayout from "@/layouts/app-layout";
 import AuthLayout from "@/layouts/auth-layout";
 import SettingsLayout from "@/layouts/settings/layout";
 import "@/echo";
+import { OrbitIcon } from "lucide-react";
 
 const appName = import.meta.env.VITE_APP_NAME || "Laravel";
 
@@ -13,7 +14,7 @@ void createInertiaApp({
     title: (title) => (title ? `${title} - ${appName}` : appName),
     layout: (name) => {
         switch (true) {
-            case name === "welcome":
+            case name === "welcome":OrbitIcon
                 return null;
             case name.startsWith("onboarding/"):
                 return null;

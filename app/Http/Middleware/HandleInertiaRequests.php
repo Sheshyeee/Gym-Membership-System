@@ -42,10 +42,23 @@ class HandleInertiaRequests extends Middleware
             'name' => config('app.name'),
             'auth' => [
                 'user' => $user,
-                'roles' => $user?->getRoleNames()->toArray() ?? [], // Spatie permission example
-                // or: $user?->roles->pluck('name')->toArray() ?? [],
+                'roles' => $user?->getRoleNames()->toArray() ?? [],
             ],
             'sidebarOpen' => ! $request->hasCookie('sidebar_state') || $request->cookie('sidebar_state') === 'true',
+            'notifications' => $user ? [
+                'unread_count' => $user->unreadNotifications()->count(),
+                'items' => $user->notifications()
+                    ->limit(10)
+                    ->get()
+                    ->map(fn($n) => [
+                        'id' => $n->id,
+                        'type' => $n->data['type'] ?? null,
+                        'title' => $n->data['title'] ?? '',
+                        'body' => $n->data['body'] ?? '',
+                        'read' => $n->read_at !== null,
+                        'created_at' => $n->created_at->diffForHumans(),
+                    ]),
+            ] : null,
         ];
     }
 }
