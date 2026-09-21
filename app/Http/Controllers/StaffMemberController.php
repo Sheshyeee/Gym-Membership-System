@@ -283,7 +283,7 @@ class StaffMemberController extends Controller
         return $streak;
     }
 
-    private function computeAvgVisitsPerWeek(Collection $attendances, ?Carbon $joinedAt): int
+    private function computeAvgVisitsPerWeek(Collection $attendances, ?\Carbon\CarbonInterface $joinedAt): int
     {
         if ($attendances->isEmpty()) {
             return 0;
