@@ -102,7 +102,7 @@ class DashboardController extends Controller
         $cursorDay = $today->copy()->startOfDay();
         while ($byDate->has($cursorDay->toDateString())) {
             $streak++;
-            $cursorDay->subDay();
+            $cursorDay = $cursorDay->subDay();  // reassign — CarbonImmutable returns a new instance
         }
         $bestStreak = $this->longestStreak($byDate->keys()->all());
 
@@ -222,4 +222,3 @@ class DashboardController extends Controller
         return $longest;
     }
 }
-    

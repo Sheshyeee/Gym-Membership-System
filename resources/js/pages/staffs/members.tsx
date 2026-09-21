@@ -98,6 +98,14 @@ export default function StaffMembers({
         goTo({ status });
     }
 
+    function handleCheckinSuccess() {
+        // Partial reload: re-fetch just the table + tab counts from the
+        // current URL/filters, without a full navigation or losing scroll.
+        router.reload({
+            only: ["members", "statusCounts"],
+        });
+    }
+
     return (
         <>
             <Head title="Members" />
@@ -309,6 +317,7 @@ export default function StaffMembers({
                 userId={selectedMemberId}
                 open={sheetOpen}
                 onOpenChange={setSheetOpen}
+                onCheckinSuccess={handleCheckinSuccess}
             />
         </>
     );

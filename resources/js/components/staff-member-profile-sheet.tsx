@@ -83,10 +83,12 @@ export function StaffMemberProfileSheet({
     userId,
     open,
     onOpenChange,
+    onCheckinSuccess,
 }: {
     userId: number | null;
     open: boolean;
     onOpenChange: (open: boolean) => void;
+    onCheckinSuccess?: () => void;
 }) {
     const [data, setData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(false);
@@ -130,6 +132,10 @@ export function StaffMemberProfileSheet({
             if (json.checkin) {
                 setCheckinResult(json.checkin);
                 setTimeout(() => setCheckinResult(null), 4000);
+
+                if (json.checkin.result === "success") {
+                    onCheckinSuccess?.();
+                }
             }
         } catch {
             setCheckinResult({
@@ -534,12 +540,6 @@ export function StaffMemberProfileSheet({
                                         </div>
                                     ))}
                                 </div>
-                            </TabsContent>
-
-                            <TabsContent value="sessions" className="pt-4">
-                                <p className="text-sm text-muted-foreground">
-                                    No sessions data yet.
-                                </p>
                             </TabsContent>
                         </Tabs>
                     </div>

@@ -19,7 +19,6 @@ class StaffMemberController extends Controller
 
     public function index(Request $request): Response
     {
-        // ...unchanged, keep exactly as-is...
         $search = $request->string('search')->toString();
         $status = $request->string('status')->toString();
         $page = max(1, $request->integer('page', 1));
@@ -33,7 +32,28 @@ class StaffMemberController extends Controller
             ->latest()
             ->get();
 
-        $transformed = $users->map(fn(User $user) => $this->transform($user));
+        $now = Carbon::now();
+        $monthStart = $now->copy()->startOfMonth();
+
+        // One query for everyone's monthly visit count, one for everyone's last visit — avoids N+1.
+        $monthlyVisitCounts = Attendance::where('status', 'success')
+            ->where('scanned_at', '>=', $monthStart)
+            ->whereIn('user_id', $users->pluck('id'))
+            ->selectRaw('user_id, count(*) as cnt')
+            ->groupBy('user_id')
+            ->pluck('cnt', 'user_id');
+
+        $lastVisits = Attendance::where('status', 'success')
+            ->whereIn('user_id', $users->pluck('id'))
+            ->selectRaw('user_id, max(scanned_at) as last_at')
+            ->groupBy('user_id')
+            ->pluck('last_at', 'user_id');
+
+        $transformed = $users->map(fn(User $user) => $this->transform(
+            $user,
+            $monthlyVisitCounts->get($user->id, 0),
+            $lastVisits->get($user->id),
+        ));
 
         $statusCounts = [
             'all' => $transformed->count(),
@@ -199,7 +219,7 @@ class StaffMemberController extends Controller
         ];
     }
 
-    private function transform(User $user): array
+    private function transform(User $user, int $monthlyVisits = 0, ?string $lastVisitAt = null): array
     {
         $subscription = $user->latestSubscription;
 
@@ -211,8 +231,8 @@ class StaffMemberController extends Controller
             'plan' => $subscription?->plan?->name,
             'status' => $this->resolveStatus($subscription),
             'valid_until' => optional($subscription?->current_period_end)->format('M j, Y'),
-            'last_visit' => null,
-            'visits' => null,
+            'last_visit' => $lastVisitAt ? Carbon::parse($lastVisitAt)->format('M j, Y') : null,
+            'visits' => $monthlyVisits,
         ];
     }
 
