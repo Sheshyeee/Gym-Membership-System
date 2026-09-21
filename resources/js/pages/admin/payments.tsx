@@ -422,8 +422,7 @@ export default function Payments({
                                 </Button>
                             )}
 
-                            {(selected.status === "pending" ||
-                                selected.status === "failed") && (
+                            {selected.status === "pending" && (
                                 <div className="mt-6 space-y-3">
                                     <Button
                                         className="w-full"

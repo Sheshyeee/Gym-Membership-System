@@ -108,6 +108,18 @@ class PaymentService
     return $response->json('data');
   }
 
+  public function listPayments(int $limit = 100): array
+  {
+    $response = $this->client()->get('/payments', ['limit' => $limit]);
+
+    if ($response->failed()) {
+      Log::error('PayMongo listPayments failed', ['body' => $response->json()]);
+      throw new RuntimeException('Unable to list payments.');
+    }
+
+    return $response->json('data');
+  }
+
   public function retrievePaymentIntent(string $intentId): array
   {
     $response = $this->client()->get("/payment_intents/{$intentId}");

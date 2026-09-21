@@ -83,8 +83,8 @@ class AdminPaymentController extends Controller
     }
     public function retry(Invoice $invoice)
     {
-        if (! in_array($invoice->status, ['pending', 'failed'], true)) {
-            return back()->withErrors(['retry' => 'Only pending or failed invoices can be retried.']);
+        if ($invoice->status !== 'pending') {
+            return back()->withErrors(['retry' => 'Only pending invoices can be retried.']);
         }
 
         if (! in_array($invoice->payment_method_type, ['gcash', 'paymaya'], true)) {

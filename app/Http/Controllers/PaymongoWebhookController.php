@@ -133,6 +133,7 @@ class PaymongoWebhookController extends Controller
 
     protected function handlePaymentPaid(?array $resource): void
     {
+        $$paymentId = $resource['id'] ?? null;
         $sourceId = $resource['attributes']['source']['id'] ?? null;
         $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
 
@@ -150,13 +151,12 @@ class PaymongoWebhookController extends Controller
             return;
         }
 
-        DB::transaction(function () use ($invoice) {
+        DB::transaction(function () use ($invoice, $paymentId) {
             $invoice->update([
                 'status' => 'paid',
-                'processor_payment_id' => $invoice->processor_payment_id, // unchanged below, see note
+                'processor_payment_id' => $paymentId ?? $invoice->processor_payment_id,
                 'paid_at' => now(),
             ]);
-
             $subscription = $invoice->subscription;
 
             if (! $subscription) {
