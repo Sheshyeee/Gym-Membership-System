@@ -19,7 +19,31 @@ import {
 import { useRef, useState } from "react";
 import { dashboard } from "@/routes";
 
-type InvoiceStatus = "paid" | "failed" | "pending" | "expired";
+type InvoiceStatus =
+    | "paid"
+    | "failed"
+    | "pending"
+    | "expired"
+    | "refunding"
+    | "refunded";
+
+const statusStyles: Record<InvoiceStatus, string> = {
+    paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
+    failed: "bg-red-500/10 text-red-500 border-red-500/20",
+    pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
+    expired: "bg-muted text-muted-foreground border-border",
+    refunding: "bg-blue-500/10 text-blue-500 border-blue-500/20",
+    refunded: "bg-purple-500/10 text-purple-500 border-purple-500/20",
+};
+
+const statusLabels: Record<InvoiceStatus, string> = {
+    paid: "Successful",
+    failed: "Failed",
+    pending: "Pending",
+    expired: "Expired",
+    refunding: "Refunding",
+    refunded: "Refunded",
+};
 type StatusFilter = "all" | "successful" | "failed" | "pending" | "expired";
 
 interface InvoiceRow {
@@ -55,20 +79,6 @@ interface Stats {
     failed: { amount: string; count: number };
     pending: { amount: string; count: number };
 }
-
-const statusStyles: Record<InvoiceStatus, string> = {
-    paid: "bg-emerald-500/10 text-emerald-500 border-emerald-500/20",
-    failed: "bg-red-500/10 text-red-500 border-red-500/20",
-    pending: "bg-amber-500/10 text-amber-500 border-amber-500/20",
-    expired: "bg-muted text-muted-foreground border-border",
-};
-
-const statusLabels: Record<InvoiceStatus, string> = {
-    paid: "Successful",
-    failed: "Failed",
-    pending: "Pending",
-    expired: "Expired",
-};
 
 function csrfSafeFetch(url: string) {
     return fetch(url, { headers: { Accept: "application/json" } }).then((r) =>
