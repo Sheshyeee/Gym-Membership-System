@@ -133,7 +133,7 @@ class PaymongoWebhookController extends Controller
 
     protected function handlePaymentPaid(?array $resource): void
     {
-        $$paymentId = $resource['id'] ?? null;
+        $paymentId = $resource['id'] ?? null; // <-- this line was missing
         $sourceId = $resource['attributes']['source']['id'] ?? null;
         $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
 
@@ -157,6 +157,7 @@ class PaymongoWebhookController extends Controller
                 'processor_payment_id' => $paymentId ?? $invoice->processor_payment_id,
                 'paid_at' => now(),
             ]);
+
             $subscription = $invoice->subscription;
 
             if (! $subscription) {
@@ -164,14 +165,10 @@ class PaymongoWebhookController extends Controller
                 return;
             }
 
-            // Days left on the OLD cycle if this is an early renewal
-            // (for a switch, current_period_end is still null on the new
-            // pending subscription, so this is just 0).
             $daysLeftOnOldCycle = ($subscription->current_period_end && $subscription->current_period_end->isFuture())
                 ? now()->diffInDays($subscription->current_period_end)
                 : 0;
 
-            // Days credited from a plan switch (snapshotted in prepareSwitchInvoice).
             $switchCredit = $subscription->remaining_days_credit ?? 0;
 
             $bonusDays = $daysLeftOnOldCycle + $switchCredit;
@@ -197,7 +194,6 @@ class PaymongoWebhookController extends Controller
             StaffAlert::send(new StaffNewSubscriptionCreated($subscription));
         });
     }
-
     protected function handlePaymentFailed(?array $resource): void
     {
         $sourceId = $resource['attributes']['source']['id'] ?? null;
