@@ -239,7 +239,7 @@ class StaffMemberController extends Controller
         return 'active';
     }
 
-    private function dateLabel(Carbon $date): string
+    private function dateLabel(\Carbon\CarbonInterface $date): string
     {
         if ($date->isToday()) {
             return 'Today';
