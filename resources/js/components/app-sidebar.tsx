@@ -93,6 +93,11 @@ export function AppSidebar() {
                       href: "/staff/attendance",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Payments",
+                      href: "/staff/payments",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
         ...(isUser

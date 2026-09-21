@@ -14,6 +14,7 @@ use App\Http\Controllers\MemberPaymentController;
 use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
+use App\Http\Controllers\StaffPaymentController;
 use App\Http\Controllers\PaymongoWebhookController;
 use App\Http\Controllers\QRAccessController;
 use App\Http\Controllers\StaffAttendanceController;
@@ -147,6 +148,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::post('/staff/members/{user}/checkin', [StaffMemberController::class, 'checkin'])
         ->middleware('role:staff')
         ->name('staff.members.checkin');
+
+    Route::get('/staff/payments', [StaffPaymentController::class, 'index'])
+        ->middleware('role:staff')
+        ->name('staff.payments');
+
+    Route::get('/staff/payments/{invoice}', [StaffPaymentController::class, 'show'])
+        ->middleware('role:staff')
+        ->name('staff.payments.show');
 });
 
 Route::post('/webhooks/paymongo', [PaymongoWebhookController::class, 'handle'])
