@@ -11,6 +11,7 @@ use App\Http\Controllers\MemberActivityController;
 
 use App\Http\Controllers\MemberMembershipController;
 use App\Http\Controllers\MemberPaymentController;
+use App\Http\Controllers\MemberProfileController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\PaymongoWebhookController;
@@ -80,6 +81,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
     Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
     Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
+
+    Route::get('/member/profile', [MemberProfileController::class, 'index'])->name('member.profile');
 
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

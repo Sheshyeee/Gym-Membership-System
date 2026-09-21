@@ -118,6 +118,11 @@ export function AppSidebar() {
                       href: "/member/payments",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Profile & Settings",
+                      href: "/member/profile",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
     ];
