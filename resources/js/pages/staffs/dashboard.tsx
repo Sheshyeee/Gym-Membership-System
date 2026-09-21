@@ -1,11 +1,5 @@
 import { Head, Link } from "@inertiajs/react";
-import {
-    Users,
-    ShieldCheck,
-    Flame,
-    QrCode,
-    XCircle,
-} from "lucide-react";
+import { Users, ShieldCheck, Flame, QrCode, XCircle } from "lucide-react";
 import { dashboard } from "@/routes";
 
 type Stats = {
@@ -80,13 +74,13 @@ export default function Dashboard({
                             Good {greeting.timeOfDay}, {greeting.name}
                         </h1>
                         <p className="mt-1 text-sm text-neutral-500">
-                            Here&apos;s what&apos;s happening at the front
-                            desk today.
+                            Here&apos;s what&apos;s happening at the front desk
+                            today.
                         </p>
                     </div>
 
                     <Link
-                        href={route("staff.qr-checkin")}
+                        href="/staff/qr-checkin"
                         className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
                     >
                         <QrCode className="h-4 w-4" />
@@ -136,9 +130,7 @@ export default function Dashboard({
                                     : "text-rose-400"
                             }`}
                         >
-                            {stats.newMembersThisMonth.change >= 0
-                                ? "↗"
-                                : "↘"}{" "}
+                            {stats.newMembersThisMonth.change >= 0 ? "↗" : "↘"}{" "}
                             {Math.abs(stats.newMembersThisMonth.change)}% vs
                             last month
                         </p>
@@ -243,8 +235,8 @@ export default function Dashboard({
                                 {attendanceOverview.changeVsLastWeek >= 0
                                     ? "↗"
                                     : "↘"}{" "}
-                                {Math.abs(attendanceOverview.changeVsLastWeek)}
-                                % from last week
+                                {Math.abs(attendanceOverview.changeVsLastWeek)}%
+                                from last week
                             </span>
                         </div>
                     </div>
