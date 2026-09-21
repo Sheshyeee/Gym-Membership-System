@@ -23,6 +23,7 @@ use App\Http\Controllers\StaffCheckInsController;
 use App\Http\Controllers\StaffDashboardController;
 use App\Http\Controllers\StaffManualCheckInController;
 use App\Http\Controllers\StaffMemberController;
+use App\Http\Controllers\StaffProfileSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
@@ -58,6 +59,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staff/attendance', [StaffAttendanceController::class, 'index'])
         ->middleware('role:staff')
         ->name('staff.attendance');
+
+    Route::get('/staff/profile', [StaffProfileSettingsController::class, 'index'])
+        ->middleware('role:staff')
+        ->name('staff.profile');
 
 
 

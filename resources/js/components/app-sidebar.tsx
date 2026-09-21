@@ -103,6 +103,11 @@ export function AppSidebar() {
                       href: "/staff/payments",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Profile & Settings",
+                      href: "/member/profile",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
         ...(isUser
