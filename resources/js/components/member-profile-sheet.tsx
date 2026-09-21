@@ -10,6 +10,16 @@ import { Separator } from "@/components/ui/separator";
 import { Skeleton } from "@/components/ui/skeleton";
 import { useEffect, useState } from "react";
 
+interface AttendanceItem {
+    id: number;
+    status: "success" | "denied";
+    denial_reason: string | null;
+    method: string;
+    date: string;
+    time: string;
+    relative: string;
+}
+
 interface ProfileData {
     id: number;
     code: string;
@@ -33,6 +43,12 @@ interface ProfileData {
         status: string;
         date: string | null;
     }[];
+    visits: number;
+    visits_this_month: number;
+    denied_count: number;
+    last_visit: string | null;
+    attendances: AttendanceItem[];
+    recent_activity: AttendanceItem[];
 }
 
 const statusStyles: Record<string, string> = {
@@ -49,6 +65,15 @@ const paymentStyles: Record<string, string> = {
     failed: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
     expired: "bg-muted text-muted-foreground border-border",
 };
+
+const attendanceStyles: Record<string, string> = {
+    success:
+        "bg-emerald-500/10 text-emerald-600 dark:text-emerald-400 border-emerald-500/20",
+    denied: "bg-red-500/10 text-red-600 dark:text-red-400 border-red-500/20",
+};
+
+const humanize = (s: string | null) =>
+    s ? s.replace(/_/g, " ").replace(/^\w/, (c) => c.toUpperCase()) : "";
 
 export function MemberProfileSheet({
     userId,
@@ -150,6 +175,7 @@ export function MemberProfileSheet({
                                 </TabsTrigger>
                             </TabsList>
 
+                            {/* OVERVIEW */}
                             <TabsContent
                                 value="overview"
                                 className="space-y-4 pt-4"
@@ -168,7 +194,7 @@ export function MemberProfileSheet({
                                             Gym visits
                                         </p>
                                         <p className="mt-1 text-sm font-semibold text-foreground">
-                                            —
+                                            {data.visits}
                                         </p>
                                     </div>
                                     <div className="rounded-lg border border-border bg-muted/30 p-3">
@@ -225,12 +251,42 @@ export function MemberProfileSheet({
                                     <p className="mb-2 text-sm font-semibold text-foreground">
                                         Recent activity
                                     </p>
-                                    <p className="text-sm text-muted-foreground">
-                                        No recent activity yet.
-                                    </p>
+                                    {data.recent_activity.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No recent activity yet.
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-3 border-l border-border pl-4">
+                                            {data.recent_activity.map((a) => (
+                                                <div
+                                                    key={a.id}
+                                                    className="relative"
+                                                >
+                                                    <span
+                                                        className={`absolute -left-[21px] top-1 h-2 w-2 rounded-full ${
+                                                            a.status ===
+                                                            "success"
+                                                                ? "bg-emerald-500"
+                                                                : "bg-red-500"
+                                                        }`}
+                                                    />
+                                                    <p className="text-sm font-medium text-foreground">
+                                                        {a.status === "success"
+                                                            ? "Checked in at the gym"
+                                                            : `Check-in denied${a.denial_reason ? ` · ${humanize(a.denial_reason)}` : ""}`}
+                                                    </p>
+                                                    <p className="text-xs text-muted-foreground">
+                                                        {a.date} · {a.time} ·{" "}
+                                                        {a.relative}
+                                                    </p>
+                                                </div>
+                                            ))}
+                                        </div>
+                                    )}
                                 </div>
                             </TabsContent>
 
+                            {/* MEMBERSHIP */}
                             <TabsContent
                                 value="membership"
                                 className="space-y-4 pt-4"
@@ -256,7 +312,16 @@ export function MemberProfileSheet({
                                         <p className="text-xs text-muted-foreground">
                                             Status
                                         </p>
-                                        <p className="mt-1 text-sm font-semibold text-emerald-600 dark:text-emerald-400">
+                                        <p
+                                            className={`mt-1 text-sm font-semibold ${
+                                                data.status === "active"
+                                                    ? "text-emerald-600 dark:text-emerald-400"
+                                                    : data.status ===
+                                                        "expiring_soon"
+                                                      ? "text-amber-600 dark:text-amber-400"
+                                                      : "text-muted-foreground"
+                                            }`}
+                                        >
                                             {data.status === "active"
                                                 ? "Active"
                                                 : data.status ===
@@ -296,6 +361,7 @@ export function MemberProfileSheet({
                                 </div>
                             </TabsContent>
 
+                            {/* PAYMENTS */}
                             <TabsContent value="payments" className="pt-4">
                                 <div className="overflow-x-auto rounded-lg border border-border">
                                     <table className="w-full text-left text-sm">
@@ -362,10 +428,101 @@ export function MemberProfileSheet({
                                 </div>
                             </TabsContent>
 
-                            <TabsContent value="attendance" className="pt-4">
-                                <p className="text-sm text-muted-foreground">
-                                    No attendance data yet.
-                                </p>
+                            {/* ATTENDANCE */}
+                            <TabsContent
+                                value="attendance"
+                                className="space-y-4 pt-4"
+                            >
+                                <div className="grid grid-cols-3 gap-3">
+                                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                                        <p className="text-xs text-muted-foreground">
+                                            Total visits
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-foreground">
+                                            {data.visits}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                                        <p className="text-xs text-muted-foreground">
+                                            This month
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-foreground">
+                                            {data.visits_this_month}
+                                        </p>
+                                    </div>
+                                    <div className="rounded-lg border border-border bg-muted/30 p-3">
+                                        <p className="text-xs text-muted-foreground">
+                                            Last visit
+                                        </p>
+                                        <p className="mt-1 text-sm font-semibold text-foreground">
+                                            {data.last_visit ?? "—"}
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div className="overflow-x-auto rounded-lg border border-border">
+                                    <table className="w-full text-left text-sm">
+                                        <thead>
+                                            <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
+                                                <th className="px-3 py-2 font-medium">
+                                                    Date
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Time
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Method
+                                                </th>
+                                                <th className="px-3 py-2 font-medium">
+                                                    Result
+                                                </th>
+                                            </tr>
+                                        </thead>
+                                        <tbody>
+                                            {data.attendances.length === 0 && (
+                                                <tr>
+                                                    <td
+                                                        colSpan={4}
+                                                        className="px-3 py-4 text-center text-muted-foreground"
+                                                    >
+                                                        No attendance data yet.
+                                                    </td>
+                                                </tr>
+                                            )}
+                                            {data.attendances.map((a) => (
+                                                <tr
+                                                    key={a.id}
+                                                    className="border-b border-border/60 last:border-0"
+                                                >
+                                                    <td className="px-3 py-2 text-foreground">
+                                                        {a.date}
+                                                    </td>
+                                                    <td className="px-3 py-2 text-foreground/80">
+                                                        {a.time}
+                                                    </td>
+                                                    <td className="px-3 py-2 uppercase text-foreground/80">
+                                                        {a.method}
+                                                    </td>
+                                                    <td className="px-3 py-2">
+                                                        <Badge
+                                                            variant="outline"
+                                                            className={
+                                                                attendanceStyles[
+                                                                    a.status
+                                                                ] ?? ""
+                                                            }
+                                                        >
+                                                            {a.status ===
+                                                            "success"
+                                                                ? "Success"
+                                                                : `Denied${a.denial_reason ? ` · ${humanize(a.denial_reason)}` : ""}`}
+                                                        </Badge>
+                                                    </td>
+                                                </tr>
+                                            ))}
+                                        </tbody>
+                                    </table>
+                                </div>
                             </TabsContent>
                         </Tabs>
                     </div>

@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Subscription;
 use App\Models\User;
+use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -20,6 +21,9 @@ class AdminMemberController extends Controller
             ->with([
                 'latestSubscription.plan',
                 'latestSubscription.invoices' => fn($q) => $q->latest()->limit(1),
+            ])
+            ->withCount([
+                'attendances as visits_count' => fn($q) => $q->where('status', 'success'),
             ])
             ->when($search, fn($q) => $q->where(fn($q2) => $q2
                 ->where('name', 'like', "%{$search}%")
@@ -50,7 +54,7 @@ class AdminMemberController extends Controller
             'plan' => $subscription?->plan?->name,
             'status' => $this->resolveStatus($subscription),
             'valid_until' => optional($subscription?->current_period_end)->format('M j, Y'),
-            'visits' => null, // no visits table exists yet
+            'visits' => (int) $user->visits_count,
             'payment_status' => $invoice?->status,
         ];
     }
@@ -100,7 +104,8 @@ class AdminMemberController extends Controller
             ])->values(),
         ];
     }
-    public function show(User $user): \Illuminate\Http\JsonResponse
+
+    public function show(User $user): JsonResponse
     {
         $user->load(['subscriptions.plan', 'subscriptions.invoices']);
 
@@ -137,18 +142,54 @@ class AdminMemberController extends Controller
                 'started_at' => optional($sub->current_period_start ?? $sub->created_at)->format('M j, Y'),
             ]);
 
+        // Attendance
+        $attendances = $user->attendances()
+            ->latest('scanned_at')
+            ->limit(50)
+            ->get()
+            ->map(fn($a) => [
+                'id' => $a->id,
+                'status' => $a->status,
+                'denial_reason' => $a->denial_reason,
+                'method' => $a->method,
+                'date' => $a->scanned_at->format('M j, Y'),
+                'time' => $a->scanned_at->format('g:i A'),
+                'relative' => $a->scanned_at->diffForHumans(),
+            ])
+            ->values();
+
+        $successCount = $user->attendances()->where('status', 'success')->count();
+
+        $thisMonthCount = $user->attendances()
+            ->where('status', 'success')
+            ->where('scanned_at', '>=', now()->startOfMonth())
+            ->count();
+
+        $deniedCount = $user->attendances()->where('status', 'denied')->count();
+
+        $lastVisit = $user->attendances()
+            ->where('status', 'success')
+            ->latest('scanned_at')
+            ->first();
+
         return response()->json([
             'id' => $user->id,
             'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
             'name' => $user->name,
             'email' => $user->email,
-            'phone' => null,
+            'phone' => $user->phone,
             'joined_at' => $user->created_at->format('M j, Y'),
             'plan' => $latestSubscription?->plan?->name,
             'status' => $this->resolveStatus($latestSubscription),
             'valid_until' => optional($latestSubscription?->current_period_end)->format('M j, Y'),
             'plan_history' => $planHistory,
             'payments' => $payments,
+            'visits' => $successCount,
+            'visits_this_month' => $thisMonthCount,
+            'denied_count' => $deniedCount,
+            'last_visit' => $lastVisit?->scanned_at?->diffForHumans(),
+            'attendances' => $attendances,
+            'recent_activity' => $attendances->take(5)->values(),
         ]);
     }
 }
