@@ -21,10 +21,9 @@ class StaffAttendanceController extends Controller
             default => [Carbon::now(self::DISPLAY_TZ)->startOfDay(), Carbon::now(self::DISPLAY_TZ)->endOfDay()],
         };
 
-        $utcStart = $rangeStart->copy()->utc();
-        $utcEnd = $rangeEnd->copy()->utc();
-
-        $scoped = fn() => Attendance::whereBetween('scanned_at', [$utcStart, $utcEnd]);
+        // scanned_at is stored in Asia/Manila (app timezone), so query
+        // with these local boundaries directly — do NOT convert to UTC.
+        $scoped = fn() => Attendance::whereBetween('scanned_at', [$rangeStart, $rangeEnd]);
 
         $totalVisits = $scoped()->where('status', 'success')->count();
         $deniedCount = $scoped()->where('status', 'denied')->count();
@@ -78,11 +77,11 @@ class StaffAttendanceController extends Controller
             ->orderByDesc('scanned_at');
 
         if ($date) {
-            $dayStart = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay()->utc();
-            $dayEnd = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay()->utc();
+            $dayStart = Carbon::parse($date, self::DISPLAY_TZ)->startOfDay();
+            $dayEnd = Carbon::parse($date, self::DISPLAY_TZ)->endOfDay();
             $recentQuery->whereBetween('scanned_at', [$dayStart, $dayEnd]);
         } else {
-            $recentQuery->whereBetween('scanned_at', [$utcStart, $utcEnd]);
+            $recentQuery->whereBetween('scanned_at', [$rangeStart, $rangeEnd]);
         }
 
         $recentVisits = $recentQuery->limit(25)->get()->map(function ($v) {
