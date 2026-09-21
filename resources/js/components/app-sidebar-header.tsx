@@ -2,13 +2,21 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { BreadcrumbItem as BreadcrumbItemType } from "@/types";
 import { router, usePage } from "@inertiajs/react";
-import { Bell, CreditCard, RefreshCcw, ShieldAlert, Ticket, TriangleAlert, UserPlus, XCircle } from "lucide-react";
+import {
+    Bell,
+    CalendarDays,
+    Search as SearchIcon,
+    Ticket,
+    TriangleAlert,
+    XCircle,
+} from "lucide-react";
 import { useEffect, useState } from "react";
 import {
     DropdownMenu,
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { MemberSearchDialog } from "@/components/member-search-dialog";
 import AppearanceToggleTab from "./appearance-tabs";
 import AppearanceTabs from "./appearance-tabs";
 import AppearanceToggleIcon from "./appearance-toggle-icon";
@@ -24,28 +32,17 @@ type NotificationItem = {
 
 type PageProps = {
     notifications: { unread_count: number; items: NotificationItem[] } | null;
-    auth: { user: { id: number } | null };
+    auth: { user: { id: number } | null; roles: string[] };
 };
 
 function NotificationIcon({ type }: { type: string | null }) {
-    switch (type) {
-        case "membership_expiring":
-        case "staff_membership_expiring":
-            return <TriangleAlert className="h-4 w-4 text-amber-400" />;
-        case "membership_expired":
-        case "staff_payment_failed":
-            return <XCircle className="h-4 w-4 text-red-400" />;
-        case "staff_checkin_denied":
-            return <ShieldAlert className="h-4 w-4 text-red-400" />;
-        case "staff_new_member":
-            return <UserPlus className="h-4 w-4 text-emerald-400" />;
-        case "staff_new_subscription":
-            return <CreditCard className="h-4 w-4 text-emerald-400" />;
-        case "staff_payment_refunded":
-            return <RefreshCcw className="h-4 w-4 text-blue-400" />;
-        default:
-            return <Ticket className="h-4 w-4 text-amber-400" />;
+    if (type === "membership_expiring") {
+        return <TriangleAlert className="h-4 w-4 text-amber-400" />;
     }
+    if (type === "membership_expired") {
+        return <XCircle className="h-4 w-4 text-red-400" />;
+    }
+    return <Ticket className="h-4 w-4 text-amber-400" />;
 }
 
 export function AppSidebarHeader({
@@ -55,6 +52,17 @@ export function AppSidebarHeader({
 }) {
     const { notifications, auth } = usePage<PageProps>().props;
     const [open, setOpen] = useState(false);
+    const [searchOpen, setSearchOpen] = useState(false);
+
+    const canSearchMembers =
+        auth.roles?.includes("staff") || auth.roles?.includes("admin");
+
+    const today = new Date().toLocaleDateString("en-US", {
+        weekday: "long",
+        year: "numeric",
+        month: "long",
+        day: "numeric",
+    });
 
     useEffect(() => {
         const userId = auth.user?.id;
@@ -63,9 +71,6 @@ export function AppSidebarHeader({
         const channel = window.Echo.private(
             `App.Models.User.${userId}`,
         ).notification(() => {
-            // A fresh notification broadcast — refresh the shared prop
-            // rather than hand-merge the payload, so unread_count and
-            // the list stay in sync with the server's true state.
             router.reload({ only: ["notifications"] });
         });
 
@@ -73,6 +78,22 @@ export function AppSidebarHeader({
             window.Echo.leave(`App.Models.User.${userId}`);
         };
     }, [auth.user?.id]);
+
+    // Keyboard shortcut: Cmd/Ctrl+K opens member search, same convention as
+    // most command-palette-style search dialogs.
+    useEffect(() => {
+        if (!canSearchMembers) return;
+
+        function handleKeydown(e: KeyboardEvent) {
+            if ((e.metaKey || e.ctrlKey) && e.key === "k") {
+                e.preventDefault();
+                setSearchOpen(true);
+            }
+        }
+
+        window.addEventListener("keydown", handleKeydown);
+        return () => window.removeEventListener("keydown", handleKeydown);
+    }, [canSearchMembers]);
 
     function markAllRead() {
         router.post(
@@ -110,6 +131,26 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2">
+                {canSearchMembers && (
+                    <>
+                        <span className="hidden items-center gap-1.5 rounded-lg border border-sidebar-border/60 px-3 py-1.5 text-xs text-muted-foreground md:flex">
+                            <CalendarDays className="h-3.5 w-3.5" />
+                            {today}
+                        </span>
+                        <button
+                            onClick={() => setSearchOpen(true)}
+                            className="rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                            aria-label="Search members"
+                        >
+                            <SearchIcon className="h-5 w-5" />
+                        </button>
+                        <MemberSearchDialog
+                            open={searchOpen}
+                            onOpenChange={setSearchOpen}
+                        />
+                    </>
+                )}
+
                 <AppearanceToggleIcon />
 
                 <DropdownMenu open={open} onOpenChange={setOpen}>

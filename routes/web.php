@@ -12,6 +12,7 @@ use App\Http\Controllers\MemberActivityController;
 use App\Http\Controllers\MemberMembershipController;
 use App\Http\Controllers\MemberPaymentController;
 use App\Http\Controllers\MemberProfileController;
+use App\Http\Controllers\MemberSearchController;
 use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\StaffPaymentController;
@@ -126,6 +127,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staff/members/{user}', [StaffMemberController::class, 'show'])
         ->middleware('role:staff')
         ->name('staff.members.show');
+
+    Route::get('/search/members', [MemberSearchController::class, 'search'])
+    ->middleware('role:staff|admin')
+    ->name('search.members');
 
 
 
