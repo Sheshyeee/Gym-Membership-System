@@ -135,7 +135,7 @@ class StaffPaymentController extends Controller
         };
     }
 
-    private function timeLabel(?Carbon $date): string
+    private function timeLabel(?\Carbon\CarbonInterface $date): string
     {
         if (! $date) {
             return '—';
