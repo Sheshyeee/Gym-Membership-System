@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Subscription;
+use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 use Inertia\Inertia;
@@ -29,7 +30,7 @@ class StaffDashboardController extends Controller
         ]);
     }
 
-    private function timeOfDay(Carbon $now): string
+    private function timeOfDay(CarbonInterface $now): string
     {
         $hour = (int) $now->format('G');
 
@@ -40,7 +41,7 @@ class StaffDashboardController extends Controller
         };
     }
 
-    private function stats(Carbon $now): array
+    private function stats(CarbonInterface $now): array
     {
         $todayStart = $now->copy()->startOfDay();
         $todayEnd = $now->copy()->endOfDay();
@@ -115,7 +116,7 @@ class StaffDashboardController extends Controller
         return round((($current - $previous) / $previous) * 100, 1);
     }
 
-    private function peakHoursLabel(Carbon $now): string
+    private function peakHoursLabel(CarbonInterface $now): string
     {
         $start = $now->copy()->subDays(6)->startOfDay();
 
@@ -146,14 +147,14 @@ class StaffDashboardController extends Controller
         return "{$startLabel} – {$endLabel}";
     }
 
-    private function attendanceOverview(Carbon $now): array
+    private function attendanceOverview(CarbonInterface $now): array
     {
         $days = collect(range(6, 0))->map(fn($i) => $now->copy()->subDays($i)->startOfDay());
 
         $records = Attendance::where('scanned_at', '>=', $days->first())
             ->get(['status', 'scanned_at']);
 
-        $series = $days->map(function (Carbon $day) use ($records) {
+        $series = $days->map(function (CarbonInterface $day) use ($records) {
             $dayRecords = $records->filter(
                 fn($a) => $a->scanned_at->timezone(self::TZ)->isSameDay($day)
             );
