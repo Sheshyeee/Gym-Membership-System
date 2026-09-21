@@ -9,6 +9,7 @@ import {
     DropdownMenuContent,
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import AppearanceToggleTab from "./appearance-tabs";
 
 type NotificationItem = {
     id: string;
@@ -95,67 +96,72 @@ export function AppSidebarHeader({
                 <SidebarTrigger className="-ml-1" />
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
+            <div className="flex items-center gap-2">
+                <AppearanceToggleTab />
 
-            <DropdownMenu open={open} onOpenChange={setOpen}>
-                <DropdownMenuTrigger asChild>
-                    <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                        <Bell className="h-5 w-5" />
-                        {unread > 0 && (
-                            <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-black">
-                                {unread > 9 ? "9+" : unread}
-                            </span>
-                        )}
-                    </button>
-                </DropdownMenuTrigger>
+                <DropdownMenu open={open} onOpenChange={setOpen}>
+                    <DropdownMenuTrigger asChild>
+                        <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
+                            <Bell className="h-5 w-5" />
+                            {unread > 0 && (
+                                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-black">
+                                    {unread > 9 ? "9+" : unread}
+                                </span>
+                            )}
+                        </button>
+                    </DropdownMenuTrigger>
 
-                <DropdownMenuContent align="end" className="w-80 p-0">
-                    <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                        <p className="text-sm font-semibold">Notifications</p>
-                        {unread > 0 && (
-                            <button
-                                onClick={markAllRead}
-                                className="text-xs font-medium text-amber-400 hover:text-amber-300"
-                            >
-                                Mark all read
-                            </button>
-                        )}
-                    </div>
-
-                    {items.length === 0 ? (
-                        <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                            You're all caught up.
-                        </p>
-                    ) : (
-                        <div className="max-h-96 divide-y divide-border overflow-y-auto">
-                            {items.map((n) => (
+                    <DropdownMenuContent align="end" className="w-80 p-0">
+                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                            <p className="text-sm font-semibold">
+                                Notifications
+                            </p>
+                            {unread > 0 && (
                                 <button
-                                    key={n.id}
-                                    onClick={() => openNotification(n)}
-                                    className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/40 ${
-                                        n.read ? "" : "bg-amber-500/5"
-                                    }`}
+                                    onClick={markAllRead}
+                                    className="text-xs font-medium text-amber-400 hover:text-amber-300"
                                 >
-                                    <NotificationIcon type={n.type} />
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-sm font-medium text-amber-400">
-                                            {n.title}
-                                        </p>
-                                        <p className="mt-0.5 text-xs text-muted-foreground">
-                                            {n.body}
-                                        </p>
-                                        <p className="mt-1 text-[10px] text-muted-foreground/70">
-                                            {n.created_at}
-                                        </p>
-                                    </div>
-                                    {!n.read && (
-                                        <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-                                    )}
+                                    Mark all read
                                 </button>
-                            ))}
+                            )}
                         </div>
-                    )}
-                </DropdownMenuContent>
-            </DropdownMenu>
+
+                        {items.length === 0 ? (
+                            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                                You're all caught up.
+                            </p>
+                        ) : (
+                            <div className="max-h-96 divide-y divide-border overflow-y-auto">
+                                {items.map((n) => (
+                                    <button
+                                        key={n.id}
+                                        onClick={() => openNotification(n)}
+                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/40 ${
+                                            n.read ? "" : "bg-amber-500/5"
+                                        }`}
+                                    >
+                                        <NotificationIcon type={n.type} />
+                                        <div className="min-w-0 flex-1">
+                                            <p className="truncate text-sm font-medium text-amber-400">
+                                                {n.title}
+                                            </p>
+                                            <p className="mt-0.5 text-xs text-muted-foreground">
+                                                {n.body}
+                                            </p>
+                                            <p className="mt-1 text-[10px] text-muted-foreground/70">
+                                                {n.created_at}
+                                            </p>
+                                        </div>
+                                        {!n.read && (
+                                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                                        )}
+                                    </button>
+                                ))}
+                            </div>
+                        )}
+                    </DropdownMenuContent>
+                </DropdownMenu>
+            </div>
         </header>
     );
 }
