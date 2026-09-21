@@ -7,7 +7,20 @@ import {
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
+import { Calendar, Check, CheckCircle2, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
+
+interface AttendanceEntry {
+    id: number;
+    date_label: string;
+    time: string;
+    method_label: string;
+}
+
+interface CheckinResult {
+    result: "success" | "denied" | "duplicate";
+    message: string;
+}
 
 interface ProfileData {
     id: number;
@@ -21,6 +34,9 @@ interface ProfileData {
     valid_until: string | null;
     monthly_visits: number | null;
     last_check_in: string | null;
+    avg_visits_per_week: number | null;
+    streak_days: number | null;
+    attendance_history: AttendanceEntry[];
     plan_history: {
         id: number;
         plan: string | null;
@@ -33,6 +49,7 @@ interface ProfileData {
         status: string;
         date: string | null;
     }[];
+    checkin?: CheckinResult;
 }
 
 const statusStyles: Record<string, string> = {
@@ -54,6 +71,14 @@ const paymentStyles: Record<string, string> = {
     expired: "bg-muted text-muted-foreground border-border",
 };
 
+function csrfToken() {
+    return (
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") ?? ""
+    );
+}
+
 export function StaffMemberProfileSheet({
     userId,
     open,
@@ -65,12 +90,17 @@ export function StaffMemberProfileSheet({
 }) {
     const [data, setData] = useState<ProfileData | null>(null);
     const [loading, setLoading] = useState(false);
+    const [checkingIn, setCheckingIn] = useState(false);
+    const [checkinResult, setCheckinResult] = useState<CheckinResult | null>(
+        null,
+    );
 
     useEffect(() => {
         if (!open || !userId) return;
 
         setLoading(true);
         setData(null);
+        setCheckinResult(null);
 
         fetch(`/staff/members/${userId}`, {
             headers: { Accept: "application/json" },
@@ -79,6 +109,37 @@ export function StaffMemberProfileSheet({
             .then((json) => setData(json))
             .finally(() => setLoading(false));
     }, [open, userId]);
+
+    async function handleCheckIn() {
+        if (!data || checkingIn) return;
+
+        setCheckingIn(true);
+        setCheckinResult(null);
+
+        try {
+            const res = await fetch(`/staff/members/${data.id}/checkin`, {
+                method: "POST",
+                headers: {
+                    "Content-Type": "application/json",
+                    Accept: "application/json",
+                    "X-CSRF-TOKEN": csrfToken(),
+                },
+            });
+            const json: ProfileData = await res.json();
+            setData(json);
+            if (json.checkin) {
+                setCheckinResult(json.checkin);
+                setTimeout(() => setCheckinResult(null), 4000);
+            }
+        } catch {
+            setCheckinResult({
+                result: "denied",
+                message: "Network error — try again.",
+            });
+        } finally {
+            setCheckingIn(false);
+        }
+    }
 
     return (
         <Sheet open={open} onOpenChange={onOpenChange}>
@@ -123,22 +184,48 @@ export function StaffMemberProfileSheet({
                             </Badge>
                         </div>
 
-                        {/* Message + QR are static placeholders for now — not wired up */}
-                        <div className="flex items-center justify-center gap-3">
-                            <button
-                                disabled
-                                title="Messaging coming soon"
-                                className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground"
-                            >
-                                ✉️
-                            </button>
-                            <button
-                                disabled
-                                title="QR check-in coming soon"
-                                className="flex h-10 w-10 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground"
-                            >
-                                ▦
-                            </button>
+                        <div className="space-y-2">
+                            <div className="flex items-center gap-3">
+                                <button
+                                    onClick={handleCheckIn}
+                                    disabled={checkingIn}
+                                    className="flex h-11 flex-1 items-center justify-center gap-2 rounded-lg bg-orange-500 text-sm font-semibold text-white transition-colors hover:bg-orange-600 disabled:cursor-not-allowed disabled:opacity-60"
+                                >
+                                    {checkingIn ? (
+                                        <>
+                                            <span className="h-4 w-4 animate-spin rounded-full border-2 border-white/40 border-t-white" />
+                                            Checking in...
+                                        </>
+                                    ) : (
+                                        <>
+                                            <Check className="h-4 w-4" />
+                                            Check in
+                                        </>
+                                    )}
+                                </button>
+                                <button
+                                    disabled
+                                    title="QR check-in coming soon"
+                                    className="flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground"
+                                >
+                                    <QrCode className="h-4 w-4" />
+                                </button>
+                            </div>
+
+                            {checkinResult && (
+                                <p
+                                    className={`text-center text-xs font-medium ${
+                                        checkinResult.result === "success"
+                                            ? "text-emerald-500"
+                                            : checkinResult.result ===
+                                                "duplicate"
+                                              ? "text-amber-500"
+                                              : "text-red-500"
+                                    }`}
+                                >
+                                    {checkinResult.message}
+                                </p>
+                            )}
                         </div>
 
                         <Tabs defaultValue="overview">
@@ -316,11 +403,85 @@ export function StaffMemberProfileSheet({
                                 )}
                             </TabsContent>
 
-                            {/* Attendance: left blank for now, no attendance table yet */}
-                            <TabsContent value="attendance" className="pt-4">
-                                <p className="text-sm text-muted-foreground">
-                                    No attendance data yet.
-                                </p>
+                            <TabsContent
+                                value="attendance"
+                                className="space-y-4 pt-4"
+                            >
+                                <div className="grid grid-cols-2 gap-y-3 text-sm">
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Visits this month
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {data.monthly_visits ?? 0}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Last check-in
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {data.last_check_in ?? "—"}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Avg visits/week
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {data.avg_visits_per_week ?? 0}
+                                        </p>
+                                    </div>
+                                    <div>
+                                        <p className="text-xs text-muted-foreground">
+                                            Streak
+                                        </p>
+                                        <p className="font-semibold text-foreground">
+                                            {data.streak_days ?? 0} days
+                                        </p>
+                                    </div>
+                                </div>
+
+                                <div>
+                                    <p className="mb-2 text-sm font-semibold text-foreground">
+                                        Attendance history
+                                    </p>
+                                    {data.attendance_history.length === 0 ? (
+                                        <p className="text-sm text-muted-foreground">
+                                            No attendance data yet.
+                                        </p>
+                                    ) : (
+                                        <div className="space-y-2">
+                                            {data.attendance_history.map(
+                                                (entry) => (
+                                                    <div
+                                                        key={entry.id}
+                                                        className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3"
+                                                    >
+                                                        <div className="flex items-center gap-3">
+                                                            <Calendar className="h-4 w-4 text-muted-foreground" />
+                                                            <div>
+                                                                <p className="text-sm font-medium text-foreground">
+                                                                    {
+                                                                        entry.date_label
+                                                                    }
+                                                                </p>
+                                                                <p className="text-xs text-muted-foreground">
+                                                                    {entry.time}{" "}
+                                                                    ·{" "}
+                                                                    {
+                                                                        entry.method_label
+                                                                    }
+                                                                </p>
+                                                            </div>
+                                                        </div>
+                                                        <CheckCircle2 className="h-4 w-4 text-emerald-500" />
+                                                    </div>
+                                                ),
+                                            )}
+                                        </div>
+                                    )}
+                                </div>
                             </TabsContent>
 
                             <TabsContent value="payments" className="pt-4">
@@ -372,7 +533,6 @@ export function StaffMemberProfileSheet({
                                 </div>
                             </TabsContent>
 
-                            {/* Sessions: left blank for now, no sessions table yet */}
                             <TabsContent value="sessions" className="pt-4">
                                 <p className="text-sm text-muted-foreground">
                                     No sessions data yet.

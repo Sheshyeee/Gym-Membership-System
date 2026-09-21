@@ -139,6 +139,14 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::patch('/staffs/{user}/activate', [AdminStaffController::class, 'activate'])
         ->middleware('role:admin')
         ->name('staffs.activate');
+
+    Route::get('/staff/members/{user}', [StaffMemberController::class, 'show'])
+        ->middleware('role:staff')
+        ->name('staff.members.show');
+
+    Route::post('/staff/members/{user}/checkin', [StaffMemberController::class, 'checkin'])
+        ->middleware('role:staff')
+        ->name('staff.members.checkin');
 });
 
 Route::post('/webhooks/paymongo', [PaymongoWebhookController::class, 'handle'])
