@@ -46,7 +46,7 @@ class StaffManualCheckInController extends Controller
 
         $results = $users->map(fn(User $user) => [
             'id' => $user->id,
-            'code' => 'MEM-' . str_pad((string) $user->id, 4, '0', STR_PAD_LEFT),
+            'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
             'name' => $user->name,
             'email' => $user->email,
             'plan' => $user->latestSubscription?->plan?->name,
@@ -66,7 +66,7 @@ class StaffManualCheckInController extends Controller
             'member' => [
                 'id' => $user->id,
                 'name' => $user->name,
-                'code' => 'MEM-' . str_pad((string) $user->id, 4, '0', STR_PAD_LEFT),
+                'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
             ],
             'recentCheckIns' => $this->recentCheckIns(),
         ]);

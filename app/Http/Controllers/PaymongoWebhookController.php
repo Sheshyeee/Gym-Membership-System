@@ -88,11 +88,37 @@ class PaymongoWebhookController extends Controller
         }
 
         if ($status === 'succeeded') {
-            $invoice->update([
-                'status' => 'refunded',
-                'refund_amount' => $resource['attributes']['amount'] ?? $invoice->amount,
-                'refunded_at' => now(),
-            ]);
+            DB::transaction(function () use ($invoice, $resource) {
+                $invoice->update([
+                    'status' => 'refunded',
+                    'refund_amount' => $resource['attributes']['amount'] ?? $invoice->amount,
+                    'refunded_at' => now(),
+                ]);
+
+                $subscription = $invoice->subscription;
+
+                if (! $subscription) {
+                    return;
+                }
+
+                // If the member paid again after this invoice (early renewal),
+                // they still have a valid paid period, so don't cancel it.
+                $hasLaterPaidInvoice = $subscription->invoices()
+                    ->where('status', 'paid')
+                    ->where('id', '!=', $invoice->id)
+                    ->where('paid_at', '>', $invoice->paid_at ?? $invoice->created_at)
+                    ->exists();
+
+                if (! $hasLaterPaidInvoice) {
+                    $subscription->update([
+                        'status' => 'cancelled',
+                        'cancelled_at' => now(),
+                        'current_period_end' => now(),
+                        'next_billing_at' => null,
+                    ]);
+                }
+            });
+
             InvoiceStatusUpdated::dispatch($invoice);
 
             StaffAlert::send(new StaffPaymentRefunded($invoice));
@@ -100,7 +126,6 @@ class PaymongoWebhookController extends Controller
             $invoice->update(['status' => 'paid']);
             InvoiceStatusUpdated::dispatch($invoice);
 
-            StaffAlert::send(new StaffPaymentRefunded($invoice));
             Log::error('PayMongo refund failed', ['invoice_id' => $invoice->id, 'refund_id' => $refundId]);
         }
     }

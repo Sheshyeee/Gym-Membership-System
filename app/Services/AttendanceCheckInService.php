@@ -43,7 +43,13 @@ class AttendanceCheckInService
       return ['result' => 'denied', 'message' => 'This member is deactivated.'];
     }
 
-    if (! $member->hasActiveSubscription()) {
+    $subscription = $member->activeSubscription()->first();
+
+    $membershipValid = $subscription
+      && ! $subscription->cancelled_at
+      && (! $subscription->current_period_end || $subscription->current_period_end->isFuture());
+
+    if (! $membershipValid) {
       $attendance = Attendance::create([
         'user_id' => $member->id,
         'staff_id' => $staff->id,

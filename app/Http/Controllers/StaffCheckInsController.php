@@ -42,6 +42,7 @@ class StaffCheckInsController extends Controller
 
         // Prevent duplicate scans of the same member within a 5-minute window.
         $recentScan = Attendance::where('user_id', $user->id)
+            ->where('status', 'success')
             ->where('scanned_at', '>=', now()->subMinutes(5))
             ->orderByDesc('scanned_at')
             ->first();
@@ -78,7 +79,11 @@ class StaffCheckInsController extends Controller
 
         $subscription = $user->activeSubscription()->with('plan')->first();
 
-        if (! $subscription) {
+        if (
+            ! $subscription
+            || $subscription->cancelled_at
+            || ($subscription->current_period_end && $subscription->current_period_end->isPast())
+        ) {
             Attendance::create([
                 'user_id' => $user->id,
                 'staff_id' => $staff->id,
