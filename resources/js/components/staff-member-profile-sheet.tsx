@@ -487,10 +487,13 @@ export function StaffMemberProfileSheet({
                             <TabsContent value="payments" className="pt-4">
                                 <div className="flex items-center justify-between">
                                     <p className="text-sm font-semibold text-foreground">
-                                        Recent payments
+                                        Payment history
                                     </p>
-                                    <span className="text-xs text-orange-500">
-                                        View all
+                                    <span className="text-xs text-muted-foreground">
+                                        {data.payments.length}{" "}
+                                        {data.payments.length === 1
+                                            ? "payment"
+                                            : "payments"}
                                     </span>
                                 </div>
 
@@ -500,7 +503,7 @@ export function StaffMemberProfileSheet({
                                             No payments yet.
                                         </p>
                                     )}
-                                    {data.payments.slice(0, 5).map((p) => (
+                                    {data.payments.map((p) => (
                                         <div
                                             key={p.id}
                                             className="flex items-center justify-between rounded-lg border border-border bg-muted/30 p-3"
