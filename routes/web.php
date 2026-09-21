@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminMemberController;
 use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminStaffController;
+use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberActivityController;
 
@@ -75,6 +76,10 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/member/membership/invoices/{invoice}/status', [MemberMembershipController::class, 'invoiceStatus'])
         ->middleware('role:user')
         ->name('member.membership.invoice.status');
+
+    Route::get('/notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::post('/notifications/{id}/read', [NotificationController::class, 'markRead'])->name('notifications.read');
+    Route::post('/notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     Route::middleware('subscribed')->group(function () {
         Route::get('/dashboard', [DashboardController::class, 'index'])->name('dashboard');

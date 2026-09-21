@@ -10,6 +10,7 @@ import {
     DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 import AppearanceToggleTab from "./appearance-tabs";
+import AppearanceTabs from "./appearance-tabs";
 
 type NotificationItem = {
     id: string;
@@ -97,7 +98,7 @@ export function AppSidebarHeader({
                 <Breadcrumbs breadcrumbs={breadcrumbs} />
             </div>
             <div className="flex items-center gap-2">
-                <AppearanceToggleTab />
+                <AppearanceTabs />
 
                 <DropdownMenu open={open} onOpenChange={setOpen}>
                     <DropdownMenuTrigger asChild>
