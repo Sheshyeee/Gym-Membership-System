@@ -5,6 +5,8 @@ namespace App\Actions\Fortify;
 use App\Concerns\PasswordValidationRules;
 use App\Concerns\ProfileValidationRules;
 use App\Models\User;
+use App\Notifications\StaffNewMemberRegistered;
+use App\Support\StaffAlert;
 use Illuminate\Support\Facades\Validator;
 use Laravel\Fortify\Contracts\CreatesNewUsers;
 
@@ -31,6 +33,8 @@ class CreateNewUser implements CreatesNewUsers
         ]);
 
         $user->assignRole('user');
+
+        StaffAlert::send(new StaffNewMemberRegistered($user));
 
         return $user;
     }

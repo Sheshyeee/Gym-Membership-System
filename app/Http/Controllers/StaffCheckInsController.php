@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\User;
+use App\Notifications\StaffCheckInDenied;
+use App\Support\StaffAlert;
 use Illuminate\Http\Request;
 
 class StaffCheckInsController extends Controller
@@ -55,7 +57,7 @@ class StaffCheckInsController extends Controller
         }
 
         if (! $user->isActive()) {
-            Attendance::create([
+            $attendance = Attendance::create([
                 'user_id' => $user->id,
                 'staff_id' => $staff->id,
                 'status' => 'denied',
@@ -63,6 +65,8 @@ class StaffCheckInsController extends Controller
                 'scanned_token' => $token,
                 'scanned_at' => now(),
             ]);
+
+            StaffAlert::send(new StaffCheckInDenied($attendance));
 
             return response()->json([
                 'result' => 'denied',

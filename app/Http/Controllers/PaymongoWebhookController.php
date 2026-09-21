@@ -4,7 +4,11 @@ namespace App\Http\Controllers;
 
 use App\Events\InvoiceStatusUpdated;
 use App\Models\Invoice;
+use App\Notifications\StaffNewSubscriptionCreated;
+use App\Notifications\StaffPaymentFailed;
+use App\Notifications\StaffPaymentRefunded;
 use App\Services\PaymentService;
+use App\Support\StaffAlert;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\DB;
@@ -90,9 +94,13 @@ class PaymongoWebhookController extends Controller
                 'refunded_at' => now(),
             ]);
             InvoiceStatusUpdated::dispatch($invoice);
+
+            StaffAlert::send(new StaffPaymentRefunded($invoice));
         } elseif ($status === 'failed') {
             $invoice->update(['status' => 'paid']);
             InvoiceStatusUpdated::dispatch($invoice);
+
+            StaffAlert::send(new StaffPaymentRefunded($invoice));
             Log::error('PayMongo refund failed', ['invoice_id' => $invoice->id, 'refund_id' => $refundId]);
         }
     }
@@ -185,6 +193,8 @@ class PaymongoWebhookController extends Controller
             ]);
 
             $subscription->user->notify(new \App\Notifications\MembershipActivated($subscription));
+
+            StaffAlert::send(new StaffNewSubscriptionCreated($subscription));
         });
     }
 
@@ -197,6 +207,10 @@ class PaymongoWebhookController extends Controller
 
         $invoice = Invoice::where('processor_source_id', $sourceId)->first();
         $invoice?->update(['status' => 'failed']);
+
+        if ($invoice) {
+            StaffAlert::send(new StaffPaymentFailed($invoice));
+        }
     }
 
     protected function verifySignature(Request $request): bool

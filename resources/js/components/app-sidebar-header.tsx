@@ -2,7 +2,7 @@ import { Breadcrumbs } from "@/components/breadcrumbs";
 import { SidebarTrigger } from "@/components/ui/sidebar";
 import type { BreadcrumbItem as BreadcrumbItemType } from "@/types";
 import { router, usePage } from "@inertiajs/react";
-import { Bell, Ticket, TriangleAlert, XCircle } from "lucide-react";
+import { Bell, CreditCard, RefreshCcw, ShieldAlert, Ticket, TriangleAlert, UserPlus, XCircle } from "lucide-react";
 import { useEffect, useState } from "react";
 import {
     DropdownMenu,
@@ -28,13 +28,24 @@ type PageProps = {
 };
 
 function NotificationIcon({ type }: { type: string | null }) {
-    if (type === "membership_expiring") {
-        return <TriangleAlert className="h-4 w-4 text-amber-400" />;
+    switch (type) {
+        case "membership_expiring":
+        case "staff_membership_expiring":
+            return <TriangleAlert className="h-4 w-4 text-amber-400" />;
+        case "membership_expired":
+        case "staff_payment_failed":
+            return <XCircle className="h-4 w-4 text-red-400" />;
+        case "staff_checkin_denied":
+            return <ShieldAlert className="h-4 w-4 text-red-400" />;
+        case "staff_new_member":
+            return <UserPlus className="h-4 w-4 text-emerald-400" />;
+        case "staff_new_subscription":
+            return <CreditCard className="h-4 w-4 text-emerald-400" />;
+        case "staff_payment_refunded":
+            return <RefreshCcw className="h-4 w-4 text-blue-400" />;
+        default:
+            return <Ticket className="h-4 w-4 text-amber-400" />;
     }
-    if (type === "membership_expired") {
-        return <XCircle className="h-4 w-4 text-red-400" />;
-    }
-    return <Ticket className="h-4 w-4 text-amber-400" />;
 }
 
 export function AppSidebarHeader({

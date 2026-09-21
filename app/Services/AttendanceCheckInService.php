@@ -4,6 +4,8 @@ namespace App\Services;
 
 use App\Models\Attendance;
 use App\Models\User;
+use App\Notifications\StaffCheckInDenied;
+use App\Support\StaffAlert;
 
 class AttendanceCheckInService
 {
@@ -27,7 +29,7 @@ class AttendanceCheckInService
     }
 
     if (! $member->isActive()) {
-      Attendance::create([
+      $attendance = Attendance::create([
         'user_id' => $member->id,
         'staff_id' => $staff->id,
         'status' => 'denied',
@@ -36,11 +38,13 @@ class AttendanceCheckInService
         'scanned_at' => now(),
       ]);
 
+      StaffAlert::send(new StaffCheckInDenied($attendance));
+
       return ['result' => 'denied', 'message' => 'This member is deactivated.'];
     }
 
     if (! $member->hasActiveSubscription()) {
-      Attendance::create([
+      $attendance = Attendance::create([
         'user_id' => $member->id,
         'staff_id' => $staff->id,
         'status' => 'denied',
@@ -48,6 +52,8 @@ class AttendanceCheckInService
         'method' => $method,
         'scanned_at' => now(),
       ]);
+
+      StaffAlert::send(new StaffCheckInDenied($attendance));
 
       return ['result' => 'denied', 'message' => 'This member\'s plan is not active.'];
     }
