@@ -89,66 +89,14 @@ class StaffMemberController extends Controller
         return response()->json($this->buildProfilePayload($user));
     }
 
+    public function __construct(protected \App\Services\AttendanceCheckInService $checkInService) {}
+
     public function checkin(Request $request, User $user): JsonResponse
     {
-        $staff = $request->user();
-
-        // Same 5-minute duplicate guard used by the QR scanner.
-        $recent = Attendance::where('user_id', $user->id)
-            ->where('status', 'success')
-            ->where('scanned_at', '>=', now()->subMinutes(5))
-            ->orderByDesc('scanned_at')
-            ->first();
-
-        if ($recent) {
-            return response()->json(array_merge($this->buildProfilePayload($user), [
-                'checkin' => [
-                    'result' => 'duplicate',
-                    'message' => 'Already checked in ' . $recent->scanned_at->diffForHumans() . '.',
-                ],
-            ]));
-        }
-
-        if (! $user->isActive()) {
-            Attendance::create([
-                'user_id' => $user->id,
-                'staff_id' => $staff->id,
-                'status' => 'denied',
-                'denial_reason' => 'Account Deactivated',
-                'method' => 'manual',
-                'scanned_at' => now(),
-            ]);
-
-            return response()->json(array_merge($this->buildProfilePayload($user), [
-                'checkin' => ['result' => 'denied', 'message' => 'This member is deactivated.'],
-            ]));
-        }
-
-        if (! $user->hasActiveSubscription()) {
-            Attendance::create([
-                'user_id' => $user->id,
-                'staff_id' => $staff->id,
-                'status' => 'denied',
-                'denial_reason' => 'Membership Expired',
-                'method' => 'manual',
-                'scanned_at' => now(),
-            ]);
-
-            return response()->json(array_merge($this->buildProfilePayload($user), [
-                'checkin' => ['result' => 'denied', 'message' => 'This member\'s plan is not active.'],
-            ]));
-        }
-
-        Attendance::create([
-            'user_id' => $user->id,
-            'staff_id' => $staff->id,
-            'status' => 'success',
-            'method' => 'manual',
-            'scanned_at' => now(),
-        ]);
+        $result = $this->checkInService->checkIn($user, $request->user());
 
         return response()->json(array_merge($this->buildProfilePayload($user), [
-            'checkin' => ['result' => 'success', 'message' => 'Checked in successfully.'],
+            'checkin' => $result,
         ]));
     }
 

@@ -99,7 +99,7 @@ export default function StaffMembers({
     }
 
     function handleCheckinSuccess() {
-        // Partial reload: re-fetch just the table + tab counts from the
+        // Partial reload: re-fetch just the table + tab counts from thepay
         // current URL/filters, without a full navigation or losing scroll.
         router.reload({
             only: ["members", "statusCounts"],

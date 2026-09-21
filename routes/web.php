@@ -20,6 +20,7 @@ use App\Http\Controllers\QRAccessController;
 use App\Http\Controllers\StaffAttendanceController;
 use App\Http\Controllers\StaffCheckInsController;
 use App\Http\Controllers\StaffDashboardController;
+use App\Http\Controllers\StaffManualCheckInController;
 use App\Http\Controllers\StaffMemberController;
 use Illuminate\Support\Facades\Route;
 
@@ -156,6 +157,18 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/staff/payments/{invoice}', [StaffPaymentController::class, 'show'])
         ->middleware('role:staff')
         ->name('staff.payments.show');
+
+    Route::get('/staff/manual-checkin', [StaffManualCheckInController::class, 'index'])
+        ->middleware('role:staff')
+        ->name('staff.manual-checkin');
+
+    Route::get('/staff/manual-checkin/search', [StaffManualCheckInController::class, 'search'])
+        ->middleware('role:staff')
+        ->name('staff.manual-checkin.search');
+
+    Route::post('/staff/manual-checkin/{user}/checkin', [StaffManualCheckInController::class, 'checkin'])
+        ->middleware('role:staff')
+        ->name('staff.manual-checkin.checkin');
 });
 
 Route::post('/webhooks/paymongo', [PaymongoWebhookController::class, 'handle'])

@@ -89,6 +89,11 @@ export function AppSidebar() {
                       icon: LayoutGrid,
                   } satisfies NavItem,
                   {
+                      title: "Manual check-In",
+                      href: "/staff/manual-checkin",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
+                  {
                       title: "Attendance",
                       href: "/staff/attendance",
                       icon: LayoutGrid,
