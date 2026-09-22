@@ -167,7 +167,9 @@
      * Kept subtle + corner-anchored so dashboard text/tables stay readable.
      */
     .dark body,
-    .dark [data-slot="sidebar-inset"] {
+    .dark [data-slot="sidebar-inset"],
+    .dark header,
+    .dark [data-sidebar="sidebar"] {
         background-image:
             radial-gradient(
                 ellipse 90% 65% at 75% 100%,
@@ -185,6 +187,18 @@
                 transparent 60%
             );
         background-attachment: fixed;
+    }
+
+    /* Header sits on top of the inset's gradient but paints its own solid
+       bg-background underneath; soften it so the wider glow reads through. */
+    .dark header {
+        background-color: color-mix(
+            in oklch,
+            var(--background) 70%,
+            transparent
+        );
+        backdrop-filter: blur(12px);
+        -webkit-backdrop-filter: blur(12px);
     }
 
     .dark .bg-card {
