@@ -30,68 +30,79 @@ export function MobileBottomNav() {
 
     if (isAdmin) {
         items = [
-            { title: "Overview", href: "/overview", icon: LayoutGrid },
+            { title: "Dashboard", href: "/overview", icon: LayoutGrid },
             { title: "Members", href: "/members", icon: Users },
-            { title: "Payments", href: "/payments", icon: Wallet },
-            { title: "Analytics", href: "/revenue-analytics", icon: BarChart3 },
+            { title: "Check-In", href: "/attendance", icon: QrCode },
+            { title: "Attendance", href: "/attendance", icon: CalendarCheck },
         ];
     } else if (isStaff) {
         items = [
             { title: "Dashboard", href: "/staff/dashboard", icon: LayoutGrid },
             { title: "Members", href: "/staff/members", icon: Users },
             { title: "Check-In", href: "/staff/qr-checkin", icon: QrCode },
-            { title: "Attendance", href: "/staff/attendance", icon: CalendarCheck },
+            {
+                title: "Attendance",
+                href: "/staff/attendance",
+                icon: CalendarCheck,
+            },
         ];
     } else {
         items = [
             { title: "Home", href: "/dashboard", icon: LayoutGrid },
             { title: "QR Access", href: "/qraccess", icon: QrCode },
-            { title: "Membership", href: "/member/membership", icon: CalendarCheck },
+            {
+                title: "Membership",
+                href: "/member/membership",
+                icon: CalendarCheck,
+            },
             { title: "Payments", href: "/member/payments", icon: Wallet },
         ];
     }
 
     return (
-        <nav
+        <div
             className={cn(
-                "fixed inset-x-0 bottom-0 z-40 flex items-center justify-around",
-                "border-t border-sidebar-border bg-sidebar/95 backdrop-blur",
-                "px-1 pt-1.5 pb-[max(0.375rem,env(safe-area-inset-bottom))]",
-                "md:hidden",
+                "fixed inset-x-0 bottom-0 z-40 flex justify-center px-4 md:hidden",
+                "pb-[max(1rem,env(safe-area-inset-bottom))]",
             )}
         >
-            {items.map((item) => {
-                const isActive = url.startsWith(item.href);
-                return (
-                    <Link
-                        key={item.href}
-                        href={item.href}
-                        className="flex flex-1 flex-col items-center gap-1 rounded-lg py-1 text-[11px] font-medium"
-                    >
-                        <item.icon
+            <nav
+                className={cn(
+                    "flex w-full max-w-sm items-center justify-around gap-1 rounded-[28px] px-2 py-2.5",
+                    // distinct from bg-card: more opaque + its own border/shadow so it
+                    // reads as a floating control, not another card, when scrolled content
+                    // passes beneath it
+                    "border border-white/10 bg-neutral-900/85 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl",
+                    "dark:bg-neutral-900/85",
+                )}
+            >
+                {items.map((item) => {
+                    const isActive = url.startsWith(item.href);
+                    return (
+                        <Link
+                            key={item.title}
+                            href={item.href}
                             className={cn(
-                                "h-5 w-5",
-                                isActive ? "text-primary" : "text-muted-foreground",
-                            )}
-                        />
-                        <span
-                            className={cn(
-                                isActive ? "text-primary" : "text-muted-foreground",
+                                "flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] font-medium transition-colors",
+                                isActive
+                                    ? "text-primary"
+                                    : "text-muted-foreground",
                             )}
                         >
-                            {item.title}
-                        </span>
-                    </Link>
-                );
-            })}
+                            <item.icon className="h-5 w-5" />
+                            <span>{item.title}</span>
+                        </Link>
+                    );
+                })}
 
-            <button
-                onClick={toggleSidebar}
-                className="flex flex-1 flex-col items-center gap-1 rounded-lg py-1 text-[11px] font-medium text-muted-foreground"
-            >
-                <MoreHorizontal className="h-5 w-5" />
-                <span>More</span>
-            </button>
-        </nav>
+                <button
+                    onClick={toggleSidebar}
+                    className="flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] font-medium text-muted-foreground"
+                >
+                    <MoreHorizontal className="h-5 w-5" />
+                    <span>More</span>
+                </button>
+            </nav>
+        </div>
     );
 }
