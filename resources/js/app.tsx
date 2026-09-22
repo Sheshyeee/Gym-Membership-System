@@ -33,6 +33,7 @@ void createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
+                <FlashToasts />
                 <Toaster
                     position="top-center"
                     toastOptions={{
