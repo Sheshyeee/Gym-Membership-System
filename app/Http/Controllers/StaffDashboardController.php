@@ -4,6 +4,8 @@ namespace App\Http\Controllers;
 
 use App\Models\Attendance;
 use App\Models\Subscription;
+use App\Models\User;
+use App\Support\MemberStatusResolver;
 use Carbon\CarbonInterface;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
@@ -82,13 +84,17 @@ class StaffDashboardController extends Controller
 
         $newMembersChange = $this->percentChange($newMembersLastMonth, $newMembersThisMonth);
 
-        $activeMembers = Subscription::where('status', 'active')
-            ->where(function ($q) use ($now) {
-                $q->whereNull('current_period_end')
-                    ->orWhere('current_period_end', '>=', $now);
-            })
-            ->distinct('user_id')
-            ->count('user_id');
+        // "Currently subscribed" — the same date-based rule (14-day expiring
+        // window, role('user') only) that the Members and Overview pages use,
+        // via MemberStatusResolver, instead of trusting the raw `status`
+        // column on Subscription directly. That raw column can say 'active'
+        // even after current_period_end has passed, or belong to a non-member
+        // account, which was inflating this count.
+        $activeMembers = User::role('user')
+            ->with('latestSubscription')
+            ->get()
+            ->filter(fn(User $u) => MemberStatusResolver::isCurrentlySubscribed($u->latestSubscription))
+            ->count();
 
         return [
             'checkInsToday' => [
