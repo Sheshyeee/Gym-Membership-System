@@ -39,10 +39,13 @@ class PayoutRecorder
         'provider' => $attributes['provider'] ?? null,
         // organization.* is the merchant's actual settlement account;
         // fall back to the last transfer's receiver details if absent.
+        // PayoutRecorder.php
         'settlement_bank_name' => $organization['bank_name']
-          ?? ($lastTransfer['receiver_institution_name'] ?? null),
+          ?? ($lastTransfer['receiver_institution_name'] ?? null)
+          ?? ($attributes['bank_name'] ?? null),
         'settlement_account_number' => $organization['bank_account_number']
-          ?? ($lastTransfer['receiver_account_number'] ?? null),
+          ?? ($lastTransfer['receiver_account_number'] ?? null)
+          ?? ($attributes['bank_account_number'] ?? null),
         'transfer_status' => $lastTransfer['status'] ?? null,
         'transfer_reference_number' => $lastTransfer['reference_number'] ?? null,
         'description' => $attributes['description'] ?? null,

@@ -86,6 +86,20 @@ class AdminPaymentController extends Controller
         ]));
     }
 
+    public function reprocessLastPayout()
+    {
+        $payout = \App\Models\Payout::latest('updated_at')->first();
+
+        if ($payout) {
+            \App\Support\PayoutRecorder::record([
+                'id' => $payout->id,
+                'attributes' => $payout->raw_payload,
+            ]);
+        }
+
+        return back()->with('success', 'Reprocessed.');
+    }
+
     public function syncPayouts()
     {
         $payouts = $this->payments->listPayouts(['limit' => 100]);
