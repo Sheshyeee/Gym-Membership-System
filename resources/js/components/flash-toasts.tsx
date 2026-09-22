@@ -1,5 +1,5 @@
 import { usePage } from "@inertiajs/react";
-import { useEffect } from "react";
+import { useEffect, useRef } from "react";
 import { toast } from "sonner";
 
 type FlashProps = {
@@ -8,11 +8,16 @@ type FlashProps = {
 
 export function FlashToasts() {
     const { flash } = usePage<FlashProps>().props;
+    const lastSeen = useRef<string | null>(null);
 
     useEffect(() => {
-        if (flash?.success) toast.success(flash.success);
-        if (flash?.error) toast.error(flash.error);
-        // eslint-disable-next-line react-hooks/exhaustive-deps
+        const key = JSON.stringify(flash);
+        if (key === lastSeen.current) return; // avoid double-fire from double mounts/strict mode
+        lastSeen.current = key;
+
+        if (flash?.success)
+            toast.success(flash.success, { id: crypto.randomUUID() });
+        if (flash?.error) toast.error(flash.error, { id: crypto.randomUUID() });
     }, [flash]);
 
     return null;

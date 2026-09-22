@@ -33,7 +33,19 @@ void createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
-                <Toaster position="top-center" richColors />
+                <Toaster
+                    position="top-center"
+                    toastOptions={{
+                        classNames: {
+                            toast: "bg-zinc-900 text-white border border-zinc-700 shadow-lg",
+                            success:
+                                "!bg-green-950 !text-green-200 !border-green-800",
+                            error: "!bg-red-950 !text-red-200 !border-red-800",
+                            title: "font-semibold",
+                            description: "text-zinc-300",
+                        },
+                    }}
+                />
             </TooltipProvider>
         );
     },

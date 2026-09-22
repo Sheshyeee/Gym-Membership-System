@@ -12,7 +12,6 @@ export default function AppLayout({
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs}>
             {children}
-            <FlashToasts />
         </AppLayoutTemplate>
     );
 }
