@@ -11,11 +11,9 @@ export function FlashToasts() {
 
     useEffect(() => {
         if (flash?.success) toast.success(flash.success);
-    }, [flash?.success]);
-
-    useEffect(() => {
         if (flash?.error) toast.error(flash.error);
-    }, [flash?.error]);
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [flash]);
 
     return null;
 }
