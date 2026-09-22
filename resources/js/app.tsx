@@ -33,7 +33,7 @@ void createInertiaApp({
         return (
             <TooltipProvider delayDuration={0}>
                 {app}
-                <Toaster position="top-center" />
+                <Toaster position="top-center" richColors />
             </TooltipProvider>
         );
     },
