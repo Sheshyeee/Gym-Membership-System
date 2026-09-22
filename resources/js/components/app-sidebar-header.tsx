@@ -19,8 +19,7 @@ import {
 import { MemberSearchDialog } from "@/components/member-search-dialog";
 import { MemberProfileSheet } from "@/components/member-profile-sheet";
 import { StaffMemberProfileSheet } from "@/components/staff-member-profile-sheet";
-import AppearanceToggleTab from "./appearance-tabs";
-import AppearanceTabs from "./appearance-tabs";
+import AppLogo from "@/components/app-logo";
 import AppearanceToggleIcon from "./appearance-toggle-icon";
 
 type NotificationItem = {
@@ -47,6 +46,68 @@ function NotificationIcon({ type }: { type: string | null }) {
     return <Ticket className="h-4 w-4 text-amber-400" />;
 }
 
+function NotificationsList({
+    items,
+    unread,
+    onMarkAllRead,
+    onOpenNotification,
+}: {
+    items: NotificationItem[];
+    unread: number;
+    onMarkAllRead: () => void;
+    onOpenNotification: (n: NotificationItem) => void;
+}) {
+    return (
+        <>
+            <div className="flex items-center justify-between border-b border-border px-4 py-3">
+                <p className="text-sm font-semibold">Notifications</p>
+                {unread > 0 && (
+                    <button
+                        onClick={onMarkAllRead}
+                        className="text-xs font-medium text-amber-400 hover:text-amber-300"
+                    >
+                        Mark all read
+                    </button>
+                )}
+            </div>
+
+            {items.length === 0 ? (
+                <p className="px-4 py-8 text-center text-sm text-muted-foreground">
+                    You're all caught up.
+                </p>
+            ) : (
+                <div className="max-h-96 divide-y divide-border overflow-y-auto">
+                    {items.map((n) => (
+                        <button
+                            key={n.id}
+                            onClick={() => onOpenNotification(n)}
+                            className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/40 ${
+                                n.read ? "" : "bg-amber-500/5"
+                            }`}
+                        >
+                            <NotificationIcon type={n.type} />
+                            <div className="min-w-0 flex-1">
+                                <p className="truncate text-sm font-medium text-amber-400">
+                                    {n.title}
+                                </p>
+                                <p className="mt-0.5 text-xs text-muted-foreground">
+                                    {n.body}
+                                </p>
+                                <p className="mt-1 text-[10px] text-muted-foreground/70">
+                                    {n.created_at}
+                                </p>
+                            </div>
+                            {!n.read && (
+                                <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
+                            )}
+                        </button>
+                    ))}
+                </div>
+            )}
+        </>
+    );
+}
+
 export function AppSidebarHeader({
     breadcrumbs = [],
 }: {
@@ -54,6 +115,7 @@ export function AppSidebarHeader({
 }) {
     const { notifications, auth } = usePage<PageProps>().props;
     const [open, setOpen] = useState(false);
+    const [mobileOpen, setMobileOpen] = useState(false);
     const [searchOpen, setSearchOpen] = useState(false);
     const [selectedMemberId, setSelectedMemberId] = useState<number | null>(
         null,
@@ -135,18 +197,13 @@ export function AppSidebarHeader({
     const items = notifications?.items ?? [];
 
     return (
-        <header className="border-sidebar-border/50 flex h-16 shrink-0 items-center justify-between gap-2 border-b bg-background px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:px-4">
-            <div className="flex items-center gap-2">
-                <SidebarTrigger className="-ml-1" />
-                <Breadcrumbs breadcrumbs={breadcrumbs} />
-            </div>
-            <div className="flex items-center gap-2">
-                {canSearchMembers && (
-                    <>
-                        <span className="hidden items-center gap-1.5 rounded-lg border border-sidebar-border/60 px-3 py-1.5 text-xs text-muted-foreground md:flex">
-                            <CalendarDays className="h-3.5 w-3.5" />
-                            {today}
-                        </span>
+        <>
+            {/* Mobile header */}
+            <header className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border/50 bg-background px-4 md:hidden">
+                <AppLogo />
+
+                <div className="flex items-center gap-1">
+                    {canSearchMembers && (
                         <button
                             onClick={() => setSearchOpen(true)}
                             className="rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
@@ -154,95 +211,118 @@ export function AppSidebarHeader({
                         >
                             <SearchIcon className="h-5 w-5" />
                         </button>
-                        <MemberSearchDialog
-                            open={searchOpen}
-                            onOpenChange={setSearchOpen}
-                            onSelectMember={handleSelectMember}
-                        />
+                    )}
 
-                        {isAdmin && (
-                            <MemberProfileSheet
-                                userId={selectedMemberId}
-                                open={profileOpen}
-                                onOpenChange={setProfileOpen}
+                    <AppearanceToggleIcon />
+
+                    <DropdownMenu
+                        open={mobileOpen}
+                        onOpenChange={setMobileOpen}
+                    >
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                aria-label="Notifications"
+                            >
+                                <Bell className="h-5 w-5" />
+                                {unread > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-black">
+                                        {unread > 9 ? "9+" : unread}
+                                    </span>
+                                )}
+                            </button>
+                        </DropdownMenuTrigger>
+                        <DropdownMenuContent
+                            align="end"
+                            className="w-[calc(100vw-2rem)] p-0"
+                        >
+                            <NotificationsList
+                                items={items}
+                                unread={unread}
+                                onMarkAllRead={markAllRead}
+                                onOpenNotification={openNotification}
                             />
-                        )}
-                        {!isAdmin && isStaff && (
-                            <StaffMemberProfileSheet
-                                userId={selectedMemberId}
-                                open={profileOpen}
-                                onOpenChange={setProfileOpen}
-                                onCheckinSuccess={() => {}}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </header>
+
+            {/* Desktop header */}
+            <header className="border-sidebar-border/50 hidden h-16 shrink-0 items-center justify-between gap-2 border-b bg-background px-6 transition-[width,height] ease-linear group-has-data-[collapsible=icon]/sidebar-wrapper:h-12 md:flex md:px-4">
+                <div className="flex items-center gap-2">
+                    <SidebarTrigger className="-ml-1" />
+                    <Breadcrumbs breadcrumbs={breadcrumbs} />
+                </div>
+                <div className="flex items-center gap-2">
+                    {canSearchMembers && (
+                        <>
+                            <span className="hidden items-center gap-1.5 rounded-lg border border-sidebar-border/60 px-3 py-1.5 text-xs text-muted-foreground md:flex">
+                                <CalendarDays className="h-3.5 w-3.5" />
+                                {today}
+                            </span>
+                            <button
+                                onClick={() => setSearchOpen(true)}
+                                className="rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                aria-label="Search members"
+                            >
+                                <SearchIcon className="h-5 w-5" />
+                            </button>
+                        </>
+                    )}
+
+                    <AppearanceToggleIcon />
+
+                    <DropdownMenu open={open} onOpenChange={setOpen}>
+                        <DropdownMenuTrigger asChild>
+                            <button
+                                className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground"
+                                aria-label="Notifications"
+                            >
+                                <Bell className="h-5 w-5" />
+                                {unread > 0 && (
+                                    <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-black">
+                                        {unread > 9 ? "9+" : unread}
+                                    </span>
+                                )}
+                            </button>
+                        </DropdownMenuTrigger>
+
+                        <DropdownMenuContent align="end" className="w-80 p-0">
+                            <NotificationsList
+                                items={items}
+                                unread={unread}
+                                onMarkAllRead={markAllRead}
+                                onOpenNotification={openNotification}
                             />
-                        )}
-                    </>
-                )}
+                        </DropdownMenuContent>
+                    </DropdownMenu>
+                </div>
+            </header>
 
-                <AppearanceToggleIcon />
+            {/* Shared across both headers, mounted once */}
+            {canSearchMembers && (
+                <MemberSearchDialog
+                    open={searchOpen}
+                    onOpenChange={setSearchOpen}
+                    onSelectMember={handleSelectMember}
+                />
+            )}
 
-                <DropdownMenu open={open} onOpenChange={setOpen}>
-                    <DropdownMenuTrigger asChild>
-                        <button className="relative rounded-lg p-2 text-muted-foreground hover:bg-muted/60 hover:text-foreground">
-                            <Bell className="h-5 w-5" />
-                            {unread > 0 && (
-                                <span className="absolute -top-0.5 -right-0.5 flex h-4 min-w-4 items-center justify-center rounded-full bg-amber-500 px-1 text-[10px] font-semibold text-black">
-                                    {unread > 9 ? "9+" : unread}
-                                </span>
-                            )}
-                        </button>
-                    </DropdownMenuTrigger>
-
-                    <DropdownMenuContent align="end" className="w-80 p-0">
-                        <div className="flex items-center justify-between border-b border-border px-4 py-3">
-                            <p className="text-sm font-semibold">
-                                Notifications
-                            </p>
-                            {unread > 0 && (
-                                <button
-                                    onClick={markAllRead}
-                                    className="text-xs font-medium text-amber-400 hover:text-amber-300"
-                                >
-                                    Mark all read
-                                </button>
-                            )}
-                        </div>
-
-                        {items.length === 0 ? (
-                            <p className="px-4 py-8 text-center text-sm text-muted-foreground">
-                                You're all caught up.
-                            </p>
-                        ) : (
-                            <div className="max-h-96 divide-y divide-border overflow-y-auto">
-                                {items.map((n) => (
-                                    <button
-                                        key={n.id}
-                                        onClick={() => openNotification(n)}
-                                        className={`flex w-full items-start gap-3 px-4 py-3 text-left hover:bg-muted/40 ${
-                                            n.read ? "" : "bg-amber-500/5"
-                                        }`}
-                                    >
-                                        <NotificationIcon type={n.type} />
-                                        <div className="min-w-0 flex-1">
-                                            <p className="truncate text-sm font-medium text-amber-400">
-                                                {n.title}
-                                            </p>
-                                            <p className="mt-0.5 text-xs text-muted-foreground">
-                                                {n.body}
-                                            </p>
-                                            <p className="mt-1 text-[10px] text-muted-foreground/70">
-                                                {n.created_at}
-                                            </p>
-                                        </div>
-                                        {!n.read && (
-                                            <span className="mt-1 h-2 w-2 shrink-0 rounded-full bg-amber-500" />
-                                        )}
-                                    </button>
-                                ))}
-                            </div>
-                        )}
-                    </DropdownMenuContent>
-                </DropdownMenu>
-            </div>
-        </header>
+            {isAdmin && (
+                <MemberProfileSheet
+                    userId={selectedMemberId}
+                    open={profileOpen}
+                    onOpenChange={setProfileOpen}
+                />
+            )}
+            {!isAdmin && isStaff && (
+                <StaffMemberProfileSheet
+                    userId={selectedMemberId}
+                    open={profileOpen}
+                    onOpenChange={setProfileOpen}
+                    onCheckinSuccess={() => {}}
+                />
+            )}
+        </>
     );
 }
