@@ -6,20 +6,27 @@ use App\Models\Attendance;
 use App\Models\Invoice;
 use App\Models\Subscription;
 use App\Models\User;
+use App\Support\MemberStatusResolver;
 use Illuminate\Http\Request;
 use Illuminate\Support\Carbon;
 
 class OverviewController extends Controller
 {
+    // scanned_at is stored in Asia/Manila (see AdminAttendanceController) —
+    // query boundaries must stay in Asia/Manila too, never converted to
+    // UTC, or counts here will drift from the attendance dashboard.
+    private const DISPLAY_TZ = 'Asia/Manila';
+
     public function index(Request $request)
     {
-        $now = Carbon::now();
+        $now = Carbon::now(self::DISPLAY_TZ);
+        $members = User::role('user')->with('latestSubscription')->get();
 
         return inertia('overview', [
-            'stats' => $this->stats($now),
+            'stats' => $this->stats($now, $members),
             'revenuePerformance' => $this->revenuePerformance($now),
-            'memberActivity' => $this->memberActivity($now),
-            'retentionHealth' => $this->retentionHealth($now),
+            'memberActivity' => $this->memberActivity($members),
+            'retentionHealth' => $this->retentionHealth($now, $members),
             'attendanceOverview' => $this->attendanceOverview($now),
             'liveFinancialActivity' => $this->liveFinancialActivity(),
         ]);
@@ -28,7 +35,7 @@ class OverviewController extends Controller
     /**
      * Top-row stat cards: monthly revenue, active members, payment success rate.
      */
-    private function stats(Carbon $now): array
+    private function stats(Carbon $now, \Illuminate\Support\Collection $members): array
     {
         $startOfMonth = $now->copy()->startOfMonth();
         $startOfLastMonth = $now->copy()->subMonthNoOverflow()->startOfMonth();
@@ -42,12 +49,25 @@ class OverviewController extends Controller
             ->whereBetween('paid_at', [$startOfLastMonth, $endOfLastMonth])
             ->sum('amount');
 
-        $activeMembers = User::whereHas('subscriptions', fn($q) => $q->where('status', 'active'))->count();
+        // "Active members" here matches the attendance dashboard's definition:
+        // currently subscribed (active OR expiring soon), not just the
+        // narrower "active" bucket used in the donut breakdown below.
+        $activeMembers = $members->filter(
+            fn(User $u) => MemberStatusResolver::isCurrentlySubscribed($u->latestSubscription)
+        )->count();
 
-        // Active members as of the end of last month, for a rough month-over-month trend.
-        $activeMembersLastMonth = User::whereHas('subscriptions', function ($q) use ($endOfLastMonth) {
-            $q->where('status', 'active')->where('created_at', '<=', $endOfLastMonth);
-        })->count();
+        // Snapshot of who was currently subscribed as of the end of last
+        // month, based on their subscription's period dates (not created_at)
+        // so it reflects what was actually true at that point in time.
+        $activeMembersLastMonth = Subscription::where('current_period_start', '<=', $endOfLastMonth)
+            ->where(function ($q) use ($endOfLastMonth) {
+                $q->whereNull('current_period_end')->orWhere('current_period_end', '>', $endOfLastMonth);
+            })
+            ->where(function ($q) use ($endOfLastMonth) {
+                $q->whereNull('cancelled_at')->orWhere('cancelled_at', '>', $endOfLastMonth);
+            })
+            ->distinct('user_id')
+            ->count('user_id');
 
         $last30 = Invoice::where('created_at', '>=', $now->copy()->subDays(30))
             ->whereIn('status', ['paid', 'failed'])
@@ -61,7 +81,7 @@ class OverviewController extends Controller
             : 100.0;
 
         $paymentSuccessRate = $successRate($last30);
-        $prevPaymentSuccessRate = $successRate($prev30);
+        $prevPaymentSuccessRate = $prev30->count() > 0 ? $successRate($prev30) : null;
 
         return [
             'monthlyRevenue' => round($thisMonthRevenue / 100),
@@ -69,7 +89,7 @@ class OverviewController extends Controller
             'activeMembers' => $activeMembers,
             'activeMembersGrowth' => $this->percentChange($activeMembers, $activeMembersLastMonth),
             'paymentSuccessRate' => $paymentSuccessRate,
-            'paymentSuccessGrowth' => round($paymentSuccessRate - $prevPaymentSuccessRate, 1),
+            'paymentSuccessGrowth' => $prevPaymentSuccessRate === null ? null : round($paymentSuccessRate - $prevPaymentSuccessRate, 1),
         ];
     }
 
@@ -106,31 +126,21 @@ class OverviewController extends Controller
     }
 
     /**
-     * Donut: active / expiring soon (next 7 days) / expired, across everyone who has ever subscribed.
+     * Donut: active / expiring soon / expired, using the exact same rule
+     * AdminMemberController uses — this is what makes it match the Members
+     * page totals (role('user'), latestSubscription, 14-day expiring window).
      */
-    private function memberActivity(Carbon $now): array
+    private function memberActivity(\Illuminate\Support\Collection $members): array
     {
-        $expiringSoon = Subscription::where('status', 'active')
-            ->whereNotNull('current_period_end')
-            ->whereBetween('current_period_end', [$now, $now->copy()->addDays(7)])
-            ->count();
+        $statuses = $members->map(fn(User $u) => MemberStatusResolver::resolve($u->latestSubscription));
 
-        $active = Subscription::where('status', 'active')
-            ->where(function ($q) use ($now) {
-                $q->whereNull('current_period_end')
-                    ->orWhere('current_period_end', '>', $now->copy()->addDays(7));
-            })
-            ->count();
-
-        $expired = Subscription::where('status', '!=', 'active')
-            ->whereNotNull('current_period_end')
-            ->where('current_period_end', '<=', $now)
-            ->count();
-
-        $total = max($active + $expiringSoon + $expired, 1);
+        $active = $statuses->filter(fn($s) => $s === 'active')->count();
+        $expiringSoon = $statuses->filter(fn($s) => $s === 'expiring_soon')->count();
+        $expired = $statuses->filter(fn($s) => $s === 'expired')->count();
+        $total = max($members->count(), 1);
 
         return [
-            'total' => $active + $expiringSoon + $expired,
+            'total' => $members->count(),
             'breakdown' => [
                 ['label' => 'Active', 'value' => $active, 'percent' => round($active / $total * 100)],
                 ['label' => 'Expiring', 'value' => $expiringSoon, 'percent' => round($expiringSoon / $total * 100)],
@@ -140,35 +150,64 @@ class OverviewController extends Controller
     }
 
     /**
-     * Rough retention: of members whose subscription had already started 30+ days ago,
-     * how many are still active today.
+     * Of members whose subscription had already started 30+ days ago, how
+     * many are still currently subscribed today. Returns a neutral "not
+     * enough data" state instead of a misleading 0% "at risk" reading when
+     * nobody has 30 days of history yet.
      */
-    private function retentionHealth(Carbon $now): array
+    private function retentionHealth(Carbon $now, \Illuminate\Support\Collection $members): array
     {
         $cutoff = $now->copy()->subDays(30);
 
-        $eligible = Subscription::where('current_period_start', '<=', $cutoff)
-            ->distinct('user_id')
-            ->count('user_id');
+        $eligible = $members->filter(function (User $u) use ($cutoff) {
+            $start = $u->latestSubscription?->current_period_start;
 
-        $retained = User::whereHas('subscriptions', function ($q) use ($cutoff) {
-            $q->where('current_period_start', '<=', $cutoff);
-        })->whereHas('subscriptions', fn($q) => $q->where('status', 'active'))->count();
+            return $start && Carbon::parse($start)->lte($cutoff);
+        });
 
-        $rate = $eligible > 0 ? round(($retained / $eligible) * 100) : 0;
+        if ($eligible->isEmpty()) {
+            return [
+                'rate' => 0,
+                'change' => 0,
+                'label' => 'Not enough data',
+                'status' => 'neutral',
+            ];
+        }
 
-        // Compare against the same calculation a quarter ago for the "vs last quarter" badge.
+        $retained = $eligible->filter(
+            fn(User $u) => MemberStatusResolver::isCurrentlySubscribed($u->latestSubscription)
+        )->count();
+        $rate = (int) round(($retained / $eligible->count()) * 100);
+
         $quarterCutoff = $now->copy()->subMonths(3)->subDays(30);
-        $eligibleQuarterAgo = Subscription::where('current_period_start', '<=', $quarterCutoff)->distinct('user_id')->count('user_id');
-        $retainedQuarterAgo = User::whereHas('subscriptions', function ($q) use ($quarterCutoff) {
-            $q->where('current_period_start', '<=', $quarterCutoff);
-        })->whereHas('subscriptions', fn($q) => $q->where('status', 'active'))->count();
-        $rateQuarterAgo = $eligibleQuarterAgo > 0 ? round(($retainedQuarterAgo / $eligibleQuarterAgo) * 100) : 0;
+        $eligibleQuarterAgo = $members->filter(function (User $u) use ($quarterCutoff) {
+            $start = $u->latestSubscription?->current_period_start;
+
+            return $start && Carbon::parse($start)->lte($quarterCutoff);
+        });
+        $rateQuarterAgo = 0;
+        if ($eligibleQuarterAgo->isNotEmpty()) {
+            $retainedQuarterAgo = $eligibleQuarterAgo->filter(
+                fn(User $u) => MemberStatusResolver::isCurrentlySubscribed($u->latestSubscription)
+            )->count();
+            $rateQuarterAgo = (int) round(($retainedQuarterAgo / $eligibleQuarterAgo->count()) * 100);
+        }
+
+        $status = match (true) {
+            $rate >= 70 => 'healthy',
+            $rate >= 50 => 'warning',
+            default => 'risk',
+        };
 
         return [
             'rate' => $rate,
             'change' => $rate - $rateQuarterAgo,
-            'label' => $rate >= 70 ? 'Healthy' : ($rate >= 50 ? 'Needs attention' : 'At risk'),
+            'label' => match ($status) {
+                'healthy' => 'Healthy',
+                'warning' => 'Needs attention',
+                default => 'At risk',
+            },
+            'status' => $status,
         ];
     }
 
@@ -191,17 +230,17 @@ class OverviewController extends Controller
 
         $peakHour = Attendance::where('status', 'success')
             ->whereBetween('scanned_at', [$today, $today->copy()->endOfDay()])
-            ->selectRaw('HOUR(scanned_at) as hour, COUNT(*) as total')
-            ->groupBy('hour')
-            ->orderByDesc('total')
+            ->get(['scanned_at'])
+            ->groupBy(fn(Attendance $a) => (int) $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('G'))
+            ->map(fn($group, $hour) => ['hour' => $hour, 'total' => $group->count()])
+            ->sortByDesc('total')
             ->first();
 
         $weekStart = $now->copy()->startOfWeek();
         $weekCounts = Attendance::where('status', 'success')
             ->whereBetween('scanned_at', [$weekStart, $now->copy()->endOfDay()])
-            ->selectRaw('DATE(scanned_at) as day, COUNT(*) as total')
-            ->groupBy('day')
-            ->pluck('total', 'day');
+            ->get(['scanned_at'])
+            ->countBy(fn(Attendance $a) => $a->scanned_at->setTimezone(self::DISPLAY_TZ)->format('Y-m-d'));
 
         $week = collect(range(0, 6))->map(function (int $offset) use ($weekStart, $weekCounts, $today) {
             $date = $weekStart->copy()->addDays($offset);
@@ -216,14 +255,14 @@ class OverviewController extends Controller
         return [
             'checkInsToday' => $checkInsToday,
             'checkInsGrowth' => $this->percentChange($checkInsToday, $checkInsYesterday),
-            'peakHour' => $peakHour ? $this->formatHourRange((int) $peakHour->hour) : null,
+            'peakHour' => $peakHour ? Carbon::createFromTime((int) $peakHour['hour'])->format('g A') : null,
             'week' => $week,
         ];
     }
 
     private function liveFinancialActivity(int $limit = 5): array
     {
-        return Invoice::with(['user:id,name', 'plan:id,name'])
+        return Invoice::with(['user:id,name', 'plan:id,name', 'subscription:id,billing_cycle'])
             ->where('status', 'paid')
             ->latest('paid_at')
             ->take($limit)
@@ -241,20 +280,16 @@ class OverviewController extends Controller
             ->all();
     }
 
-    private function percentChange(float $current, float $previous): float
+    /**
+     * Returns null (instead of a misleading 100%) when there's no prior
+     * period to compare against — the frontend shows a "New" badge for that.
+     */
+    private function percentChange(float $current, float $previous): ?float
     {
         if ($previous > 0) {
             return round((($current - $previous) / $previous) * 100, 1);
         }
 
-        return $current > 0 ? 100.0 : 0.0;
-    }
-
-    private function formatHourRange(int $hour): string
-    {
-        $start = Carbon::createFromTime($hour);
-        $end = $start->copy()->addHours(2);
-
-        return $start->format('g A') . '-' . $end->format('g A');
+        return null;
     }
 }

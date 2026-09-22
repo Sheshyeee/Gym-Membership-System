@@ -71,6 +71,20 @@ class AdminPaymentController extends Controller
             'filters' => ['search' => $search, 'status' => $status ?: 'all'],
         ]);
     }
+    public function debug(Invoice $invoice)
+    {
+        return response()->json($invoice->only([
+            'id',
+            'status',
+            'payment_method_type',
+            'processor_source_id',
+            'processor_payment_intent_id',
+            'processor_payment_id',
+            'paid_at',
+            'created_at',
+            'subscription_id',
+        ]));
+    }
 
     public function syncPayouts()
     {

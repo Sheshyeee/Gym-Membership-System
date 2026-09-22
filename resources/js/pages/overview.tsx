@@ -34,11 +34,11 @@ import { overview } from "@/routes";
 interface OverviewProps {
     stats: {
         monthlyRevenue: number;
-        monthlyRevenueGrowth: number;
+        monthlyRevenueGrowth: number | null;
         activeMembers: number;
-        activeMembersGrowth: number;
+        activeMembersGrowth: number | null;
         paymentSuccessRate: number;
-        paymentSuccessGrowth: number;
+        paymentSuccessGrowth: number | null;
     };
     revenuePerformance: {
         month: string;
@@ -49,7 +49,12 @@ interface OverviewProps {
         total: number;
         breakdown: { label: string; value: number; percent: number }[];
     };
-    retentionHealth: { rate: number; change: number; label: string };
+    retentionHealth: {
+        rate: number;
+        change: number;
+        label: string;
+        status: "healthy" | "warning" | "risk" | "neutral";
+    };
     attendanceOverview: {
         checkInsToday: number;
         checkInsGrowth: number;
@@ -80,6 +85,35 @@ const DONUT_COLORS: Record<string, string> = {
 function formatCompact(value: number) {
     if (value >= 1000) return `${Math.round(value / 1000)}k`;
     return `${value}`;
+}
+
+function GrowthBadge({
+    growth,
+    suffix = "",
+}: {
+    growth: number | null;
+    suffix?: string;
+}) {
+    if (growth === null) {
+        return (
+            <span className="text-muted-foreground text-xs font-medium">
+                New
+            </span>
+        );
+    }
+
+    const isPositive = growth >= 0;
+
+    return (
+        <span
+            className={cn(
+                "text-xs font-medium",
+                isPositive ? "text-emerald-500" : "text-red-500",
+            )}
+        >
+            {isPositive ? "↗" : "↘"} {Math.abs(growth)}%{suffix}
+        </span>
+    );
 }
 
 function timeAgo(dateString: string | null) {
@@ -171,10 +205,8 @@ function StatCard({
     iconClassName?: string;
     label: string;
     value: string;
-    growth: number;
+    growth: number | null;
 }) {
-    const isPositive = growth >= 0;
-
     return (
         <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card flex flex-1 flex-col gap-3 rounded-xl border p-4">
             <div
@@ -192,14 +224,7 @@ function StatCard({
                     {value}
                 </span>
             </div>
-            <span
-                className={cn(
-                    "text-xs font-medium",
-                    isPositive ? "text-emerald-500" : "text-red-500",
-                )}
-            >
-                {isPositive ? "↗" : "↘"} {Math.abs(growth)}%
-            </span>
+            <GrowthBadge growth={growth} />
         </div>
     );
 }
@@ -211,10 +236,8 @@ function RevenueChart({
 }: {
     data: { month: string; revenue: number | null; lastYear: number }[];
     total: number;
-    growth: number;
+    growth: number | null;
 }) {
-    const isPositive = growth >= 0;
-
     return (
         <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4 md:col-span-2">
             <div className="mb-4 flex items-start justify-between">
@@ -230,15 +253,7 @@ function RevenueChart({
                 <span className="text-2xl font-semibold tracking-tight">
                     ₱{total.toLocaleString()}
                 </span>
-                <span
-                    className={
-                        isPositive
-                            ? "text-xs font-medium text-emerald-500"
-                            : "text-xs font-medium text-red-500"
-                    }
-                >
-                    {isPositive ? "↗" : "↘"} {Math.abs(growth)}% vs last month
-                </span>
+                <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
             <div className="h-56 w-full">
@@ -291,16 +306,15 @@ function RevenueChart({
                             width={40}
                         />
                         <Tooltip
-                            formatter={(value, name) => {
-                                const numeric = Array.isArray(value)
-                                    ? Number(value[0])
-                                    : Number(value);
-                                return [
-                                    `₱${numeric.toLocaleString()}`,
-                                    name === "revenue"
-                                        ? "This year"
-                                        : "Last year",
-                                ];
+                            formatter={(value, name) => [
+                                `₱${Number(value ?? 0).toLocaleString()}`,
+                                name === "revenue" ? "This year" : "Last year",
+                            ]}
+                            contentStyle={{
+                                background: "var(--color-card, #1a1a1a)",
+                                border: "1px solid rgba(128,128,128,0.2)",
+                                borderRadius: 8,
+                                fontSize: 12,
                             }}
                         />
                         <Line
@@ -335,12 +349,10 @@ function AttendanceOverview({
     week,
 }: {
     checkInsToday: number;
-    checkInsGrowth: number;
+    checkInsGrowth: number | null;
     peakHour: string | null;
     week: { label: string; count: number; isToday: boolean }[];
 }) {
-    const isPositive = checkInsGrowth >= 0;
-
     return (
         <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
             <div className="mb-4 flex items-start justify-between">
@@ -358,15 +370,7 @@ function AttendanceOverview({
                     <span className="text-xl font-semibold">
                         {checkInsToday}
                     </span>
-                    <span
-                        className={
-                            isPositive
-                                ? "text-xs font-medium text-emerald-500"
-                                : "text-xs font-medium text-red-500"
-                        }
-                    >
-                        {isPositive ? "↗" : "↘"} {Math.abs(checkInsGrowth)}%
-                    </span>
+                    <GrowthBadge growth={checkInsGrowth} />
                 </div>
                 <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground text-xs">
@@ -401,12 +405,10 @@ function AttendanceOverview({
                         />
                         <Tooltip
                             cursor={{ fill: "currentColor", opacity: 0.05 }}
-                            formatter={(value) => {
-                                const numeric = Array.isArray(value)
-                                    ? value[0]
-                                    : value;
-                                return [`${numeric}`, "Check-ins"];
-                            }}
+                            formatter={(value) => [
+                                `${Number(value ?? 0)}`,
+                                "Check-ins",
+                            ]}
                             contentStyle={{
                                 background: "var(--color-card, #1a1a1a)",
                                 border: "1px solid rgba(128,128,128,0.2)",
@@ -529,17 +531,31 @@ function MemberActivityDonut({
     );
 }
 
+const RETENTION_STATUS_STYLES: Record<string, { badge: string; bar: string }> =
+    {
+        healthy: {
+            badge: "bg-emerald-500/10 text-emerald-500",
+            bar: "#10b981",
+        },
+        warning: { badge: "bg-amber-500/10 text-amber-500", bar: "#eab308" },
+        risk: { badge: "bg-red-500/10 text-red-500", bar: "#ef4444" },
+        neutral: { badge: "bg-muted text-muted-foreground", bar: "#71717a" },
+    };
+
 function RetentionGauge({
     rate,
     change,
     label,
+    status,
 }: {
     rate: number;
     change: number;
     label: string;
+    status: "healthy" | "warning" | "risk" | "neutral";
 }) {
-    const isPositive = change >= 0;
-    const data = [{ name: "retention", value: rate, fill: "#f97316" }];
+    const styles =
+        RETENTION_STATUS_STYLES[status] ?? RETENTION_STATUS_STYLES.neutral;
+    const data = [{ name: "retention", value: rate, fill: styles.bar }];
 
     return (
         <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
@@ -584,16 +600,19 @@ function RetentionGauge({
             </div>
 
             <div className="mt-3 flex items-center justify-between">
+                {status === "neutral" ? (
+                    <span className="text-muted-foreground text-xs">
+                        Check back after 30 days
+                    </span>
+                ) : (
+                    <GrowthBadge growth={change} suffix=" vs last quarter" />
+                )}
                 <span
-                    className={
-                        isPositive
-                            ? "text-xs font-medium text-emerald-500"
-                            : "text-xs font-medium text-red-500"
-                    }
+                    className={cn(
+                        "rounded-full px-2 py-0.5 text-xs font-medium",
+                        styles.badge,
+                    )}
                 >
-                    {isPositive ? "↗" : "↘"} {Math.abs(change)}% vs last quarter
-                </span>
-                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-xs font-medium text-emerald-500">
                     {label}
                 </span>
             </div>
@@ -736,6 +755,7 @@ export default function Overview({
                         rate={retentionHealth.rate}
                         change={retentionHealth.change}
                         label={retentionHealth.label}
+                        status={retentionHealth.status}
                     />
                 </div>
             </div>

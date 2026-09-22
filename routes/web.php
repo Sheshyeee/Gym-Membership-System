@@ -108,6 +108,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
             ->name('member.membership');
     });
 
+    Route::get('/admin/payments/{invoice}/debug', [AdminPaymentController::class, 'debug'])
+        ->middleware('role:admin');
+
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
         ->middleware('role:admin')
         ->name('admin.plans.index');
