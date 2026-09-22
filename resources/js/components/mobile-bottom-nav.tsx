@@ -74,19 +74,15 @@ export function MobileBottomNav() {
             <nav
                 className={cn(
                     "relative isolate flex w-full max-w-sm items-center gap-1 overflow-hidden rounded-[28px] p-1.5",
-                    // Base glass: two stacked gradients (a faint warm-to-cool tint,
-                    // then a top-heavy sheen) over a dark, saturated blur — this is
-                    // what keeps it from reading as "just a dark card."
-                    "bg-[linear-gradient(160deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02)_40%,rgba(0,0,0,0.05)),linear-gradient(180deg,rgba(28,28,32,0.72),rgba(12,12,15,0.82))]",
-                    "backdrop-blur-2xl backdrop-saturate-150",
-                    // Rim + depth: outer ambient shadow for lift, inset highlight
-                    // along the top (light catching the glass edge), inset shadow
-                    // along the bottom (glass sitting into a recess).
+                    // Glass built on the theme's own background instead of a fixed
+                    // neutral, so a warm/dark/reddish theme (or any other) comes
+                    // through instead of being overridden.
+                    "bg-background/70 backdrop-blur-2xl backdrop-saturate-150",
                     "shadow-[0_10px_40px_-8px_rgba(0,0,0,0.55),0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_10px_0_rgba(0,0,0,0.35)_inset]",
-                    "ring-1 ring-white/[0.08]",
+                    "ring-1 ring-border/60",
                 )}
             >
-                {/* Sliding active pill */}
+                {/* Sliding active pill, tinted with the theme's primary color */}
                 {activeIndex !== -1 && (
                     <div
                         aria-hidden
@@ -99,14 +95,10 @@ export function MobileBottomNav() {
                         <div
                             className={cn(
                                 "h-full w-full rounded-[20px]",
-                                "bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.03))]",
-                                "shadow-[0_2px_12px_-2px_var(--nav-glow,rgba(255,255,255,0.25)),0_1px_0_0_rgba(255,255,255,0.14)_inset]",
-                                "ring-1 ring-white/[0.14]",
+                                "bg-primary/15",
+                                "shadow-[0_1px_0_0_rgba(255,255,255,0.12)_inset]",
+                                "ring-1 ring-primary/25",
                             )}
-                            style={{
-                                ["--nav-glow" as string]:
-                                    "color-mix(in oklab, var(--primary) 45%, transparent)",
-                            }}
                         />
                     </div>
                 )}
@@ -120,15 +112,14 @@ export function MobileBottomNav() {
                             className={cn(
                                 "relative z-10 flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-medium transition-colors duration-200",
                                 isActive
-                                    ? "text-white"
-                                    : "text-white/50 active:text-white/80",
+                                    ? "text-primary"
+                                    : "text-muted-foreground active:text-foreground/80",
                             )}
                         >
                             <item.icon
                                 className={cn(
                                     "h-5 w-5 transition-transform duration-200",
-                                    isActive &&
-                                        "scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]",
+                                    isActive && "scale-110",
                                 )}
                             />
                             <span>{item.title}</span>
@@ -138,7 +129,7 @@ export function MobileBottomNav() {
 
                 <button
                     onClick={toggleSidebar}
-                    className="relative z-10 flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-medium text-white/50 transition-colors duration-200 active:text-white/80"
+                    className="relative z-10 flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-medium text-muted-foreground transition-colors duration-200 active:text-foreground/80"
                 >
                     <MoreHorizontal className="h-5 w-5" />
                     <span>More</span>
