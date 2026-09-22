@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/select";
 import { Check, Plus, X } from "lucide-react";
 import type { Plan } from "@/types/plan";
+import { toast } from "sonner";
 
 type PriceView = "monthly" | "annual";
 
@@ -76,6 +77,14 @@ export function EditPlanDialog({
         patch(`/admin/plans/${plan.id}`, {
             preserveScroll: true,
             onSuccess: () => onOpenChange(false),
+            onError: (errors) => {
+                // Validation errors already render inline under each field.
+                // Only toast for the case where something failed but gave us
+                // no field-level errors to show (network/500/expired session).
+                if (Object.keys(errors).length === 0) {
+                    toast.error("Something went wrong. Please try again.");
+                }
+            },
         });
     };
 

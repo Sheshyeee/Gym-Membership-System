@@ -18,13 +18,18 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $gymProfile = $request->attributes->get('gymProfile') ?? GymProfile::current();
+        $gymProfile = GymProfile::current();
+
         return [
             ...parent::share($request),
             'name' => config('app.name'),
             'gymProfile' => [
                 'name' => $gymProfile->name,
                 'cover_url' => $gymProfile->cover_url,
+            ],
+            'flash' => [
+                'success' => fn() => $request->session()->get('success'),
+                'error' => fn() => $request->session()->get('error'),
             ],
             'auth' => [
                 'user' => $user,
