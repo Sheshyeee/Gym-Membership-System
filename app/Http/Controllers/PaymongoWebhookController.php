@@ -3,11 +3,13 @@
 namespace App\Http\Controllers;
 
 use App\Events\InvoiceStatusUpdated;
+use App\Events\PayoutStatusUpdated;
 use App\Models\Invoice;
 use App\Notifications\StaffNewSubscriptionCreated;
 use App\Notifications\StaffPaymentFailed;
 use App\Notifications\StaffPaymentRefunded;
 use App\Services\PaymentService;
+use App\Support\PayoutRecorder;
 use App\Support\StaffAlert;
 use Illuminate\Http\Request;
 use Illuminate\Http\Response;
@@ -48,13 +50,17 @@ class PaymongoWebhookController extends Controller
         $resource = $event['attributes']['data'] ?? null;
 
         try {
-            match ($eventType) {
-                'source.chargeable' => $this->handleSourceChargeable($resource),
-                'payment.paid' => $this->handlePaymentPaid($resource),
-                'payment.refund.updated' => $this->handleRefundUpdated($resource),   // was 'refund.updated'
-                'payment.failed' => $this->handlePaymentFailed($resource),
-                default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
-            };
+            if (str_starts_with((string) $eventType, 'payout.')) {
+                $this->handlePayoutUpdated($resource);
+            } else {
+                match ($eventType) {
+                    'source.chargeable' => $this->handleSourceChargeable($resource),
+                    'payment.paid' => $this->handlePaymentPaid($resource),
+                    'payment.refund.updated' => $this->handleRefundUpdated($resource),
+                    'payment.failed' => $this->handlePaymentFailed($resource),
+                    default => Log::info('Unhandled PayMongo webhook event', ['type' => $eventType]),
+                };
+            }
         } catch (\Throwable $e) {
             // Un-mark so PayMongo's retry can actually reprocess this event
             // instead of us silently swallowing it forever.
@@ -70,6 +76,19 @@ class PaymongoWebhookController extends Controller
         }
 
         return response()->json(['message' => 'ok']);
+    }
+
+    protected function handlePayoutUpdated(?array $resource): void
+    {
+        if (! $resource) {
+            return;
+        }
+
+        $payout = PayoutRecorder::record($resource);
+
+        if ($payout) {
+            PayoutStatusUpdated::dispatch($payout);
+        }
     }
     protected function handleRefundUpdated(?array $resource): void
     {

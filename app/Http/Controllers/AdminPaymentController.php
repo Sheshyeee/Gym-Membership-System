@@ -3,7 +3,9 @@
 namespace App\Http\Controllers;
 
 use App\Models\Invoice;
+use App\Models\Payout;
 use App\Services\PaymentService;
+use App\Support\PayoutRecorder;
 use Illuminate\Http\Request;
 use Inertia\Inertia;
 use RuntimeException;
@@ -46,10 +48,39 @@ class AdminPaymentController extends Controller
                 'can_refund' => $invoice->status === 'paid' && $invoice->processor_payment_id !== null,
             ]);
 
+        $payouts = Payout::query()
+            ->orderByDesc('paymongo_created_at')
+            ->limit(50)
+            ->get()
+            ->map(fn(Payout $payout) => [
+                'id' => $payout->id,
+                'status' => $payout->status,
+                'amount' => $payout->net_amount,
+                'currency' => $payout->currency,
+                'bank_name' => $payout->settlement_bank_name,
+                // Never send the full account number to the browser — last 4 only.
+                'account_last4' => $payout->settlement_account_number
+                    ? substr($payout->settlement_account_number, -4)
+                    : null,
+                'created_at' => optional($payout->paymongo_created_at)->toIso8601String(),
+            ]);
+
         return Inertia::render('admin/payments', [
             'invoices' => $invoices,
+            'payouts' => $payouts,
             'filters' => ['search' => $search, 'status' => $status ?: 'all'],
         ]);
+    }
+
+    public function syncPayouts()
+    {
+        $payouts = $this->payments->listPayouts(['limit' => 100]);
+
+        foreach ($payouts as $payoutResource) {
+            PayoutRecorder::record($payoutResource);
+        }
+
+        return back()->with('success', 'Payout history synced from PayMongo.');
     }
 
     public function refund(Request $request, Invoice $invoice)

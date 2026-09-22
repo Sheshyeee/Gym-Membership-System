@@ -108,6 +108,34 @@ class PaymentService
     return $response->json('data');
   }
 
+  /**
+   * List payouts from PayMongo's ledger. Used only to backfill our local
+   * `payouts` table — this never initiates or modifies a payout.
+   */
+  public function listPayouts(array $query = []): array
+  {
+    $response = $this->client()->get('/payouts', $query);
+
+    if ($response->failed()) {
+      Log::error('PayMongo listPayouts failed', ['body' => $response->json()]);
+      throw new RuntimeException('Unable to list payouts.');
+    }
+
+    return $response->json('data');
+  }
+
+  public function retrievePayout(string $payoutId): array
+  {
+    $response = $this->client()->get("/payouts/{$payoutId}");
+
+    if ($response->failed()) {
+      Log::error('PayMongo retrievePayout failed', ['id' => $payoutId, 'body' => $response->json()]);
+      throw new RuntimeException('Unable to retrieve payout.');
+    }
+
+    return $response->json('data');
+  }
+
   public function listPayments(int $limit = 100): array
   {
     $response = $this->client()->get('/payments', ['limit' => $limit]);

@@ -119,6 +119,9 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->middleware('role:admin')
         ->name('admin.payments.retry');
 
+    Route::post('/admin/payouts/sync', [AdminPaymentController::class, 'syncPayouts'])
+        ->name('admin.payouts.sync');
+
     Route::patch('/admin/plans/{plan}', [AdminPlansController::class, 'update'])
         ->middleware('role:admin')
         ->name('admin.plans.update');
@@ -139,8 +142,8 @@ Route::middleware(['auth', 'verified'])->group(function () {
         ->name('staff.members.show');
 
     Route::get('/search/members', [MemberSearchController::class, 'search'])
-    ->middleware('role:staff|admin')
-    ->name('search.members');
+        ->middleware('role:staff|admin')
+        ->name('search.members');
 
 
 

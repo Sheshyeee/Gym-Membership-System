@@ -291,15 +291,16 @@ function RevenueChart({
                             width={40}
                         />
                         <Tooltip
-                            formatter={(value: number, name: string) => [
-                                `₱${value.toLocaleString()}`,
-                                name === "revenue" ? "This year" : "Last year",
-                            ]}
-                            contentStyle={{
-                                background: "var(--color-card, #1a1a1a)",
-                                border: "1px solid rgba(128,128,128,0.2)",
-                                borderRadius: 8,
-                                fontSize: 12,
+                            formatter={(value, name) => {
+                                const numeric = Array.isArray(value)
+                                    ? Number(value[0])
+                                    : Number(value);
+                                return [
+                                    `₱${numeric.toLocaleString()}`,
+                                    name === "revenue"
+                                        ? "This year"
+                                        : "Last year",
+                                ];
                             }}
                         />
                         <Line
@@ -400,10 +401,12 @@ function AttendanceOverview({
                         />
                         <Tooltip
                             cursor={{ fill: "currentColor", opacity: 0.05 }}
-                            formatter={(value: number) => [
-                                `${value}`,
-                                "Check-ins",
-                            ]}
+                            formatter={(value) => {
+                                const numeric = Array.isArray(value)
+                                    ? value[0]
+                                    : value;
+                                return [`${numeric}`, "Check-ins"];
+                            }}
                             contentStyle={{
                                 background: "var(--color-card, #1a1a1a)",
                                 border: "1px solid rgba(128,128,128,0.2)",

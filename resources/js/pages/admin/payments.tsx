@@ -24,7 +24,13 @@ import {
     TableHeader,
     TableRow,
 } from "@/components/ui/table";
-import { ChevronRight, RefreshCw, ShieldCheck, Clock } from "lucide-react";
+import {
+    ChevronRight,
+    RefreshCw,
+    ShieldCheck,
+    Clock,
+    Landmark,
+} from "lucide-react";
 import { dashboard } from "@/routes";
 
 type InvoiceStatus =
@@ -49,6 +55,26 @@ type InvoiceRow = {
     paid_at: string | null;
     refunded_at: string | null;
     can_refund: boolean;
+};
+
+// Mirrors PayMongo's payout resource status field exactly — see
+// https://docs.paymongo.com/reference/payout-resources
+type PayoutStatus =
+    | "pending"
+    | "on_hold"
+    | "in_transit"
+    | "deposited"
+    | "returned"
+    | "cancelled";
+
+type PayoutRow = {
+    id: string;
+    status: PayoutStatus;
+    amount: number;
+    currency: string;
+    bank_name: string | null;
+    account_last4: string | null;
+    created_at: string | null;
 };
 
 type PageFlash = {
@@ -80,6 +106,15 @@ function formatDate(iso: string) {
     return `${date.toLocaleDateString([], { month: "short", day: "numeric" })}, ${time}`;
 }
 
+function formatSettlementDate(iso: string | null) {
+    if (!iso) return "—";
+    return new Date(iso).toLocaleDateString(undefined, {
+        month: "short",
+        day: "numeric",
+        year: "numeric",
+    });
+}
+
 const statusStyles: Record<InvoiceStatus, string> = {
     paid: "bg-green-500/15 text-green-400 border-green-500/30",
     pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
@@ -98,6 +133,24 @@ const statusLabels: Record<InvoiceStatus, string> = {
     refunded: "Refunded",
 };
 
+const payoutStatusStyles: Record<PayoutStatus, string> = {
+    deposited: "bg-green-500/15 text-green-400 border-green-500/30",
+    in_transit: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    pending: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    on_hold: "bg-amber-500/15 text-amber-400 border-amber-500/30",
+    returned: "bg-red-500/15 text-red-400 border-red-500/30",
+    cancelled: "bg-zinc-500/15 text-zinc-400 border-zinc-500/30",
+};
+
+const payoutStatusLabels: Record<PayoutStatus, string> = {
+    deposited: "Settled",
+    in_transit: "In transit",
+    pending: "Pending",
+    on_hold: "On hold",
+    returned: "Returned",
+    cancelled: "Cancelled",
+};
+
 function initials(name: string) {
     return name
         .split(" ")
@@ -109,9 +162,11 @@ function initials(name: string) {
 
 export default function Payments({
     invoices,
+    payouts,
     filters,
 }: {
     invoices: InvoiceRow[];
+    payouts: PayoutRow[];
     filters: { search: string; status: string };
 }) {
     const { flash } = usePage<{ flash: PageFlash }>().props;
@@ -121,28 +176,25 @@ export default function Payments({
     const [refunding, setRefunding] = useState(false);
     const [retrying, setRetrying] = useState(false);
     const [copied, setCopied] = useState(false);
+    const [syncingPayouts, setSyncingPayouts] = useState(false);
 
     useEffect(() => {
-        const channel = window.Echo.private("admin.payments").listen(
-            ".invoice.status.updated",
-            () => {
+        const channel = window.Echo.private("admin.payments")
+            .listen(".invoice.status.updated", () => {
                 // Just re-fetch the invoices prop; cheap, and avoids drift
                 // between partial payloads and full server state.
                 router.reload({ only: ["invoices"] });
-            },
-        );
+            })
+            .listen(".payout.status.updated", () => {
+                // Same idea for payouts — PayMongo owns the source of truth,
+                // we just re-pull our mirrored copy.
+                router.reload({ only: ["payouts"] });
+            });
 
         return () => {
             window.Echo.leave("admin.payments");
         };
     }, []);
-
-    // keep the open sheet's data fresh when invoices refreshes
-    useEffect(() => {
-        if (!selected) return;
-        const updated = invoices.find((i) => i.id === selected.id);
-        if (updated) setSelected(updated);
-    }, [invoices]);
 
     // keep the open sheet's data fresh when invoices refreshes
     useEffect(() => {
@@ -199,9 +251,114 @@ export default function Payments({
         setCopied(true);
     }
 
+    function syncPayouts() {
+        setSyncingPayouts(true);
+        router.post(
+            "/admin/payouts/sync",
+            {},
+            {
+                preserveScroll: true,
+                preserveState: true,
+                onFinish: () => setSyncingPayouts(false),
+            },
+        );
+    }
+
     return (
         <>
             <Head title="Payments" />
+
+            {/* Payout history — mirrors PayMongo's own settlement ledger.
+                Read-only: this app never initiates a payout, it only records
+                what PayMongo has already sent (or is about to send) to the
+                bank account on file. */}
+            <div className="rounded-xl border border-border bg-card p-6 mb-6">
+                <div className="flex items-start justify-between gap-4">
+                    <div>
+                        <h1 className="text-lg font-semibold">
+                            Payout history
+                        </h1>
+                        <p className="text-sm text-muted-foreground">
+                            Recent settlement transactions from PayMongo
+                        </p>
+                    </div>
+
+                    <Button
+                        variant="outline"
+                        size="sm"
+                        disabled={syncingPayouts}
+                        onClick={syncPayouts}
+                    >
+                        <RefreshCw
+                            className={`mr-2 h-4 w-4 ${syncingPayouts ? "animate-spin" : ""}`}
+                        />
+                        {syncingPayouts ? "Syncing…" : "Sync now"}
+                    </Button>
+                </div>
+
+                <Table className="mt-6">
+                    <TableHeader>
+                        <TableRow>
+                            <TableHead>Settlement ID</TableHead>
+                            <TableHead>Date</TableHead>
+                            <TableHead>Amount</TableHead>
+                            <TableHead>Method</TableHead>
+                            <TableHead>Status</TableHead>
+                        </TableRow>
+                    </TableHeader>
+                    <TableBody>
+                        {payouts.length === 0 && (
+                            <TableRow>
+                                <TableCell
+                                    colSpan={5}
+                                    className="text-center text-sm text-muted-foreground py-6"
+                                >
+                                    No payouts recorded yet. Once PayMongo sends
+                                    a payout webhook — or you hit "Sync now" —
+                                    settlements will show up here.
+                                </TableCell>
+                            </TableRow>
+                        )}
+                        {payouts.map((payout) => (
+                            <TableRow key={payout.id}>
+                                <TableCell className="font-medium">
+                                    {payout.id.toUpperCase()}
+                                </TableCell>
+                                <TableCell className="text-muted-foreground">
+                                    {formatSettlementDate(payout.created_at)}
+                                </TableCell>
+                                <TableCell>
+                                    {formatAmount(
+                                        payout.amount,
+                                        payout.currency,
+                                    )}
+                                </TableCell>
+                                <TableCell>
+                                    <div className="flex items-center gap-2">
+                                        <Landmark className="h-3.5 w-3.5 text-muted-foreground" />
+                                        {payout.bank_name ?? "Bank transfer"}
+                                        {payout.account_last4 && (
+                                            <span className="text-muted-foreground">
+                                                •••• {payout.account_last4}
+                                            </span>
+                                        )}
+                                    </div>
+                                </TableCell>
+                                <TableCell>
+                                    <Badge
+                                        variant="outline"
+                                        className={
+                                            payoutStatusStyles[payout.status]
+                                        }
+                                    >
+                                        {payoutStatusLabels[payout.status]}
+                                    </Badge>
+                                </TableCell>
+                            </TableRow>
+                        ))}
+                    </TableBody>
+                </Table>
+            </div>
 
             <div className="rounded-xl border border-border bg-card p-6">
                 <div className="flex items-start justify-between gap-4">
