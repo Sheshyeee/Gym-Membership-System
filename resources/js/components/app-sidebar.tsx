@@ -1,8 +1,23 @@
 import { Link, usePage } from "@inertiajs/react";
-import { BookOpen, FolderGit2, LayoutGrid } from "lucide-react";
+import {
+    BarChart3,
+    BookOpen,
+    CalendarCheck,
+    ClipboardCheck,
+    ClipboardList,
+    FolderGit2,
+    Home,
+    LayoutGrid,
+    QrCode,
+    Settings,
+    Ticket,
+    UserCog,
+    Users,
+    Wallet,
+} from "lucide-react";
 import AppLogo from "@/components/app-logo";
 import { NavFooter } from "@/components/nav-footer";
-import { NavMain } from "@/components/nav-main";
+import { NavMain, type NavGroup } from "@/components/nav-main";
 import { NavUser } from "@/components/nav-user";
 import {
     Sidebar,
@@ -36,119 +51,171 @@ export function AppSidebar() {
     const isUser = auth.roles.includes("user");
     const isStaff = auth.roles.includes("staff");
 
-    const mainNavItems: NavItem[] = [
+    const mainNavGroups: NavGroup[] = [
         ...(isAdmin
-            ? [
+            ? ([
                   {
                       title: "Overview",
-                      href: "/overview",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      items: [
+                          {
+                              title: "Overview",
+                              href: "/overview",
+                              icon: LayoutGrid,
+                          },
+                      ],
+                  },
                   {
-                      title: "Members",
-                      href: "/members",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "People",
+                      items: [
+                          { title: "Members", href: "/members", icon: Users },
+                          { title: "Staffs", href: "/staffs", icon: UserCog },
+                      ],
+                  },
                   {
-                      title: "Attendance",
-                      href: "/attendance",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Operations",
+                      items: [
+                          {
+                              title: "Attendance",
+                              href: "/attendance",
+                              icon: CalendarCheck,
+                          },
+                      ],
+                  },
                   {
-                      title: "Staffs",
-                      href: "/staffs",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Finance",
+                      items: [
+                          {
+                              title: "Payments",
+                              href: "/payments",
+                              icon: Wallet,
+                          },
+                          {
+                              title: "Revenue Analytics",
+                              href: "/revenue-analytics",
+                              icon: BarChart3,
+                          },
+                          {
+                              title: "Membership Plans",
+                              href: "/admin/plans",
+                              icon: ClipboardList,
+                          },
+                      ],
+                  },
                   {
-                      title: "Payments",
-                      href: "/payments",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Revenue Analytics",
-                      href: "/revenue-analytics",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Membership Plans",
-                      href: "/admin/plans",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Settings",
-                      href: "/admin/settings",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-              ]
+                      title: "System",
+                      items: [
+                          {
+                              title: "Settings",
+                              href: "/admin/settings",
+                              icon: Settings,
+                          },
+                      ],
+                  },
+              ] satisfies NavGroup[])
             : []),
         ...(isStaff
-            ? [
+            ? ([
                   {
-                      title: "Dashboard",
-                      href: "/staff/dashboard",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Overview",
+                      items: [
+                          {
+                              title: "Dashboard",
+                              href: "/staff/dashboard",
+                              icon: LayoutGrid,
+                          },
+                      ],
+                  },
                   {
                       title: "Members",
-                      href: "/staff/members",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      items: [
+                          {
+                              title: "Members",
+                              href: "/staff/members",
+                              icon: Users,
+                          },
+                      ],
+                  },
                   {
-                      title: "QR Check-In",
-                      href: "/staff/qr-checkin",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Check-In",
+                      items: [
+                          {
+                              title: "QR Check-In",
+                              href: "/staff/qr-checkin",
+                              icon: QrCode,
+                          },
+                          {
+                              title: "Manual check-In",
+                              href: "/staff/manual-checkin",
+                              icon: ClipboardCheck,
+                          },
+                          {
+                              title: "Attendance",
+                              href: "/staff/attendance",
+                              icon: CalendarCheck,
+                          },
+                      ],
+                  },
                   {
-                      title: "Manual check-In",
-                      href: "/staff/manual-checkin",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Finance",
+                      items: [
+                          {
+                              title: "Payments",
+                              href: "/staff/payments",
+                              icon: Wallet,
+                          },
+                      ],
+                  },
                   {
-                      title: "Attendance",
-                      href: "/staff/attendance",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Payments",
-                      href: "/staff/payments",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Profile & Settings",
-                      href: "/member/profile",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-              ]
+                      title: "Account",
+                      items: [
+                          {
+                              title: "Profile & Settings",
+                              href: "/member/profile",
+                              icon: UserCog,
+                          },
+                      ],
+                  },
+              ] satisfies NavGroup[])
             : []),
         ...(isUser
-            ? [
+            ? ([
                   {
-                      title: "Home",
-                      href: "/dashboard",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-
+                      title: "Overview",
+                      items: [
+                          { title: "Home", href: "/dashboard", icon: Home },
+                      ],
+                  },
                   {
-                      title: "QR Access",
-                      href: "/qraccess",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
+                      title: "Your Fitness",
+                      items: [
+                          {
+                              title: "QR Access",
+                              href: "/qraccess",
+                              icon: QrCode,
+                          },
+                          {
+                              title: "Membership",
+                              href: "/member/membership",
+                              icon: Ticket,
+                          },
+                      ],
+                  },
                   {
-                      title: "Membership",
-                      href: "/member/membership",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Payments",
-                      href: "/member/payments",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-                  {
-                      title: "Profile & Settings",
-                      href: "/member/profile",
-                      icon: LayoutGrid,
-                  } satisfies NavItem,
-              ]
+                      title: "Account",
+                      items: [
+                          {
+                              title: "Payments",
+                              href: "/member/payments",
+                              icon: Wallet,
+                          },
+                          {
+                              title: "Profile & Settings",
+                              href: "/member/profile",
+                              icon: UserCog,
+                          },
+                      ],
+                  },
+              ] satisfies NavGroup[])
             : []),
     ];
 
@@ -167,7 +234,7 @@ export function AppSidebar() {
             </SidebarHeader>
 
             <SidebarContent>
-                <NavMain items={mainNavItems} />
+                <NavMain groups={mainNavGroups} />
             </SidebarContent>
 
             <SidebarFooter>
