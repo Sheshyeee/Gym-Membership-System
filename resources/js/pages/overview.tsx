@@ -174,7 +174,7 @@ function PanelHeader({
                     {title}
                 </h2>
                 {subtitle && (
-                    <span className="text-muted-foreground mt-1 block text-[11px]">
+                    <span className="mt-1 block text-[11px] font-medium text-orange-500/90 dark:text-orange-400/80">
                         {subtitle}
                     </span>
                 )}
@@ -203,7 +203,12 @@ function HeroCard({
 
     return (
         <Panel className="relative flex flex-col justify-between gap-4 overflow-hidden xl:col-span-2">
-            <div className="flex flex-col gap-2">
+            <Dumbbell
+                className="pointer-events-none absolute -right-6 -bottom-6 size-32 rotate-12 text-orange-500/10 dark:text-orange-400/10"
+                strokeWidth={1.5}
+            />
+
+            <div className="relative flex flex-col gap-2">
                 <span className="text-muted-foreground text-[11px]">
                     {today}
                 </span>
@@ -216,7 +221,7 @@ function HeroCard({
                 </p>
             </div>
 
-            <div className="flex flex-wrap items-center gap-2">
+            <div className="relative flex flex-wrap items-center gap-2">
                 <Link
                     href="/members"
                     className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
@@ -716,7 +721,7 @@ export default function Overview({
             <Head title="Overview" />
             <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
                 {/* Row 1 — hero + primary stats */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
@@ -744,7 +749,7 @@ export default function Overview({
                 </div>
 
                 {/* Row 2 — revenue trend + attendance */}
-                <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-3">
+                <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 xl:grid-cols-3">
                     <RevenueChart
                         data={revenuePerformance}
                         total={revenuePerformance.reduce(
@@ -762,7 +767,7 @@ export default function Overview({
                 </div>
 
                 {/* Row 3 — member mix, retention, live payments */}
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                     <MemberActivityDonut
                         total={memberActivity.total}
                         breakdown={memberActivity.breakdown}
