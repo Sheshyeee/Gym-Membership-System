@@ -459,7 +459,7 @@ function MemberActivityDonut({
                 <div>
                     <h2 className="text-sm font-medium">Member activity</h2>
                     <span className="text-muted-foreground text-xs">
-                        Last 7 days
+                        Current status
                     </span>
                 </div>
             </div>
