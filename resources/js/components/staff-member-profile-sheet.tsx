@@ -9,6 +9,8 @@ import { Badge } from "@/components/ui/badge";
 import { Skeleton } from "@/components/ui/skeleton";
 import { Calendar, Check, CheckCircle2, QrCode } from "lucide-react";
 import { useEffect, useState } from "react";
+import { Dialog, DialogContent, DialogHeader, DialogTitle } from "./ui/dialog";
+import { QRCodeSVG } from "qrcode.react";
 
 interface AttendanceEntry {
     id: number;
@@ -36,6 +38,7 @@ interface ProfileData {
     last_check_in: string | null;
     avg_visits_per_week: number | null;
     streak_days: number | null;
+    qr_token: string;
     attendance_history: AttendanceEntry[];
     plan_history: {
         id: number;
@@ -96,6 +99,7 @@ export function StaffMemberProfileSheet({
     const [checkinResult, setCheckinResult] = useState<CheckinResult | null>(
         null,
     );
+    const [showQr, setShowQr] = useState(false);
 
     useEffect(() => {
         if (!open || !userId) return;
@@ -210,9 +214,9 @@ export function StaffMemberProfileSheet({
                                     )}
                                 </button>
                                 <button
-                                    disabled
-                                    title="QR check-in coming soon"
-                                    className="flex h-11 w-11 shrink-0 cursor-not-allowed items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground"
+                                    onClick={() => setShowQr(true)}
+                                    title="Show member's QR code"
+                                    className="flex h-11 w-11 shrink-0 items-center justify-center rounded-lg border border-border bg-muted/30 text-muted-foreground transition-colors hover:bg-muted/60 hover:text-foreground"
                                 >
                                     <QrCode className="h-4 w-4" />
                                 </button>
@@ -545,6 +549,31 @@ export function StaffMemberProfileSheet({
                     </div>
                 )}
             </SheetContent>
+            <Dialog open={showQr} onOpenChange={setShowQr}>
+                <DialogContent className="sm:max-w-xs">
+                    <DialogHeader>
+                        <DialogTitle
+                         className="text-center">
+                            {data?.name}'s access code
+                        </DialogTitle>
+                    </DialogHeader>
+
+                    {data && (
+                        <div className="flex flex-col items-center gap-3 py-2">
+                            <div className="rounded-xl bg-white p-4">
+                                <QRCodeSVG
+                                    value={data.qr_token}
+                                    size={200}
+                                    level="M"
+                                />
+                            </div>
+                            <p className="text-xs text-muted-foreground">
+                                {data.code}
+                            </p>
+                        </div>
+                    )}
+                </DialogContent>
+            </Dialog>
         </Sheet>
     );
 }

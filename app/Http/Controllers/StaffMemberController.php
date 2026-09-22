@@ -79,6 +79,7 @@ class StaffMemberController extends Controller
 
         return Inertia::render('staffs/members', [
             'members' => $paginated,
+
             'filters' => ['search' => $search ?: null, 'status' => $status ?: 'all'],
             'statusCounts' => $statusCounts,
         ]);
@@ -150,6 +151,7 @@ class StaffMemberController extends Controller
             'plan' => $latestSubscription?->plan?->name,
             'status' => $this->resolveStatus($latestSubscription),
             'valid_until' => optional($latestSubscription?->current_period_end)->format('M j, Y'),
+            'qr_token' => $user->qr_token, // ← add this line
             'monthly_visits' => $successfulAttendances->filter(
                 fn($a) => $a->scanned_at->isSameMonth($now)
             )->count(),
