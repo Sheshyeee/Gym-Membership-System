@@ -32,7 +32,7 @@ export function MobileBottomNav() {
         items = [
             { title: "Dashboard", href: "/overview", icon: LayoutGrid },
             { title: "Members", href: "/members", icon: Users },
-            { title: "Check-In", href: "/attendance", icon: QrCode },
+            { title: "Check-In", href: "/admin/qr-checkin", icon: QrCode },
             { title: "Attendance", href: "/attendance", icon: CalendarCheck },
         ];
     } else if (isStaff) {
