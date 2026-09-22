@@ -592,16 +592,21 @@ function RetentionGauge({
         <Panel>
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
-            <div className="relative h-28 w-full">
-                <ResponsiveContainer width="100%" height="200%">
+            {/* Fixed: previous version used height="200%" on the container and
+                innerRadius/outerRadius/cy values above 100%, which pushed the
+                arc outside its box and got clipped into the "broken crescent"
+                look. A proper semi-donut gauge keeps radii within 0–100% and
+                anchors cy at the bottom of the box. */}
+            <div className="relative h-28 w-full overflow-hidden">
+                <ResponsiveContainer width="100%" height="100%">
                     <RadialBarChart
                         data={data}
                         startAngle={180}
                         endAngle={0}
-                        innerRadius="140%"
-                        outerRadius="200%"
+                        innerRadius="70%"
+                        outerRadius="100%"
                         cx="50%"
-                        cy="65%"
+                        cy="100%"
                         barSize={14}
                     >
                         <RadialBar
@@ -720,8 +725,14 @@ export default function Overview({
         <>
             <Head title="Overview" />
             <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
-                {/* Row 1 — hero + primary stats */}
-                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+                {/* Row 1 — hero + primary stats.
+                    HeroCard spans 2 columns, plus 3 StatCards (1 col each) = 5
+                    columns of content. Previously the wrapper was xl:grid-cols-4,
+                    so 2+1+1+1=5 could not fit in 4 columns and the last
+                    StatCard wrapped onto its own row, leaving a big empty gap
+                    beside it. Using xl:grid-cols-5 makes the row fill exactly,
+                    with no deadspace. */}
+                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-5">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
@@ -748,7 +759,9 @@ export default function Overview({
                     />
                 </div>
 
-                {/* Row 2 — revenue trend + attendance */}
+                {/* Row 2 — revenue trend + attendance.
+                    RevenueChart spans 2 cols, AttendanceOverview takes 1 col,
+                    inside xl:grid-cols-3 — fills exactly, no change needed. */}
                 <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 xl:grid-cols-3">
                     <RevenueChart
                         data={revenuePerformance}
@@ -766,7 +779,10 @@ export default function Overview({
                     />
                 </div>
 
-                {/* Row 3 — member mix, retention, live payments */}
+                {/* Row 3 — member mix, retention, live payments.
+                    MemberActivityDonut (1) + RetentionGauge (1) +
+                    LiveFinancialActivity (2) = 4 cols inside xl:grid-cols-4 —
+                    fills exactly, no change needed. */}
                 <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                     <MemberActivityDonut
                         total={memberActivity.total}
