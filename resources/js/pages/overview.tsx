@@ -695,7 +695,7 @@ export default function Overview({
     return (
         <>
             <Head title="Overview" />
-            <div className="flex h-full flex-1 flex-col gap-4 overflow-x-auto rounded-xl p-4">
+            <div className="flex flex-1 flex-col gap-4 rounded-xl p-4">
                 <div className="grid gap-4 md:grid-cols-3">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
