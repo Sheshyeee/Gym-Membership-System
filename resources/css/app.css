@@ -141,7 +141,7 @@
     --chart-4: oklch(0.627 0.265 303.9);
     --chart-5: oklch(0.645 0.246 16.439);
 
-    --sidebar: oklch(0.13 0 0);
+    --sidebar: oklch(0.1 0 0);
     --sidebar-foreground: oklch(0.985 0 0);
     --sidebar-primary: oklch(0.7 0.19 35);
     --sidebar-primary-foreground: oklch(0.145 0 0);
@@ -170,13 +170,18 @@
     .dark [data-slot="sidebar-inset"] {
         background-image:
             radial-gradient(
-                ellipse 70% 50% at 100% 0%,
-                oklch(0.4 0.17 35 / 0.22),
+                ellipse 90% 65% at 75% 100%,
+                oklch(0.45 0.2 35 / 0.55),
+                transparent 65%
+            ),
+            radial-gradient(
+                ellipse 70% 55% at 100% 0%,
+                oklch(0.42 0.18 35 / 0.3),
                 transparent 60%
             ),
             radial-gradient(
                 ellipse 60% 45% at 0% 100%,
-                oklch(0.35 0.16 35 / 0.16),
+                oklch(0.38 0.17 35 / 0.25),
                 transparent 60%
             );
         background-attachment: fixed;
