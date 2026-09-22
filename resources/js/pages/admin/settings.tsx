@@ -1,4 +1,4 @@
-import { Head, useForm } from "@inertiajs/react";
+import { Head, router, useForm } from "@inertiajs/react";
 import { useRef, useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
@@ -45,6 +45,9 @@ export default function Settings({ gymProfile, adminEmail }: SettingsProps) {
         post("/admin/settings", {
             forceFormData: true,
             preserveScroll: true,
+            onSuccess: () => {
+                router.flushAll();
+            },
         });
     }
 
