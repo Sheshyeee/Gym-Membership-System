@@ -3,7 +3,6 @@ import {
     LayoutGrid,
     Users,
     Wallet,
-    BarChart3,
     QrCode,
     CalendarCheck,
     MoreHorizontal,
@@ -29,11 +28,12 @@ export function MobileBottomNav() {
     let items: MobileNavItem[] = [];
 
     if (isAdmin) {
+        // Matches AppSidebar exactly: admin has no check-in route, only Attendance.
         items = [
             { title: "Dashboard", href: "/overview", icon: LayoutGrid },
             { title: "Members", href: "/members", icon: Users },
-            { title: "Check-In", href: "/admin/qr-checkin", icon: QrCode },
             { title: "Attendance", href: "/attendance", icon: CalendarCheck },
+            { title: "Payments", href: "/payments", icon: Wallet },
         ];
     } else if (isStaff) {
         items = [
@@ -74,15 +74,11 @@ export function MobileBottomNav() {
             <nav
                 className={cn(
                     "relative isolate flex w-full max-w-sm items-center gap-1 overflow-hidden rounded-[28px] p-1.5",
-                    // Glass built on the theme's own background instead of a fixed
-                    // neutral, so a warm/dark/reddish theme (or any other) comes
-                    // through instead of being overridden.
                     "bg-background/70 backdrop-blur-2xl backdrop-saturate-150",
                     "shadow-[0_10px_40px_-8px_rgba(0,0,0,0.55),0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_10px_0_rgba(0,0,0,0.35)_inset]",
                     "ring-1 ring-border/60",
                 )}
             >
-                {/* Sliding active pill, tinted with the theme's primary color */}
                 {activeIndex !== -1 && (
                     <div
                         aria-hidden
