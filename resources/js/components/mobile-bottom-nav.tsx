@@ -59,6 +59,11 @@ export function MobileBottomNav() {
         ];
     }
 
+    // "More" is included in the slot count so the pill math and spacing
+    // stay correct regardless of which role's items are shown.
+    const slots = items.length + 1;
+    const activeIndex = items.findIndex((item) => url.startsWith(item.href));
+
     return (
         <div
             className={cn(
@@ -68,28 +73,64 @@ export function MobileBottomNav() {
         >
             <nav
                 className={cn(
-                    "flex w-full max-w-sm items-center justify-around gap-1 rounded-[28px] px-2 py-2.5",
-                    // distinct from bg-card: more opaque + its own border/shadow so it
-                    // reads as a floating control, not another card, when scrolled content
-                    // passes beneath it
-                    "border border-white/10 bg-neutral-900/85 shadow-[0_8px_30px_rgba(0,0,0,0.45)] backdrop-blur-xl",
-                    "dark:bg-neutral-900/85",
+                    "relative isolate flex w-full max-w-sm items-center gap-1 overflow-hidden rounded-[28px] p-1.5",
+                    // Base glass: two stacked gradients (a faint warm-to-cool tint,
+                    // then a top-heavy sheen) over a dark, saturated blur — this is
+                    // what keeps it from reading as "just a dark card."
+                    "bg-[linear-gradient(160deg,rgba(255,255,255,0.10),rgba(255,255,255,0.02)_40%,rgba(0,0,0,0.05)),linear-gradient(180deg,rgba(28,28,32,0.72),rgba(12,12,15,0.82))]",
+                    "backdrop-blur-2xl backdrop-saturate-150",
+                    // Rim + depth: outer ambient shadow for lift, inset highlight
+                    // along the top (light catching the glass edge), inset shadow
+                    // along the bottom (glass sitting into a recess).
+                    "shadow-[0_10px_40px_-8px_rgba(0,0,0,0.55),0_1px_0_0_rgba(255,255,255,0.06)_inset,0_-1px_10px_0_rgba(0,0,0,0.35)_inset]",
+                    "ring-1 ring-white/[0.08]",
                 )}
             >
-                {items.map((item) => {
-                    const isActive = url.startsWith(item.href);
+                {/* Sliding active pill */}
+                {activeIndex !== -1 && (
+                    <div
+                        aria-hidden
+                        className="pointer-events-none absolute inset-y-1.5 left-1.5 rounded-[20px] transition-transform duration-300 ease-out"
+                        style={{
+                            width: `calc((100% - 0.75rem) / ${slots})`,
+                            transform: `translateX(${activeIndex * 100}%)`,
+                        }}
+                    >
+                        <div
+                            className={cn(
+                                "h-full w-full rounded-[20px]",
+                                "bg-[linear-gradient(180deg,rgba(255,255,255,0.16),rgba(255,255,255,0.03))]",
+                                "shadow-[0_2px_12px_-2px_var(--nav-glow,rgba(255,255,255,0.25)),0_1px_0_0_rgba(255,255,255,0.14)_inset]",
+                                "ring-1 ring-white/[0.14]",
+                            )}
+                            style={{
+                                ["--nav-glow" as string]:
+                                    "color-mix(in oklab, var(--primary) 45%, transparent)",
+                            }}
+                        />
+                    </div>
+                )}
+
+                {items.map((item, index) => {
+                    const isActive = index === activeIndex;
                     return (
                         <Link
                             key={item.title}
                             href={item.href}
                             className={cn(
-                                "flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] font-medium transition-colors",
+                                "relative z-10 flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-medium transition-colors duration-200",
                                 isActive
-                                    ? "text-primary"
-                                    : "text-muted-foreground",
+                                    ? "text-white"
+                                    : "text-white/50 active:text-white/80",
                             )}
                         >
-                            <item.icon className="h-5 w-5" />
+                            <item.icon
+                                className={cn(
+                                    "h-5 w-5 transition-transform duration-200",
+                                    isActive &&
+                                        "scale-110 drop-shadow-[0_0_6px_rgba(255,255,255,0.25)]",
+                                )}
+                            />
                             <span>{item.title}</span>
                         </Link>
                     );
@@ -97,7 +138,7 @@ export function MobileBottomNav() {
 
                 <button
                     onClick={toggleSidebar}
-                    className="flex flex-1 flex-col items-center gap-1 rounded-2xl py-1.5 text-[10px] font-medium text-muted-foreground"
+                    className="relative z-10 flex flex-1 flex-col items-center gap-1 rounded-2xl py-2 text-[10px] font-medium text-white/50 transition-colors duration-200 active:text-white/80"
                 >
                     <MoreHorizontal className="h-5 w-5" />
                     <span>More</span>
