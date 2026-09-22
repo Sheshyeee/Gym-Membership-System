@@ -166,50 +166,32 @@
      * so this coexists without needing !important or component edits).
      * Kept subtle + corner-anchored so dashboard text/tables stay readable.
      */
-    /*
-     * Orange glow, layered on top of --background/--sidebar via background-image
-     * (Tailwind's bg-background / bg-sidebar utilities only set background-color,
-     * so this coexists without needing !important or component edits).
-     * Positioned relative to each element's own box (no `background-attachment:
-     * fixed`) so it scales with actual content height instead of the viewport —
-     * fixed caused a hard-edged blob to float in empty space on short/tall pages.
-     * Multiple gradient stops give a soft diffuse falloff instead of a hard ring.
-     */
     .dark body,
-    .dark [data-slot="sidebar-inset"] {
-        background-image:
-            radial-gradient(
-                120% 90% at 85% 100%,
-                oklch(0.42 0.15 35 / 0.28) 0%,
-                oklch(0.42 0.15 35 / 0.1) 35%,
-                transparent 72%
-            ),
-            radial-gradient(
-                90% 70% at 100% -5%,
-                oklch(0.4 0.13 35 / 0.16) 0%,
-                transparent 65%
-            ),
-            radial-gradient(
-                45% 35% at 2% 2%,
-                oklch(0.4 0.1 35 / 0.07) 0%,
-                transparent 60%
-            );
-    }
-
-    /* Sidebar: same idea, scaled for a tall narrow column — soft base glow
-       plus a barely-there top-left accent, per request. */
+    .dark [data-slot="sidebar-inset"],
+    .dark header,
     .dark [data-sidebar="sidebar"] {
         background-image:
             radial-gradient(
-                140% 45% at 60% 100%,
-                oklch(0.42 0.15 35 / 0.2) 0%,
-                transparent 70%
+                ellipse 90% 65% at 75% 100%,
+                oklch(0.45 0.2 35 / 0.55),
+                transparent 65%
             ),
             radial-gradient(
-                60% 30% at 5% 0%,
-                oklch(0.4 0.1 35 / 0.06) 0%,
+                ellipse 70% 55% at 100% 0%,
+                oklch(0.42 0.18 35 / 0.3),
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse 60% 45% at 0% 100%,
+                oklch(0.38 0.17 35 / 0.25),
+                transparent 60%
+            ),
+            radial-gradient(
+                ellipse 55% 45% at 0% 0%,
+                oklch(0.4 0.17 35 / 0.18),
                 transparent 60%
             );
+        background-attachment: fixed;
     }
 
     /* Header sits on top of the inset's gradient but paints its own solid
@@ -220,17 +202,6 @@
             var(--background) 70%,
             transparent
         );
-        background-image:
-            radial-gradient(
-                50% 100% at 95% 100%,
-                oklch(0.42 0.13 35 / 0.14) 0%,
-                transparent 70%
-            ),
-            radial-gradient(
-                30% 100% at 2% 0%,
-                oklch(0.4 0.1 35 / 0.05) 0%,
-                transparent 60%
-            );
         backdrop-filter: blur(12px);
         -webkit-backdrop-filter: blur(12px);
     }
