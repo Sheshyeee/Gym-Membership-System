@@ -5,6 +5,7 @@ use App\Http\Controllers\AdminMemberController;
 use App\Http\Controllers\AdminPaymentController;
 use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminRevenueAnalyticsController;
+use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminStaffController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
@@ -118,6 +119,13 @@ Route::middleware(['auth', 'verified'])->group(function () {
     Route::get('/admin/plans', [AdminPlansController::class, 'index'])
         ->middleware('role:admin')
         ->name('admin.plans.index');
+    Route::get('/admin/settings', [AdminSettingsController::class, 'index'])
+        ->middleware('role:admin')
+        ->name('admin.settings');
+
+    Route::post('/admin/settings', [AdminSettingsController::class, 'update'])
+        ->middleware('role:admin')
+        ->name('admin.settings.update');
 
     Route::post('/admin/payments/{invoice}/refund', [AdminPaymentController::class, 'refund'])
         ->middleware('role:admin')

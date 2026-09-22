@@ -74,6 +74,11 @@ export function AppSidebar() {
                       href: "/admin/plans",
                       icon: LayoutGrid,
                   } satisfies NavItem,
+                  {
+                      title: "Settings",
+                      href: "/admin/settings",
+                      icon: LayoutGrid,
+                  } satisfies NavItem,
               ]
             : []),
         ...(isStaff
