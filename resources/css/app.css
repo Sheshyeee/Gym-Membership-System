@@ -111,9 +111,9 @@
     --background: oklch(0.13 0 0);
     --foreground: oklch(0.985 0 0);
 
-    --card: oklch(0.17 0 0);
+    --card: oklch(0.17 0 0 / 0.55);
     --card-foreground: oklch(0.985 0 0);
-    --popover: oklch(0.17 0 0);
+    --popover: oklch(0.17 0 0 / 0.9);
     --popover-foreground: oklch(0.985 0 0);
 
     /* Orange brand color, slightly brighter for dark bg */
@@ -185,5 +185,10 @@
                 transparent 60%
             );
         background-attachment: fixed;
+    }
+
+    .dark .bg-card {
+        backdrop-filter: blur(16px);
+        -webkit-backdrop-filter: blur(16px);
     }
 }
