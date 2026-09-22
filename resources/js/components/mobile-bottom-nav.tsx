@@ -30,7 +30,7 @@ export function MobileBottomNav() {
     if (isAdmin) {
         // Matches AppSidebar exactly: admin has no check-in route, only Attendance.
         items = [
-            { title: "Dashboard", href: "/overview", icon: LayoutGrid },
+            { title: "Overview", href: "/overview", icon: LayoutGrid },
             { title: "Members", href: "/members", icon: Users },
             { title: "Attendance", href: "/attendance", icon: CalendarCheck },
             { title: "Payments", href: "/payments", icon: Wallet },

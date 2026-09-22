@@ -96,7 +96,7 @@ function GrowthBadge({
 }) {
     if (growth === null) {
         return (
-            <span className="text-muted-foreground text-xs font-medium">
+            <span className="text-muted-foreground text-[11px] font-medium">
                 New
             </span>
         );
@@ -107,7 +107,7 @@ function GrowthBadge({
     return (
         <span
             className={cn(
-                "text-xs font-medium",
+                "inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums",
                 isPositive ? "text-emerald-500" : "text-red-500",
             )}
         >
@@ -135,7 +135,57 @@ function timeAgo(dateString: string | null) {
 }
 
 // ---------------------------------------------------------------------------
-// Sub-components (kept in this file on purpose)
+// Shared card shell — keeps padding/border/radius consistent everywhere so
+// nothing reads as a mismatched template piece.
+// ---------------------------------------------------------------------------
+
+function Panel({
+    className,
+    children,
+}: {
+    className?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-lg border p-3.5 sm:p-4",
+                className,
+            )}
+        >
+            {children}
+        </div>
+    );
+}
+
+function PanelHeader({
+    title,
+    subtitle,
+    action,
+}: {
+    title: string;
+    subtitle?: string;
+    action?: React.ReactNode;
+}) {
+    return (
+        <div className="mb-3 flex items-start justify-between gap-2">
+            <div>
+                <h2 className="text-[13px] font-semibold leading-none">
+                    {title}
+                </h2>
+                {subtitle && (
+                    <span className="text-muted-foreground mt-1 block text-[11px]">
+                        {subtitle}
+                    </span>
+                )}
+            </div>
+            {action}
+        </div>
+    );
+}
+
+// ---------------------------------------------------------------------------
+// Sub-components
 // ---------------------------------------------------------------------------
 
 function HeroCard({
@@ -147,50 +197,42 @@ function HeroCard({
 }) {
     const today = new Date().toLocaleDateString(undefined, {
         weekday: "long",
-        year: "numeric",
         month: "long",
-        day: "2-digit",
+        day: "numeric",
     });
 
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card relative flex flex-col justify-between overflow-hidden rounded-xl border p-6 md:col-span-2">
-            <div className="flex flex-col gap-3">
-                <span className="text-muted-foreground text-xs tracking-wide uppercase">
+        <Panel className="relative flex flex-col justify-between gap-4 overflow-hidden xl:col-span-2">
+            <div className="flex flex-col gap-2">
+                <span className="text-muted-foreground text-[11px]">
                     {today}
                 </span>
-                <h1 className="text-2xl leading-tight font-semibold tracking-tight md:text-3xl">
-                    Run your gym{" "}
-                    <span className="text-orange-500 dark:text-orange-400">
-                        at full strength.
-                    </span>
+                <h1 className="text-xl leading-snug font-semibold tracking-tight sm:text-2xl">
+                    Run your gym at full strength
                 </h1>
-                <p className="text-muted-foreground max-w-sm text-sm">
-                    Everything is looking healthy today. Keep the momentum
-                    going.
+                <p className="text-muted-foreground max-w-sm text-[13px] leading-relaxed">
+                    Everything is looking healthy today — check-ins and payments
+                    are both tracking above last week.
                 </p>
+            </div>
+
+            <div className="flex flex-wrap items-center gap-2">
                 <Link
                     href="/members"
-                    className="bg-primary text-primary-foreground mt-2 inline-flex w-fit items-center gap-1.5 rounded-lg px-4 py-2 text-sm font-medium transition-opacity hover:opacity-90"
+                    className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
                 >
                     View members
                     <span aria-hidden>›</span>
                 </Link>
-            </div>
-
-            <div className="pointer-events-none absolute top-1/2 right-6 -translate-y-1/2">
-                <div className="relative flex size-32 items-center justify-center rounded-full bg-orange-500/10">
-                    <div className="absolute inset-2 rounded-full border border-orange-500/20" />
-                    <Dumbbell className="size-10 text-orange-500 dark:text-orange-400" />
-                </div>
-                <span className="bg-card border-sidebar-border/70 dark:border-sidebar-border absolute -bottom-2 left-1/2 -translate-x-1/2 rounded-full border px-2.5 py-1 text-xs font-medium whitespace-nowrap shadow-sm">
-                    {checkInsToday} check-ins
+                <span className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px]">
+                    <Dumbbell className="size-3.5 text-orange-500" />
+                    {checkInsToday} check-ins today
+                </span>
+                <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-500">
+                    {paymentSuccessRate}% payment success
                 </span>
             </div>
-
-            <span className="absolute top-6 right-6 rounded-full bg-emerald-500/10 px-2.5 py-1 text-xs font-medium text-emerald-500">
-                {paymentSuccessRate}% success
-            </span>
-        </div>
+        </Panel>
     );
 }
 
@@ -208,24 +250,26 @@ function StatCard({
     growth: number | null;
 }) {
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card flex flex-1 flex-col gap-3 rounded-xl border p-4">
+        <Panel className="flex items-center justify-between gap-3">
+            <div className="flex flex-col gap-1">
+                <span className="text-muted-foreground text-[11px]">
+                    {label}
+                </span>
+                <span className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
+                    {value}
+                </span>
+                <GrowthBadge growth={growth} />
+            </div>
             <div
                 className={cn(
-                    "flex size-9 items-center justify-center rounded-lg",
+                    "flex size-9 shrink-0 items-center justify-center rounded-md",
                     iconClassName ??
                         "bg-orange-500/10 text-orange-500 dark:text-orange-400",
                 )}
             >
-                <Icon className="size-4.5" />
+                <Icon className="size-4" />
             </div>
-            <div className="flex flex-col gap-1">
-                <span className="text-muted-foreground text-xs">{label}</span>
-                <span className="text-2xl font-semibold tracking-tight">
-                    {value}
-                </span>
-            </div>
-            <GrowthBadge growth={growth} />
-        </div>
+        </Panel>
     );
 }
 
@@ -239,28 +283,21 @@ function RevenueChart({
     growth: number | null;
 }) {
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4 md:col-span-2">
-            <div className="mb-4 flex items-start justify-between">
-                <div>
-                    <h2 className="text-sm font-medium">Revenue performance</h2>
-                    <span className="text-muted-foreground text-xs">
-                        This year
-                    </span>
-                </div>
-            </div>
+        <Panel className="xl:col-span-2">
+            <PanelHeader title="Revenue performance" subtitle="This year" />
 
-            <div className="mb-2 flex items-baseline gap-2">
-                <span className="text-2xl font-semibold tracking-tight">
+            <div className="mb-3 flex items-baseline gap-2">
+                <span className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
                     ₱{total.toLocaleString()}
                 </span>
                 <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
-            <div className="h-56 w-full">
+            <div className="h-48 w-full sm:h-56">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
-                        margin={{ top: 10, right: 4, left: -20, bottom: 0 }}
+                        margin={{ top: 8, right: 4, left: -20, bottom: 0 }}
                     >
                         <defs>
                             <linearGradient
@@ -288,22 +325,23 @@ function RevenueChart({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
-                            interval={1}
+                            interval="preserveStartEnd"
+                            minTickGap={16}
                         />
                         <YAxis
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
                             tickFormatter={formatCompact}
-                            width={40}
+                            width={36}
                         />
                         <Tooltip
                             formatter={(value, name) => [
@@ -338,7 +376,7 @@ function RevenueChart({
                     </AreaChart>
                 </ResponsiveContainer>
             </div>
-        </div>
+        </Panel>
     );
 }
 
@@ -354,40 +392,35 @@ function AttendanceOverview({
     week: { label: string; count: number; isToday: boolean }[];
 }) {
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
-            <div className="mb-4 flex items-start justify-between">
-                <div>
-                    <h2 className="text-sm font-medium">Attendance overview</h2>
-                    <span className="text-muted-foreground text-xs">Today</span>
-                </div>
-            </div>
+        <Panel>
+            <PanelHeader title="Attendance overview" subtitle="Today" />
 
-            <div className="mb-4 grid grid-cols-2 gap-4">
+            <div className="mb-3 grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-[11px]">
                         Check-ins
                     </span>
-                    <span className="text-xl font-semibold">
+                    <span className="text-lg font-semibold tabular-nums">
                         {checkInsToday}
                     </span>
                     <GrowthBadge growth={checkInsGrowth} />
                 </div>
                 <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-[11px]">
                         Peak hours
                     </span>
-                    <span className="text-xl font-semibold">
+                    <span className="text-lg font-semibold tabular-nums">
                         {peakHour ?? "—"}
                     </span>
                     {peakHour && (
-                        <span className="text-xs font-medium text-orange-500 dark:text-orange-400">
-                            highest traffic
+                        <span className="text-[11px] font-medium text-orange-500 dark:text-orange-400">
+                            Highest traffic
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="h-32 w-full">
+            <div className="h-28 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={week}
@@ -398,7 +431,7 @@ function AttendanceOverview({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 11,
+                                fontSize: 10.5,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
@@ -419,7 +452,7 @@ function AttendanceOverview({
                         <Bar
                             dataKey="count"
                             radius={[4, 4, 0, 0]}
-                            maxBarSize={22}
+                            maxBarSize={20}
                         >
                             {week.map((day) => (
                                 <Cell
@@ -437,12 +470,12 @@ function AttendanceOverview({
 
             <Link
                 href="/attendance"
-                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-4 flex w-full items-center justify-center gap-1 rounded-lg border py-2 text-xs font-medium transition-colors"
+                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-3 flex w-full items-center justify-center gap-1 rounded-md border py-1.5 text-[11px] font-medium transition-colors"
             >
                 View attendance analytics
                 <span aria-hidden>›</span>
             </Link>
-        </div>
+        </Panel>
     );
 }
 
@@ -454,18 +487,11 @@ function MemberActivityDonut({
     breakdown: { label: string; value: number; percent: number }[];
 }) {
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
-            <div className="mb-2 flex items-start justify-between">
-                <div>
-                    <h2 className="text-sm font-medium">Member activity</h2>
-                    <span className="text-muted-foreground text-xs">
-                        Current status
-                    </span>
-                </div>
-            </div>
+        <Panel>
+            <PanelHeader title="Member activity" subtitle="Current status" />
 
             <div className="flex items-center gap-4">
-                <div className="relative h-32 w-32 shrink-0">
+                <div className="relative size-28 shrink-0">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -492,20 +518,20 @@ function MemberActivityDonut({
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-xl font-semibold">
+                        <span className="text-lg font-semibold tabular-nums">
                             {total.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground text-[10px]">
+                        <span className="text-muted-foreground text-[9px]">
                             Total members
                         </span>
                     </div>
                 </div>
 
-                <ul className="flex flex-1 flex-col gap-2.5">
+                <ul className="flex flex-1 flex-col gap-2">
                     {breakdown.map((segment) => (
                         <li
                             key={segment.label}
-                            className="flex items-center justify-between text-xs"
+                            className="flex items-center justify-between text-[12px]"
                         >
                             <span className="flex items-center gap-2">
                                 <span
@@ -520,14 +546,14 @@ function MemberActivityDonut({
                                     {segment.label}
                                 </span>
                             </span>
-                            <span className="font-medium">
+                            <span className="font-medium tabular-nums">
                                 {segment.percent}%
                             </span>
                         </li>
                     ))}
                 </ul>
             </div>
-        </div>
+        </Panel>
     );
 }
 
@@ -558,17 +584,10 @@ function RetentionGauge({
     const data = [{ name: "retention", value: rate, fill: styles.bar }];
 
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
-            <div className="mb-2 flex items-start justify-between">
-                <div>
-                    <h2 className="text-sm font-medium">Retention health</h2>
-                    <span className="text-muted-foreground text-xs">
-                        Monthly
-                    </span>
-                </div>
-            </div>
+        <Panel>
+            <PanelHeader title="Retention health" subtitle="Monthly" />
 
-            <div className="relative h-32 w-full">
+            <div className="relative h-28 w-full">
                 <ResponsiveContainer width="100%" height="200%">
                     <RadialBarChart
                         data={data}
@@ -578,11 +597,11 @@ function RetentionGauge({
                         outerRadius="200%"
                         cx="50%"
                         cy="65%"
-                        barSize={16}
+                        barSize={14}
                     >
                         <RadialBar
                             dataKey="value"
-                            cornerRadius={8}
+                            cornerRadius={7}
                             background={{
                                 fill: "currentColor",
                                 fillOpacity: 0.08,
@@ -592,16 +611,18 @@ function RetentionGauge({
                     </RadialBarChart>
                 </ResponsiveContainer>
                 <div className="absolute inset-x-0 bottom-1 flex flex-col items-center">
-                    <span className="text-2xl font-semibold">{rate}</span>
-                    <span className="text-muted-foreground text-[10px]">
+                    <span className="text-xl font-semibold tabular-nums">
+                        {rate}
+                    </span>
+                    <span className="text-muted-foreground text-[9px]">
                         member retention
                     </span>
                 </div>
             </div>
 
-            <div className="mt-3 flex items-center justify-between">
+            <div className="mt-2.5 flex items-center justify-between">
                 {status === "neutral" ? (
-                    <span className="text-muted-foreground text-xs">
+                    <span className="text-muted-foreground text-[11px]">
                         Check back after 30 days
                     </span>
                 ) : (
@@ -609,14 +630,14 @@ function RetentionGauge({
                 )}
                 <span
                     className={cn(
-                        "rounded-full px-2 py-0.5 text-xs font-medium",
+                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
                         styles.badge,
                     )}
                 >
                     {label}
                 </span>
             </div>
-        </div>
+        </Panel>
     );
 }
 
@@ -626,24 +647,22 @@ function LiveFinancialActivity({
     items: OverviewProps["liveFinancialActivity"];
 }) {
     return (
-        <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-4">
-            <div className="mb-3 flex items-center justify-between">
-                <div>
-                    <h2 className="text-sm font-medium">
-                        Live financial activity
-                    </h2>
-                </div>
-                <a
-                    href="/payments"
-                    className="text-xs font-medium text-orange-500 hover:underline dark:text-orange-400"
-                >
-                    View all
-                </a>
-            </div>
+        <Panel>
+            <PanelHeader
+                title="Live financial activity"
+                action={
+                    <a
+                        href="/payments"
+                        className="text-[11px] font-medium text-orange-500 hover:underline dark:text-orange-400"
+                    >
+                        View all
+                    </a>
+                }
+            />
 
-            <ul className="flex flex-col gap-1">
+            <ul className="flex flex-col divide-y divide-sidebar-border/50 dark:divide-sidebar-border/50">
                 {items.length === 0 && (
-                    <li className="text-muted-foreground py-6 text-center text-xs">
+                    <li className="text-muted-foreground py-6 text-center text-[12px]">
                         No payments yet
                     </li>
                 )}
@@ -651,17 +670,17 @@ function LiveFinancialActivity({
                 {items.map((item) => (
                     <li
                         key={item.id}
-                        className="hover:bg-accent flex items-center justify-between rounded-lg px-1 py-2.5 transition-colors"
+                        className="hover:bg-accent flex items-center justify-between gap-3 rounded-md px-1 py-2.5 transition-colors"
                     >
-                        <div className="flex items-center gap-3">
-                            <span className="flex size-8 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-                                <ArrowDownLeft className="size-4" />
+                        <div className="flex min-w-0 items-center gap-2.5">
+                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
+                                <ArrowDownLeft className="size-3.5" />
                             </span>
-                            <div className="flex flex-col">
-                                <span className="text-sm font-medium">
+                            <div className="flex min-w-0 flex-col">
+                                <span className="truncate text-[13px] font-medium">
                                     {item.user ?? "Unknown member"}
                                 </span>
-                                <span className="text-muted-foreground text-xs">
+                                <span className="text-muted-foreground truncate text-[11px]">
                                     {item.plan ?? "Membership"}
                                     {item.billingCycle
                                         ? ` · ${item.billingCycle}`
@@ -670,13 +689,13 @@ function LiveFinancialActivity({
                                 </span>
                             </div>
                         </div>
-                        <span className="text-sm font-medium">
+                        <span className="shrink-0 text-[13px] font-medium tabular-nums">
                             ₱{item.amount.toLocaleString()}
                         </span>
                     </li>
                 ))}
             </ul>
-        </div>
+        </Panel>
     );
 }
 
@@ -695,30 +714,26 @@ export default function Overview({
     return (
         <>
             <Head title="Overview" />
-            <div className="flex flex-1 flex-col gap-4 rounded-xl p-4">
-                <div className="grid gap-4 md:grid-cols-3">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
+                {/* Row 1 — hero + primary stats */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
                     />
-                    <div className="flex flex-col gap-4">
-                        <StatCard
-                            icon={CircleDollarSign}
-                            label="Monthly revenue"
-                            value={`₱${stats.monthlyRevenue.toLocaleString()}`}
-                            growth={stats.monthlyRevenueGrowth}
-                        />
-                        <StatCard
-                            icon={Users}
-                            iconClassName="bg-blue-500/10 text-blue-500 dark:text-blue-400"
-                            label="Active members"
-                            value={stats.activeMembers.toLocaleString()}
-                            growth={stats.activeMembersGrowth}
-                        />
-                    </div>
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-3">
+                    <StatCard
+                        icon={CircleDollarSign}
+                        label="Monthly revenue"
+                        value={`₱${stats.monthlyRevenue.toLocaleString()}`}
+                        growth={stats.monthlyRevenueGrowth}
+                    />
+                    <StatCard
+                        icon={Users}
+                        iconClassName="bg-blue-500/10 text-blue-500 dark:text-blue-400"
+                        label="Active members"
+                        value={stats.activeMembers.toLocaleString()}
+                        growth={stats.activeMembersGrowth}
+                    />
                     <StatCard
                         icon={ShieldCheck}
                         iconClassName="bg-emerald-500/10 text-emerald-500"
@@ -726,6 +741,10 @@ export default function Overview({
                         value={`${stats.paymentSuccessRate}%`}
                         growth={stats.paymentSuccessGrowth}
                     />
+                </div>
+
+                {/* Row 2 — revenue trend + attendance */}
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 xl:grid-cols-3">
                     <RevenueChart
                         data={revenuePerformance}
                         total={revenuePerformance.reduce(
@@ -734,19 +753,16 @@ export default function Overview({
                         )}
                         growth={stats.monthlyRevenueGrowth}
                     />
-                </div>
-
-                <div className="grid gap-4 md:grid-cols-2">
                     <AttendanceOverview
                         checkInsToday={attendanceOverview.checkInsToday}
                         checkInsGrowth={attendanceOverview.checkInsGrowth}
                         peakHour={attendanceOverview.peakHour}
                         week={attendanceOverview.week}
                     />
-                    <LiveFinancialActivity items={liveFinancialActivity} />
                 </div>
 
-                <div className="grid gap-4 md:grid-cols-2">
+                {/* Row 3 — member mix, retention, live payments */}
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
                     <MemberActivityDonut
                         total={memberActivity.total}
                         breakdown={memberActivity.breakdown}
@@ -757,6 +773,9 @@ export default function Overview({
                         label={retentionHealth.label}
                         status={retentionHealth.status}
                     />
+                    <div className="sm:col-span-2">
+                        <LiveFinancialActivity items={liveFinancialActivity} />
+                    </div>
                 </div>
             </div>
         </>
