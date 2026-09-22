@@ -18,8 +18,7 @@ class HandleInertiaRequests extends Middleware
     public function share(Request $request): array
     {
         $user = $request->user();
-        $gymProfile = GymProfile::current();
-
+        $gymProfile = $request->attributes->get('gymProfile') ?? GymProfile::current();
         return [
             ...parent::share($request),
             'name' => config('app.name'),
