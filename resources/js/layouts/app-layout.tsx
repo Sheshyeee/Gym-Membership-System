@@ -1,5 +1,6 @@
-import AppLayoutTemplate from '@/layouts/app/app-sidebar-layout';
-import type { BreadcrumbItem } from '@/types';
+import AppLayoutTemplate from "@/layouts/app/app-sidebar-layout";
+import { FlashToasts } from "@/components/flash-toasts";
+import type { BreadcrumbItem } from "@/types";
 
 export default function AppLayout({
     breadcrumbs = [],
@@ -11,6 +12,7 @@ export default function AppLayout({
     return (
         <AppLayoutTemplate breadcrumbs={breadcrumbs}>
             {children}
+            <FlashToasts />
         </AppLayoutTemplate>
     );
 }
