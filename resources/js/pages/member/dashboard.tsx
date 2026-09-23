@@ -603,7 +603,7 @@ export default function Dashboard({
                         </div>
                     </div>
 
-                    <div className="grid grid-cols-2 items-start gap-4">
+                    <div className="grid grid-cols-2 items-stretch gap-4">
                         {attendanceCard}
                         {recentCheckinsCard}
                     </div>
