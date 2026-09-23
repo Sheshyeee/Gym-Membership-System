@@ -19,7 +19,9 @@ class GoogleAuthController extends Controller
 
     public function callback(): RedirectResponse
     {
-        $googleUser = Socialite::driver('google')->stateless()->user();
+        /** @var \Laravel\Socialite\Two\AbstractProvider $driver */
+        $driver = Socialite::driver('google');
+        $googleUser = $driver->stateless()->user();
 
         $user = User::where('google_id', $googleUser->getId())
             ->orWhere('email', $googleUser->getEmail())
