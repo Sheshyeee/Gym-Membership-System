@@ -33,7 +33,6 @@ interface MemberStats {
     active: number;
     expiring_soon: number;
     expired: number;
-    monthly_signups: { label: string; count: number }[];
 }
 
 const statusStyles: Record<MemberStatus, string> = {
@@ -125,10 +124,22 @@ export default function Member({
         setSheetOpen(true);
     }
 
-    const maxSignups = Math.max(
-        1,
-        ...stats.monthly_signups.map((m) => m.count),
-    );
+    // Bars now measure the same active / expiring_soon / expired counts
+    // shown in the list below, instead of an unrelated signups timeline.
+    const statusBars = [
+        { label: "Active", count: stats.active, color: "bg-emerald-500/70" },
+        {
+            label: "Expiring soon",
+            count: stats.expiring_soon,
+            color: "bg-amber-500/70",
+        },
+        {
+            label: "Expired",
+            count: stats.expired,
+            color: "bg-muted-foreground/50",
+        },
+    ];
+    const maxStatus = Math.max(1, ...statusBars.map((s) => s.count));
 
     return (
         <>
@@ -180,14 +191,14 @@ export default function Member({
                         </p>
 
                         <div className="mt-4 flex h-16 flex-1 items-end gap-1.5">
-                            {stats.monthly_signups.map((m) => (
+                            {statusBars.map((s) => (
                                 <div
-                                    key={m.label}
-                                    className="flex-1 rounded-t bg-orange-500/70 transition-all"
+                                    key={s.label}
+                                    className={`flex-1 rounded-t ${s.color} transition-all`}
                                     style={{
-                                        height: `${Math.max((m.count / maxSignups) * 100, m.count > 0 ? 6 : 2)}%`,
+                                        height: `${Math.max((s.count / maxStatus) * 100, s.count > 0 ? 6 : 2)}%`,
                                     }}
-                                    title={`${m.label}: ${m.count}`}
+                                    title={`${s.label}: ${s.count}`}
                                 />
                             ))}
                         </div>

@@ -88,20 +88,11 @@ class AdminMemberController extends Controller
 
         $statuses = $members->map(fn($u) => $this->resolveStatus($u->latestSubscription));
 
-        $signups = User::role('user')
-            ->where('created_at', '>=', now()->subMonths(5)->startOfMonth())
-            ->get(['created_at'])
-            ->groupBy(fn($u) => $u->created_at->format('Y-m')); // group by year+month, not just 'M'
-
         return [
             'total' => $members->count(),
             'active' => $statuses->filter(fn($s) => $s === 'active')->count(),
             'expiring_soon' => $statuses->filter(fn($s) => $s === 'expiring_soon')->count(),
             'expired' => $statuses->filter(fn($s) => $s === 'expired')->count(),
-            'monthly_signups' => collect(range(5, 0))->map(fn($ago) => [
-                'label' => now()->subMonths($ago)->format('M'),
-                'count' => $signups->get(now()->subMonths($ago)->format('Y-m'), collect())->count(),
-            ])->values(),
         ];
     }
     public function show(User $user): JsonResponse
