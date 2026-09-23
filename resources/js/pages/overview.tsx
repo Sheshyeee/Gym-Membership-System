@@ -96,7 +96,7 @@ function GrowthBadge({
 }) {
     if (growth === null) {
         return (
-            <span className="text-muted-foreground text-[11px] font-medium">
+            <span className="text-muted-foreground text-[10px] font-medium sm:text-[11px]">
                 New
             </span>
         );
@@ -107,7 +107,7 @@ function GrowthBadge({
     return (
         <span
             className={cn(
-                "inline-flex items-center gap-0.5 text-[11px] font-medium tabular-nums",
+                "inline-flex items-center gap-0.5 text-[10px] font-medium tabular-nums sm:text-[11px]",
                 isPositive ? "text-emerald-500" : "text-red-500",
             )}
         >
@@ -135,8 +135,15 @@ function timeAgo(dateString: string | null) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared card shell — keeps padding/border/radius consistent everywhere so
-// nothing reads as a mismatched template piece.
+// Shared card shell.
+// KEY FIX #1: `h-full flex flex-col` — every Panel now fills the height of
+// its grid row (rows use items-stretch below) instead of sizing to its own
+// content and leaving a hole under it. Children that should "absorb" extra
+// space use `flex-1` or `mt-auto`, so a sparse card (e.g. an empty-state
+// gauge) spreads its content across the full card instead of bunching at
+// the top with dead air underneath.
+// Mobile-first: rounded-2xl + tighter padding reads more like a modern
+// mobile app card; it steps down to the denser desktop rhythm at sm/lg.
 // ---------------------------------------------------------------------------
 
 function Panel({
@@ -149,7 +156,7 @@ function Panel({
     return (
         <div
             className={cn(
-                "border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-lg border p-3.5 sm:p-4",
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card flex h-full flex-col rounded-2xl border p-3 sm:rounded-lg sm:p-4",
                 className,
             )}
         >
@@ -168,13 +175,13 @@ function PanelHeader({
     action?: React.ReactNode;
 }) {
     return (
-        <div className="mb-3 flex items-start justify-between gap-2">
+        <div className="mb-2.5 flex items-start justify-between gap-2 sm:mb-3">
             <div>
-                <h2 className="text-[13px] font-semibold leading-none">
+                <h2 className="text-[12px] font-semibold leading-none sm:text-[13px]">
                     {title}
                 </h2>
                 {subtitle && (
-                    <span className="mt-1 block text-[11px] font-medium text-orange-500/90 dark:text-orange-400/80">
+                    <span className="mt-1 block text-[10px] font-medium text-orange-500/90 sm:text-[11px] dark:text-orange-400/80">
                         {subtitle}
                     </span>
                 )}
@@ -202,38 +209,38 @@ function HeroCard({
     });
 
     return (
-        <Panel className="relative flex flex-col justify-between gap-4 overflow-hidden xl:col-span-2">
+        <Panel className="relative justify-between gap-3 overflow-hidden xl:col-span-2">
             <Dumbbell
-                className="pointer-events-none absolute -right-6 -bottom-6 size-32 rotate-12 text-orange-500/10 dark:text-orange-400/10"
+                className="pointer-events-none absolute -right-6 -bottom-6 size-24 rotate-12 text-orange-500/10 sm:size-32 dark:text-orange-400/10"
                 strokeWidth={1.5}
             />
 
-            <div className="relative flex flex-col gap-2">
-                <span className="text-muted-foreground text-[11px]">
+            <div className="relative flex flex-col gap-1.5 sm:gap-2">
+                <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                     {today}
                 </span>
-                <h1 className="text-xl leading-snug font-semibold tracking-tight sm:text-2xl">
+                <h1 className="text-lg leading-snug font-semibold tracking-tight sm:text-xl lg:text-2xl">
                     Run your gym at full strength
                 </h1>
-                <p className="text-muted-foreground max-w-sm text-[13px] leading-relaxed">
+                <p className="text-muted-foreground max-w-sm text-[12px] leading-relaxed sm:text-[13px]">
                     Everything is looking healthy today — check-ins and payments
                     are both tracking above last week.
                 </p>
             </div>
 
-            <div className="relative flex flex-wrap items-center gap-2">
+            <div className="relative -mx-3 flex items-center gap-1.5 overflow-x-auto px-3 pb-0.5 sm:mx-0 sm:flex-wrap sm:gap-2 sm:overflow-visible sm:px-0">
                 <Link
                     href="/members"
-                    className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[13px] font-medium transition-opacity hover:opacity-90"
+                    className="bg-primary text-primary-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
                 >
                     View members
                     <span aria-hidden>›</span>
                 </Link>
-                <span className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground inline-flex items-center gap-1.5 rounded-md border px-2.5 py-1.5 text-[11px]">
-                    <Dumbbell className="size-3.5 text-orange-500" />
+                <span className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] sm:px-2.5 sm:py-1.5 sm:text-[11px]">
+                    <Dumbbell className="size-3 text-orange-500 sm:size-3.5" />
                     {checkInsToday} check-ins today
                 </span>
-                <span className="inline-flex items-center gap-1.5 rounded-md bg-emerald-500/10 px-2.5 py-1.5 text-[11px] font-medium text-emerald-500">
+                <span className="inline-flex shrink-0 items-center gap-1.5 rounded-md bg-emerald-500/10 px-2 py-1 text-[10px] font-medium text-emerald-500 sm:px-2.5 sm:py-1.5 sm:text-[11px]">
                     {paymentSuccessRate}% payment success
                 </span>
             </div>
@@ -255,24 +262,24 @@ function StatCard({
     growth: number | null;
 }) {
     return (
-        <Panel className="flex items-center justify-between gap-3">
+        <Panel className="flex-row items-center justify-between gap-3">
             <div className="flex flex-col gap-1">
-                <span className="text-muted-foreground text-[11px]">
+                <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                     {label}
                 </span>
-                <span className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
+                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl lg:text-2xl">
                     {value}
                 </span>
                 <GrowthBadge growth={growth} />
             </div>
             <div
                 className={cn(
-                    "flex size-9 shrink-0 items-center justify-center rounded-md",
+                    "flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9",
                     iconClassName ??
                         "bg-orange-500/10 text-orange-500 dark:text-orange-400",
                 )}
             >
-                <Icon className="size-4" />
+                <Icon className="size-3.5 sm:size-4" />
             </div>
         </Panel>
     );
@@ -291,14 +298,19 @@ function RevenueChart({
         <Panel className="xl:col-span-2">
             <PanelHeader title="Revenue performance" subtitle="This year" />
 
-            <div className="mb-3 flex items-baseline gap-2">
-                <span className="text-xl font-semibold tracking-tight tabular-nums sm:text-2xl">
+            <div className="mb-2.5 flex items-baseline gap-2 sm:mb-3">
+                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl lg:text-2xl">
                     ₱{total.toLocaleString()}
                 </span>
                 <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
-            <div className="h-48 w-full sm:h-56">
+            {/* KEY FIX: flex-1 instead of a fixed h-48/h-56 — the chart now
+                grows to fill whatever height this row ends up being (matched
+                to Attendance overview via items-stretch), so there's no gap
+                between the chart and the card's bottom edge. min-h-0 lets it
+                shrink correctly inside the flex column. */}
+            <div className="min-h-0 w-full flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
@@ -330,7 +342,7 @@ function RevenueChart({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
@@ -341,12 +353,12 @@ function RevenueChart({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
                             tickFormatter={formatCompact}
-                            width={36}
+                            width={32}
                         />
                         <Tooltip
                             formatter={(value, name) => [
@@ -400,32 +412,34 @@ function AttendanceOverview({
         <Panel>
             <PanelHeader title="Attendance overview" subtitle="Today" />
 
-            <div className="mb-3 grid grid-cols-2 gap-3">
+            <div className="mb-2.5 grid grid-cols-2 gap-3 sm:mb-3">
                 <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-[11px]">
+                    <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check-ins
                     </span>
-                    <span className="text-lg font-semibold tabular-nums">
+                    <span className="text-base font-semibold tabular-nums sm:text-lg">
                         {checkInsToday}
                     </span>
                     <GrowthBadge growth={checkInsGrowth} />
                 </div>
                 <div className="flex flex-col gap-1">
-                    <span className="text-muted-foreground text-[11px]">
+                    <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Peak hours
                     </span>
-                    <span className="text-lg font-semibold tabular-nums">
+                    <span className="text-base font-semibold tabular-nums sm:text-lg">
                         {peakHour ?? "—"}
                     </span>
                     {peakHour && (
-                        <span className="text-[11px] font-medium text-orange-500 dark:text-orange-400">
+                        <span className="text-[10px] font-medium text-orange-500 sm:text-[11px] dark:text-orange-400">
                             Highest traffic
                         </span>
                     )}
                 </div>
             </div>
 
-            <div className="h-28 w-full">
+            {/* flex-1 + min-h-0: bar chart fills remaining height so it
+                matches the Revenue chart's row instead of leaving a gap. */}
+            <div className="min-h-0 w-full flex-1">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={week}
@@ -436,7 +450,7 @@ function AttendanceOverview({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 10.5,
+                                fontSize: 10,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
@@ -475,7 +489,7 @@ function AttendanceOverview({
 
             <Link
                 href="/attendance"
-                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-3 flex w-full items-center justify-center gap-1 rounded-md border py-1.5 text-[11px] font-medium transition-colors"
+                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-3 flex w-full shrink-0 items-center justify-center gap-1 rounded-md border py-1.5 text-[10px] font-medium transition-colors sm:text-[11px]"
             >
                 View attendance analytics
                 <span aria-hidden>›</span>
@@ -495,8 +509,11 @@ function MemberActivityDonut({
         <Panel>
             <PanelHeader title="Member activity" subtitle="Current status" />
 
-            <div className="flex items-center gap-4">
-                <div className="relative size-28 shrink-0">
+            {/* flex-1 + items-center: centers the donut+legend vertically in
+                whatever height this row is stretched to, instead of pinning
+                it to the top and leaving blank space below. */}
+            <div className="flex flex-1 items-center gap-3 sm:gap-4">
+                <div className="relative size-24 shrink-0 sm:size-28">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -523,10 +540,10 @@ function MemberActivityDonut({
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-lg font-semibold tabular-nums">
+                        <span className="text-base font-semibold tabular-nums sm:text-lg">
                             {total.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground text-[9px]">
+                        <span className="text-muted-foreground text-[8px] sm:text-[9px]">
                             Total members
                         </span>
                     </div>
@@ -536,7 +553,7 @@ function MemberActivityDonut({
                     {breakdown.map((segment) => (
                         <li
                             key={segment.label}
-                            className="flex items-center justify-between text-[12px]"
+                            className="flex items-center justify-between text-[11px] sm:text-[12px]"
                         >
                             <span className="flex items-center gap-2">
                                 <span
@@ -592,47 +609,63 @@ function RetentionGauge({
         <Panel>
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
-            {/* Fixed: previous version used height="200%" on the container and
-                innerRadius/outerRadius/cy values above 100%, which pushed the
-                arc outside its box and got clipped into the "broken crescent"
-                look. A proper semi-donut gauge keeps radii within 0–100% and
-                anchors cy at the bottom of the box. */}
-            <div className="relative h-28 w-full overflow-hidden">
-                <ResponsiveContainer width="100%" height="100%">
-                    <RadialBarChart
-                        data={data}
-                        startAngle={180}
-                        endAngle={0}
-                        innerRadius="70%"
-                        outerRadius="100%"
-                        cx="50%"
-                        cy="100%"
-                        barSize={14}
-                    >
-                        <RadialBar
-                            dataKey="value"
-                            cornerRadius={7}
-                            background={{
-                                fill: "currentColor",
-                                fillOpacity: 0.08,
-                            }}
-                            max={100}
-                        />
-                    </RadialBarChart>
-                </ResponsiveContainer>
-                <div className="absolute inset-x-0 bottom-1 flex flex-col items-center">
-                    <span className="text-xl font-semibold tabular-nums">
-                        {rate}
-                    </span>
-                    <span className="text-muted-foreground text-[9px]">
-                        member retention
-                    </span>
-                </div>
+            {/* This is the card that was previously mostly empty. flex-1 +
+                justify-center makes the gauge (or the empty state) center
+                itself in whatever height the row stretches to, and the
+                footer below is pinned to the bottom with mt-auto — so the
+                card's content is spread edge-to-edge instead of clumped at
+                the top with a hole underneath. */}
+            <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
+                {status === "neutral" ? (
+                    <div className="flex flex-col items-center gap-1 text-center">
+                        <span className="text-2xl font-semibold tabular-nums opacity-30 sm:text-3xl">
+                            —
+                        </span>
+                        <span className="text-muted-foreground max-w-[16ch] text-[10px] leading-snug sm:text-[11px]">
+                            Not enough data yet to calculate retention
+                        </span>
+                    </div>
+                ) : (
+                    <>
+                        <div className="h-24 w-full sm:h-28">
+                            <ResponsiveContainer width="100%" height="100%">
+                                <RadialBarChart
+                                    data={data}
+                                    startAngle={180}
+                                    endAngle={0}
+                                    innerRadius="70%"
+                                    outerRadius="100%"
+                                    cx="50%"
+                                    cy="100%"
+                                    barSize={14}
+                                >
+                                    <RadialBar
+                                        dataKey="value"
+                                        cornerRadius={7}
+                                        background={{
+                                            fill: "currentColor",
+                                            fillOpacity: 0.08,
+                                        }}
+                                        max={100}
+                                    />
+                                </RadialBarChart>
+                            </ResponsiveContainer>
+                        </div>
+                        <div className="absolute inset-x-0 bottom-1 flex flex-col items-center">
+                            <span className="text-lg font-semibold tabular-nums sm:text-xl">
+                                {rate}
+                            </span>
+                            <span className="text-muted-foreground text-[8px] sm:text-[9px]">
+                                member retention
+                            </span>
+                        </div>
+                    </>
+                )}
             </div>
 
-            <div className="mt-2.5 flex items-center justify-between">
+            <div className="mt-auto flex items-center justify-between pt-2.5 sm:pt-3">
                 {status === "neutral" ? (
-                    <span className="text-muted-foreground text-[11px]">
+                    <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check back after 30 days
                     </span>
                 ) : (
@@ -640,7 +673,7 @@ function RetentionGauge({
                 )}
                 <span
                     className={cn(
-                        "rounded-full px-2 py-0.5 text-[11px] font-medium",
+                        "rounded-full px-2 py-0.5 text-[10px] font-medium sm:text-[11px]",
                         styles.badge,
                     )}
                 >
@@ -663,16 +696,19 @@ function LiveFinancialActivity({
                 action={
                     <a
                         href="/payments"
-                        className="text-[11px] font-medium text-orange-500 hover:underline dark:text-orange-400"
+                        className="text-[10px] font-medium text-orange-500 hover:underline sm:text-[11px] dark:text-orange-400"
                     >
                         View all
                     </a>
                 }
             />
 
-            <ul className="flex flex-col divide-y divide-sidebar-border/50 dark:divide-sidebar-border/50">
+            {/* flex-1 + justify-center on the empty state keeps it centered
+                in the full card height rather than floating a small block of
+                text near the top and leaving a gap below it. */}
+            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-1 flex-col divide-y">
                 {items.length === 0 && (
-                    <li className="text-muted-foreground py-6 text-center text-[12px]">
+                    <li className="text-muted-foreground flex flex-1 items-center justify-center text-[12px]">
                         No payments yet
                     </li>
                 )}
@@ -680,17 +716,17 @@ function LiveFinancialActivity({
                 {items.map((item) => (
                     <li
                         key={item.id}
-                        className="hover:bg-accent flex items-center justify-between gap-3 rounded-md px-1 py-2.5 transition-colors"
+                        className="hover:bg-accent flex items-center justify-between gap-3 rounded-md px-1 py-2 transition-colors sm:py-2.5"
                     >
                         <div className="flex min-w-0 items-center gap-2.5">
-                            <span className="flex size-7 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500">
-                                <ArrowDownLeft className="size-3.5" />
+                            <span className="flex size-6 shrink-0 items-center justify-center rounded-full bg-emerald-500/10 text-emerald-500 sm:size-7">
+                                <ArrowDownLeft className="size-3 sm:size-3.5" />
                             </span>
                             <div className="flex min-w-0 flex-col">
-                                <span className="truncate text-[13px] font-medium">
+                                <span className="truncate text-[12px] font-medium sm:text-[13px]">
                                     {item.user ?? "Unknown member"}
                                 </span>
-                                <span className="text-muted-foreground truncate text-[11px]">
+                                <span className="text-muted-foreground truncate text-[10px] sm:text-[11px]">
                                     {item.plan ?? "Membership"}
                                     {item.billingCycle
                                         ? ` · ${item.billingCycle}`
@@ -699,7 +735,7 @@ function LiveFinancialActivity({
                                 </span>
                             </div>
                         </div>
-                        <span className="shrink-0 text-[13px] font-medium tabular-nums">
+                        <span className="shrink-0 text-[12px] font-medium tabular-nums sm:text-[13px]">
                             ₱{item.amount.toLocaleString()}
                         </span>
                     </li>
@@ -724,15 +760,13 @@ export default function Overview({
     return (
         <>
             <Head title="Overview" />
-            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-2.5 p-2.5 sm:gap-4 sm:p-4 lg:gap-4 lg:p-6">
                 {/* Row 1 — hero + primary stats.
-                    HeroCard spans 2 columns, plus 3 StatCards (1 col each) = 5
-                    columns of content. Previously the wrapper was xl:grid-cols-4,
-                    so 2+1+1+1=5 could not fit in 4 columns and the last
-                    StatCard wrapped onto its own row, leaving a big empty gap
-                    beside it. Using xl:grid-cols-5 makes the row fill exactly,
-                    with no deadspace. */}
-                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-5">
+                    KEY FIX #2: items-stretch (the default — no items-start)
+                    so every card in this row is the same height as the
+                    tallest one, instead of the stat cards floating short
+                    next to the taller HeroCard. */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-5">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
@@ -759,10 +793,9 @@ export default function Overview({
                     />
                 </div>
 
-                {/* Row 2 — revenue trend + attendance.
-                    RevenueChart spans 2 cols, AttendanceOverview takes 1 col,
-                    inside xl:grid-cols-3 — fills exactly, no change needed. */}
-                <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 xl:grid-cols-3">
+                {/* Row 2 — revenue trend + attendance, stretched to equal
+                    height so the two charts fill their row edge-to-edge. */}
+                <div className="grid grid-cols-1 gap-2.5 sm:gap-4 xl:grid-cols-3">
                     <RevenueChart
                         data={revenuePerformance}
                         total={revenuePerformance.reduce(
@@ -779,11 +812,11 @@ export default function Overview({
                     />
                 </div>
 
-                {/* Row 3 — member mix, retention, live payments.
-                    MemberActivityDonut (1) + RetentionGauge (1) +
-                    LiveFinancialActivity (2) = 4 cols inside xl:grid-cols-4 —
-                    fills exactly, no change needed. */}
-                <div className="grid grid-cols-1 items-start gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-4">
+                {/* Row 3 — member mix, retention, live payments. Stretched to
+                    equal height: Retention health (the sparse one) now
+                    centers its gauge/empty-state across the full card
+                    instead of leaving a block of dead space beneath it. */}
+                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
                     <MemberActivityDonut
                         total={memberActivity.total}
                         breakdown={memberActivity.breakdown}
@@ -794,7 +827,7 @@ export default function Overview({
                         label={retentionHealth.label}
                         status={retentionHealth.status}
                     />
-                    <div className="sm:col-span-2">
+                    <div className="col-span-2 xl:col-span-2">
                         <LiveFinancialActivity items={liveFinancialActivity} />
                     </div>
                 </div>
