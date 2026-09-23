@@ -83,13 +83,17 @@ export default function Dashboard({
     const maxWeekVisits = Math.max(1, ...weeklyRhythm.map((w) => w.visits));
     const hasAnyVisits = weeklyRhythm.some((w) => w.visits > 0);
 
-    // Ring geometry for membership progress
+    // Ring geometry for membership progress.
+    // percent_used = how much of the billing period has elapsed (0 at the
+    // start of the sub, 100 once it's fully used up). The ring should show
+    // the opposite: full orange when the sub just started, draining down as
+    // days run out — so we draw the *remaining* percentage, not the used one.
     const RADIUS = 42;
     const CIRCUMFERENCE = 2 * Math.PI * RADIUS;
-    const pct = currentMembership
-        ? Math.min(100, Math.max(0, currentMembership.percent_used))
+    const percentRemaining = currentMembership
+        ? Math.min(100, Math.max(0, 100 - currentMembership.percent_used))
         : 0;
-    const ringOffset = CIRCUMFERENCE * (1 - pct / 100);
+    const ringOffset = CIRCUMFERENCE * (1 - percentRemaining / 100);
 
     const statCards = [
         {
@@ -125,7 +129,7 @@ export default function Dashboard({
             key: "payments",
             href: "/member/payments",
             title: "Payments",
-            subtitle: "View your history",
+            subtitle: "View history",
             icon: CreditCard,
             color: "bg-blue-500/10 text-blue-400",
         },
@@ -141,7 +145,7 @@ export default function Dashboard({
             key: "manage",
             href: "/member/membership",
             title: "Manage plan",
-            subtitle: "Renew or change plan",
+            subtitle: "Renew or change",
             icon: Flame,
             color: "bg-primary/10 text-primary",
         },
@@ -207,15 +211,65 @@ export default function Dashboard({
                     </div>
                 )}
 
-                {/* Hero + stats + quick access — reordered per-breakpoint via grid-area */}
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr] lg:[grid-template-areas:'hero_quick'_'stats_quick']">
+                {/*
+                    Top block. DOM order = hero, stats, quick, visits so mobile
+                    (single column, no grid-area applied) stacks in exactly
+                    that order. At lg+ the same four blocks are repositioned
+                    with grid-template-areas: hero/quick share row 1, and
+                    stats/visits share row 2 — since visits sits in the same
+                    row as the stat cards, grid's default stretch keeps their
+                    bottom edges aligned automatically.
+                */}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr] lg:[grid-template-areas:'hero_quick'_'stats_visits']">
                     {/* Membership hero */}
                     <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6 lg:[grid-area:hero]">
                         <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-primary/25 blur-3xl" />
 
                         {currentMembership ? (
-                            <div className="relative flex flex-col gap-5 sm:flex-row sm:items-center sm:justify-between">
-                                <div className="flex-1">
+                            <div className="relative flex flex-row items-center gap-4 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-6">
+                                {/* Progress ring — left on mobile, right on sm+ (flex-row-reverse) */}
+                                <div className="flex shrink-0 flex-col items-center self-center">
+                                    <div className="relative flex h-16 w-16 items-center justify-center sm:h-28 sm:w-28">
+                                        <svg
+                                            viewBox="0 0 100 100"
+                                            className="h-16 w-16 -rotate-90 sm:h-28 sm:w-28"
+                                        >
+                                            <circle
+                                                cx="50"
+                                                cy="50"
+                                                r={RADIUS}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="8"
+                                                className="text-border"
+                                            />
+                                            <circle
+                                                cx="50"
+                                                cy="50"
+                                                r={RADIUS}
+                                                fill="none"
+                                                stroke="currentColor"
+                                                strokeWidth="8"
+                                                strokeLinecap="round"
+                                                strokeDasharray={CIRCUMFERENCE}
+                                                strokeDashoffset={ringOffset}
+                                                className="text-primary transition-[stroke-dashoffset] duration-500"
+                                            />
+                                        </svg>
+                                        <div className="absolute flex flex-col items-center">
+                                            <span className="text-sm font-semibold text-foreground sm:text-xl">
+                                                {
+                                                    currentMembership.days_remaining
+                                                }
+                                            </span>
+                                            <span className="text-[8px] text-muted-foreground sm:text-[10px]">
+                                                days left
+                                            </span>
+                                        </div>
+                                    </div>
+                                </div>
+
+                                <div className="min-w-0 flex-1">
                                     <div className="mb-2 flex items-center justify-between gap-2">
                                         <span className="inline-flex items-center gap-1.5 rounded-full bg-emerald-500/10 px-2.5 py-0.5 text-[11px] font-medium text-emerald-400">
                                             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -228,10 +282,10 @@ export default function Dashboard({
                                         {monthPicker}
                                     </div>
 
-                                    <h1 className="text-xl font-semibold text-foreground sm:text-2xl">
+                                    <h1 className="truncate text-lg font-semibold text-foreground sm:text-2xl">
                                         {currentMembership.plan_name}
                                     </h1>
-                                    <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
+                                    <p className="mt-1 truncate text-xs text-muted-foreground sm:text-sm">
                                         {currentMembership.tagline}
                                     </p>
 
@@ -266,48 +320,6 @@ export default function Dashboard({
                                         <ArrowUpRight className="h-3.5 w-3.5" />
                                     </Link>
                                 </div>
-
-                                {/* Progress ring */}
-                                <div className="flex shrink-0 flex-col items-center self-center">
-                                    <div className="relative flex h-20 w-20 items-center justify-center sm:h-28 sm:w-28">
-                                        <svg
-                                            viewBox="0 0 100 100"
-                                            className="h-20 w-20 -rotate-90 sm:h-28 sm:w-28"
-                                        >
-                                            <circle
-                                                cx="50"
-                                                cy="50"
-                                                r={RADIUS}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="8"
-                                                className="text-border"
-                                            />
-                                            <circle
-                                                cx="50"
-                                                cy="50"
-                                                r={RADIUS}
-                                                fill="none"
-                                                stroke="currentColor"
-                                                strokeWidth="8"
-                                                strokeLinecap="round"
-                                                strokeDasharray={CIRCUMFERENCE}
-                                                strokeDashoffset={ringOffset}
-                                                className="text-primary transition-[stroke-dashoffset] duration-500"
-                                            />
-                                        </svg>
-                                        <div className="absolute flex flex-col items-center">
-                                            <span className="text-base font-semibold text-foreground sm:text-xl">
-                                                {
-                                                    currentMembership.days_remaining
-                                                }
-                                            </span>
-                                            <span className="text-[9px] text-muted-foreground sm:text-[10px]">
-                                                days left
-                                            </span>
-                                        </div>
-                                    </div>
-                                </div>
                             </div>
                         ) : (
                             <div className="relative flex h-full flex-col justify-center">
@@ -326,44 +338,44 @@ export default function Dashboard({
                         )}
                     </div>
 
-                    {/* Stat cards */}
-                    <div className="flex gap-2.5 overflow-x-auto pb-1 sm:grid sm:grid-cols-3 sm:gap-3 sm:overflow-visible scrollbar-thin lg:[grid-area:stats]">
+                    {/* Stat cards — fixed 3-column grid, never scrolls */}
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:[grid-area:stats]">
                         {statCards.map((s) => {
                             const Icon = s.icon;
                             return (
                                 <div
                                     key={s.key}
-                                    className="relative w-[46%] shrink-0 overflow-hidden rounded-xl border border-border bg-card p-3 sm:w-auto sm:p-4"
+                                    className="relative h-full overflow-hidden rounded-xl border border-border bg-card p-2.5 sm:p-4"
                                 >
-                                    <Icon className="pointer-events-none absolute -right-3 -bottom-3 h-14 w-14 rotate-[15deg] text-foreground opacity-[0.06]" />
+                                    <Icon className="pointer-events-none absolute -right-2 -bottom-2 h-10 w-10 rotate-[15deg] text-foreground opacity-[0.06] sm:-right-3 sm:-bottom-3 sm:h-14 sm:w-14" />
 
-                                    <div className="relative flex items-center justify-between">
+                                    <div className="relative flex items-center justify-between gap-1">
                                         <div
-                                            className={`flex h-7 w-7 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${s.color}`}
+                                            className={`flex h-6 w-6 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${s.color}`}
                                         >
-                                            <Icon className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
+                                            <Icon className="h-3 w-3 sm:h-4 sm:w-4" />
                                         </div>
                                         {s.change !== null && (
                                             <span
-                                                className={`inline-flex items-center gap-0.5 rounded-full px-1.5 py-0.5 text-[10px] font-medium ${
+                                                className={`inline-flex items-center gap-0.5 rounded-full px-1 py-0.5 text-[8px] font-medium sm:px-1.5 sm:text-[10px] ${
                                                     s.change >= 0
                                                         ? "bg-emerald-500/10 text-emerald-400"
                                                         : "bg-red-500/10 text-red-400"
                                                 }`}
                                             >
                                                 {s.change >= 0 ? (
-                                                    <TrendingUp className="h-2.5 w-2.5" />
+                                                    <TrendingUp className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                                                 ) : (
-                                                    <TrendingDown className="h-2.5 w-2.5" />
+                                                    <TrendingDown className="h-2 w-2 sm:h-2.5 sm:w-2.5" />
                                                 )}
                                                 {Math.abs(s.change)}%
                                             </span>
                                         )}
                                     </div>
-                                    <p className="relative mt-2.5 text-xl font-semibold text-foreground sm:mt-3 sm:text-2xl">
+                                    <p className="relative mt-2 text-base font-semibold text-foreground sm:mt-3 sm:text-2xl">
                                         {s.value}
                                     </p>
-                                    <p className="relative mt-0.5 truncate text-[11px] text-muted-foreground sm:text-xs">
+                                    <p className="relative mt-0.5 text-[9px] leading-snug text-muted-foreground sm:mt-0.5 sm:truncate sm:text-xs">
                                         {s.label}
                                     </p>
                                 </div>
@@ -371,97 +383,38 @@ export default function Dashboard({
                         })}
                     </div>
 
-                    {/* Quick access */}
-                    <div className="grid grid-cols-3 gap-1.5 rounded-2xl border border-border bg-card p-3 sm:p-4 sm:flex sm:flex-col lg:[grid-area:quick]">
-                        {quickLinks.map((q) => {
-                            const Icon = q.icon;
-                            return (
-                                <Link
-                                    key={q.key}
-                                    href={q.href}
-                                    className="group flex flex-col items-center gap-1.5 rounded-xl px-2 py-2.5 text-center transition hover:bg-accent sm:flex-row sm:items-center sm:gap-3 sm:px-3 sm:py-3 sm:text-left"
-                                >
-                                    <div
-                                        className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${q.color}`}
+                    {/* Quick access — mother card holding 3 individually-carded buttons, horizontal at every breakpoint */}
+                    <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 lg:[grid-area:quick]">
+                        <div className="grid grid-cols-3 gap-2">
+                            {quickLinks.map((q) => {
+                                const Icon = q.icon;
+                                return (
+                                    <Link
+                                        key={q.key}
+                                        href={q.href}
+                                        className="group flex flex-col items-center gap-1.5 rounded-xl border border-border/60 bg-background/30 px-2 py-3 text-center transition hover:border-border hover:bg-accent"
                                     >
-                                        <Icon className="h-4 w-4" />
-                                    </div>
-                                    <div className="min-w-0 flex-1">
-                                        <p className="truncate text-[11px] font-medium text-foreground sm:text-sm">
-                                            {q.title}
-                                        </p>
-                                        <p className="hidden text-xs text-muted-foreground sm:block">
-                                            {q.subtitle}
-                                        </p>
-                                    </div>
-                                    <ArrowUpRight className="hidden h-4 w-4 text-muted-foreground transition group-hover:text-foreground sm:block" />
-                                </Link>
-                            );
-                        })}
-                    </div>
-                </div>
-
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
-                    {/* Attendance map */}
-                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5">
-                        <div className="flex items-baseline justify-between">
-                            <h3 className="text-sm font-medium text-foreground">
-                                Attendance map
-                            </h3>
-                            <span className="text-xs text-muted-foreground">
-                                {selectedMonthLabel}
-                            </span>
-                        </div>
-
-                        <div className="mx-auto mt-4 w-full max-w-[280px]">
-                            <div className="grid grid-cols-7 justify-items-center gap-1 text-center text-[10px] text-muted-foreground">
-                                {["M", "T", "W", "T", "F", "S", "S"].map(
-                                    (d, i) => (
-                                        <div key={i}>{d}</div>
-                                    ),
-                                )}
-                            </div>
-
-                            <div className="mt-1.5 grid grid-cols-7 justify-items-center gap-1">
-                                {Array.from({ length: leadingBlanks }).map(
-                                    (_, i) => (
                                         <div
-                                            key={`blank-${i}`}
-                                            className="h-7 w-7"
-                                        />
-                                    ),
-                                )}
-                                {calendar.map((d) => (
-                                    <div
-                                        key={d.date}
-                                        className={`flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-medium ${
-                                            d.checked_in
-                                                ? "border border-primary/60 bg-primary/10 text-primary"
-                                                : d.is_future
-                                                  ? "bg-muted/30 text-muted-foreground/50"
-                                                  : "bg-muted/60 text-muted-foreground"
-                                        }`}
-                                    >
-                                        {d.day}
-                                    </div>
-                                ))}
-                            </div>
-                        </div>
-
-                        <div className="mt-auto flex items-center justify-center gap-4 pt-4 text-[11px] text-muted-foreground">
-                            <span className="flex items-center gap-1.5">
-                                <span className="h-2 w-2 rounded-sm bg-primary" />
-                                Checked in
-                            </span>
-                            <span className="flex items-center gap-1.5">
-                                <span className="h-2 w-2 rounded-sm bg-muted-foreground/40" />
-                                Rest day
-                            </span>
+                                            className={`flex h-8 w-8 shrink-0 items-center justify-center rounded-lg sm:h-9 sm:w-9 ${q.color}`}
+                                        >
+                                            <Icon className="h-4 w-4" />
+                                        </div>
+                                        <div className="min-w-0">
+                                            <p className="truncate text-[10px] font-medium text-foreground sm:text-xs">
+                                                {q.title}
+                                            </p>
+                                            <p className="hidden truncate text-[10px] text-muted-foreground sm:block">
+                                                {q.subtitle}
+                                            </p>
+                                        </div>
+                                    </Link>
+                                );
+                            })}
                         </div>
                     </div>
 
-                    {/* Weekly rhythm */}
-                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5">
+                    {/* Visits over time — sits under the quick access card, bottom-aligned with the stat row */}
+                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5 lg:[grid-area:visits]">
                         <div className="flex items-baseline justify-between">
                             <h3 className="text-sm font-medium text-foreground">
                                 Visits over time
@@ -530,46 +483,107 @@ export default function Dashboard({
                     </div>
                 </div>
 
-                {/* Recent check-ins */}
-                <div className="rounded-xl border border-border bg-card p-4 sm:p-6">
-                    <h3 className="text-sm font-medium text-foreground">
-                        Recent check-ins
-                    </h3>
-
-                    {recentCheckIns.length === 0 ? (
-                        <p className="mt-4 text-sm text-muted-foreground">
-                            No check-ins yet — scan in at the front desk to get
-                            started.
-                        </p>
-                    ) : (
-                        <div className="mt-2 divide-y divide-border">
-                            {recentCheckIns.map((c) => (
-                                <div
-                                    key={c.id}
-                                    className="flex items-center justify-between py-3"
-                                >
-                                    <div className="flex items-center gap-3">
-                                        <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400 sm:h-9 sm:w-9">
-                                            <QrCode className="h-4 w-4" />
-                                        </div>
-                                        <div>
-                                            {/* Placeholder: no Gym/Location model available */}
-                                            <p className="text-sm font-medium text-foreground">
-                                                FitFlow Main Gym
-                                            </p>
-                                            <p className="text-xs text-muted-foreground">
-                                                {c.when}
-                                            </p>
-                                        </div>
-                                    </div>
-                                    <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20 sm:px-2.5 sm:text-xs">
-                                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
-                                        Verified
-                                    </span>
-                                </div>
-                            ))}
+                {/* Attendance map + Recent check-ins, side by side */}
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-2">
+                    {/* Attendance map */}
+                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5">
+                        <div className="flex items-baseline justify-between">
+                            <h3 className="text-sm font-medium text-foreground">
+                                Attendance map
+                            </h3>
+                            <span className="text-xs text-muted-foreground">
+                                {selectedMonthLabel}
+                            </span>
                         </div>
-                    )}
+
+                        <div className="mx-auto mt-4 w-full max-w-[280px]">
+                            <div className="grid grid-cols-7 justify-items-center gap-1 text-center text-[10px] text-muted-foreground">
+                                {["M", "T", "W", "T", "F", "S", "S"].map(
+                                    (d, i) => (
+                                        <div key={i}>{d}</div>
+                                    ),
+                                )}
+                            </div>
+
+                            <div className="mt-1.5 grid grid-cols-7 justify-items-center gap-1">
+                                {Array.from({ length: leadingBlanks }).map(
+                                    (_, i) => (
+                                        <div
+                                            key={`blank-${i}`}
+                                            className="h-7 w-7"
+                                        />
+                                    ),
+                                )}
+                                {calendar.map((d) => (
+                                    <div
+                                        key={d.date}
+                                        className={`flex h-7 w-7 items-center justify-center rounded-md text-[11px] font-medium ${
+                                            d.checked_in
+                                                ? "border border-primary/60 bg-primary/10 text-primary"
+                                                : d.is_future
+                                                  ? "bg-muted/30 text-muted-foreground/50"
+                                                  : "bg-muted/60 text-muted-foreground"
+                                        }`}
+                                    >
+                                        {d.day}
+                                    </div>
+                                ))}
+                            </div>
+                        </div>
+
+                        <div className="mt-auto flex items-center justify-center gap-4 pt-4 text-[11px] text-muted-foreground">
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-sm bg-primary" />
+                                Checked in
+                            </span>
+                            <span className="flex items-center gap-1.5">
+                                <span className="h-2 w-2 rounded-sm bg-muted-foreground/40" />
+                                Rest day
+                            </span>
+                        </div>
+                    </div>
+
+                    {/* Recent check-ins — now takes the slot Visits over time used to occupy */}
+                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5">
+                        <h3 className="text-sm font-medium text-foreground">
+                            Recent check-ins
+                        </h3>
+
+                        {recentCheckIns.length === 0 ? (
+                            <p className="mt-4 text-sm text-muted-foreground">
+                                No check-ins yet — scan in at the front desk to
+                                get started.
+                            </p>
+                        ) : (
+                            <div className="mt-1 flex-1 divide-y divide-border overflow-y-auto">
+                                {recentCheckIns.map((c) => (
+                                    <div
+                                        key={c.id}
+                                        className="flex items-center justify-between gap-2 py-3"
+                                    >
+                                        <div className="flex min-w-0 items-center gap-3">
+                                            <div className="flex h-8 w-8 shrink-0 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
+                                                <QrCode className="h-4 w-4" />
+                                            </div>
+                                            <div className="min-w-0">
+                                                {/* Placeholder: no Gym/Location model available */}
+                                                <p className="truncate text-sm font-medium text-foreground">
+                                                    FitFlow Main Gym
+                                                </p>
+                                                <p className="truncate text-xs text-muted-foreground">
+                                                    {c.when}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <span className="inline-flex shrink-0 items-center gap-1.5 rounded-full bg-emerald-500/10 px-2 py-0.5 text-[11px] font-medium text-emerald-400 ring-1 ring-inset ring-emerald-500/20">
+                                            <span className="h-1.5 w-1.5 rounded-full bg-current" />
+                                            Verified
+                                        </span>
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </div>
                 </div>
             </div>
         </>

@@ -64,26 +64,26 @@ export default function QrAccess({ member }: { member: Member }) {
         <>
             <Head title="QR Access" />
 
-            <div className="min-h-screen bg-neutral-950 text-neutral-100 p-6 md:p-10">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex items-start justify-between mb-8">
+            <div className="p-3 sm:p-6 md:p-10">
+                <div className="mx-auto max-w-5xl">
+                    <div className="mb-5 flex items-start justify-between gap-3 sm:mb-8">
                         <div>
-                            <p className="text-xs font-medium tracking-widest text-amber-500/80 uppercase mb-2">
+                            <p className="mb-1.5 text-[10px] font-medium tracking-widest text-primary/80 uppercase sm:mb-2 sm:text-xs">
                                 Gym Access
                             </p>
-                            <h1 className="text-3xl font-semibold text-white mb-1">
+                            <h1 className="mb-1 text-xl font-semibold text-foreground sm:text-3xl">
                                 Your access pass
                             </h1>
-                            <p className="text-sm text-neutral-400">
+                            <p className="text-xs text-muted-foreground sm:text-sm">
                                 Show this code at the front desk to check in.
                             </p>
                         </div>
 
                         <span
-                            className={`hidden md:inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                            className={`inline-flex shrink-0 items-center gap-1.5 rounded-full px-2.5 py-1 text-[11px] font-medium sm:px-3 sm:text-xs ${
                                 isActive
                                     ? "bg-emerald-500/10 text-emerald-400"
-                                    : "bg-neutral-500/10 text-neutral-400"
+                                    : "bg-muted text-muted-foreground"
                             }`}
                         >
                             <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -91,34 +91,36 @@ export default function QrAccess({ member }: { member: Member }) {
                         </span>
                     </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6">
+                    <div className="grid grid-cols-1 gap-4 sm:gap-6 md:grid-cols-[1.3fr_1fr]">
                         {/* Main pass card */}
-                        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                            <div className="flex items-center justify-between mb-6">
-                                <p className="text-xs font-medium tracking-widest text-neutral-500 uppercase">
+                        <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6">
+                            <div className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+
+                            <div className="relative mb-5 flex items-center justify-between sm:mb-6">
+                                <p className="text-[10px] font-medium tracking-widest text-muted-foreground uppercase sm:text-xs">
                                     FitFlow Member Pass
                                 </p>
                             </div>
 
-                            <div className="flex items-center gap-3 mb-6">
-                                <div className="flex h-11 w-11 items-center justify-center rounded-full bg-amber-600/20 text-amber-400 font-semibold">
+                            <div className="relative mb-5 flex items-center gap-3 sm:mb-6">
+                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary sm:h-11 sm:w-11">
                                     {member.initials}
                                 </div>
-                                <div className="flex-1">
-                                    <p className="font-semibold text-white">
+                                <div className="min-w-0 flex-1">
+                                    <p className="truncate font-semibold text-foreground">
                                         {member.name}
                                     </p>
-                                    <p className="text-sm text-neutral-400">
+                                    <p className="truncate text-xs text-muted-foreground sm:text-sm">
                                         {member.planName
                                             ? `${member.planName} member`
                                             : "No active plan"}
                                     </p>
                                 </div>
                                 <span
-                                    className={`inline-flex items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium ${
+                                    className={`hidden shrink-0 items-center gap-1.5 rounded-full px-3 py-1 text-xs font-medium sm:inline-flex ${
                                         isActive
                                             ? "bg-emerald-500/10 text-emerald-400"
-                                            : "bg-neutral-500/10 text-neutral-400"
+                                            : "bg-muted text-muted-foreground"
                                     }`}
                                 >
                                     <span className="h-1.5 w-1.5 rounded-full bg-current" />
@@ -126,11 +128,12 @@ export default function QrAccess({ member }: { member: Member }) {
                                 </span>
                             </div>
 
-                            <div className="flex justify-center py-6 bg-white rounded-xl">
+                            <div className="relative flex justify-center rounded-xl bg-white py-5 sm:py-6">
                                 <QRCodeSVG
                                     value={member.qrToken}
-                                    size={220}
+                                    size={180}
                                     level="M"
+                                    className="h-[180px] w-[180px] sm:h-[220px] sm:w-[220px]"
                                 />
                             </div>
 
@@ -142,50 +145,50 @@ export default function QrAccess({ member }: { member: Member }) {
                                 style={{ display: "none" }}
                             />
 
-                            <p className="text-center text-xs text-neutral-500 mt-3 mb-6">
+                            <p className="relative mt-3 mb-5 text-center text-[11px] text-muted-foreground sm:mb-6 sm:text-xs">
                                 Fixed access code · does not expire
                             </p>
 
-                            <div className="flex flex-wrap gap-3 mb-6">
+                            <div className="relative mb-5 flex flex-wrap gap-2.5 sm:mb-6 sm:gap-3">
                                 <button
                                     onClick={handleRegenerate}
-                                    className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800/60 px-4 py-2.5 text-sm font-medium text-neutral-200 hover:bg-neutral-800 transition-colors"
+                                    className="inline-flex min-w-[110px] flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-secondary sm:px-4 sm:py-2.5 sm:text-sm"
                                 >
-                                    <RefreshCw className="h-4 w-4" />
+                                    <RefreshCw className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     Regenerate code
                                 </button>
-                               
+
                                 <button
                                     onClick={handleDownload}
-                                    className="flex-1 min-w-[110px] inline-flex items-center justify-center gap-2 rounded-lg border border-neutral-700 bg-neutral-800/60 px-4 py-2.5 text-sm font-medium text-neutral-200 hover:bg-neutral-800 transition-colors"
+                                    className="inline-flex min-w-[110px] flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-secondary/60 px-3 py-2 text-xs font-medium text-foreground transition-colors hover:bg-secondary sm:px-4 sm:py-2.5 sm:text-sm"
                                 >
-                                    <Download className="h-4 w-4" />
+                                    <Download className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                     Download QR
                                 </button>
                             </div>
 
-                            <div className="grid grid-cols-3 gap-4 border-t border-neutral-800 pt-4 text-sm">
-                                <div>
-                                    <p className="text-xs text-neutral-500 mb-1">
+                            <div className="relative grid grid-cols-3 gap-2 border-t border-border pt-4 text-xs sm:gap-4 sm:text-sm">
+                                <div className="min-w-0">
+                                    <p className="mb-1 text-[10px] text-muted-foreground sm:text-xs">
                                         Membership
                                     </p>
-                                    <p className="font-medium text-amber-400">
+                                    <p className="truncate font-medium text-primary">
                                         {member.planName ?? "—"}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-neutral-500 mb-1">
+                                <div className="min-w-0">
+                                    <p className="mb-1 text-[10px] text-muted-foreground sm:text-xs">
                                         Valid until
                                     </p>
-                                    <p className="font-medium text-amber-400">
+                                    <p className="truncate font-medium text-primary">
                                         {member.validUntil ?? "—"}
                                     </p>
                                 </div>
-                                <div>
-                                    <p className="text-xs text-neutral-500 mb-1">
+                                <div className="min-w-0">
+                                    <p className="mb-1 text-[10px] text-muted-foreground sm:text-xs">
                                         Member ID
                                     </p>
-                                    <p className="font-medium text-amber-400">
+                                    <p className="truncate font-medium text-primary">
                                         {member.memberId}
                                     </p>
                                 </div>
@@ -193,31 +196,31 @@ export default function QrAccess({ member }: { member: Member }) {
                         </div>
 
                         {/* Side panel */}
-                        <div className="flex flex-col gap-6">
-                            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                                <ShieldCheck className="h-6 w-6 text-emerald-500 mb-3" />
-                                <p className="font-semibold text-emerald-400 mb-1">
+                        <div className="flex flex-col gap-4 sm:gap-6">
+                            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+                                <ShieldCheck className="mb-2.5 h-5 w-5 text-emerald-500 sm:mb-3 sm:h-6 sm:w-6" />
+                                <p className="mb-1 text-sm font-semibold text-emerald-400 sm:text-base">
                                     {isActive ? "Good to go" : "Action needed"}
                                 </p>
-                                <p className="text-sm text-neutral-400">
+                                <p className="text-xs text-muted-foreground sm:text-sm">
                                     {isActive
                                         ? "Your membership is active. Show this code to enter the gym."
                                         : "Your membership isn't active. Renew your plan to enable access."}
                                 </p>
                             </div>
 
-                            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                                <Clock className="h-6 w-6 text-amber-500 mb-3" />
-                                <p className="font-semibold text-amber-400 mb-1">
+                            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+                                <Clock className="mb-2.5 h-5 w-5 text-primary sm:mb-3 sm:h-6 sm:w-6" />
+                                <p className="mb-1 text-sm font-semibold text-primary sm:text-base">
                                     Last check-in
                                 </p>
                                 {/* Static placeholder — wire up once attendance records exist */}
-                                <p className="text-sm text-neutral-400 mb-3">
+                                <p className="mb-3 text-xs text-muted-foreground sm:text-sm">
                                     Today, 5:42 PM
                                 </p>
-                                <button className="inline-flex items-center gap-1 text-sm font-medium text-amber-400 hover:text-amber-300">
+                                <button className="inline-flex items-center gap-1 text-xs font-medium text-primary transition hover:opacity-80 sm:text-sm">
                                     View activity
-                                    <ChevronRight className="h-4 w-4" />
+                                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </button>
                             </div>
                         </div>

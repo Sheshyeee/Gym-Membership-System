@@ -41,18 +41,18 @@ export default function MembershipCheckout({
         <>
             <Head title="Checkout" />
 
-            <div className="mx-auto max-w-5xl space-y-1 p-6">
-                <div className="flex items-start justify-between">
+            <div className="mx-auto max-w-5xl space-y-1 p-3 sm:p-6">
+                <div className="flex flex-col gap-2 sm:flex-row sm:items-start sm:justify-between">
                     <div>
-                        <p className="text-xs font-medium tracking-wide text-orange-400 uppercase">
+                        <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                             Checkout
                         </p>
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1 className="text-xl font-bold text-foreground sm:text-3xl">
                             {action === "renew"
                                 ? "Complete your renewal"
                                 : "Complete your plan switch"}
                         </h1>
-                        <p className="text-sm text-neutral-400">
+                        <p className="text-xs text-muted-foreground sm:text-sm">
                             {action === "renew"
                                 ? "You're one step away from keeping your momentum going."
                                 : `You're one step away from switching to ${plan.name}.`}
@@ -60,41 +60,41 @@ export default function MembershipCheckout({
                     </div>
                     <button
                         onClick={() => router.get("/member/membership")}
-                        className="text-sm text-neutral-400 hover:text-white"
+                        className="self-start text-xs text-muted-foreground transition hover:text-foreground sm:text-sm"
                     >
                         ← Back
                     </button>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1.3fr_1fr]">
-                    <div className="rounded-2xl border border-orange-900/40 bg-neutral-900 p-6">
-                        <p className="mb-1 text-xs font-medium tracking-wide text-orange-400 uppercase">
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[1.3fr_1fr]">
+                    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+                        <p className="mb-1 text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                             01
                         </p>
-                        <h2 className="mb-1 text-lg font-semibold text-white">
+                        <h2 className="mb-1 text-base font-semibold text-foreground sm:text-lg">
                             Payment method
                         </h2>
-                        <p className="mb-4 text-sm text-neutral-400">
+                        <p className="mb-4 text-xs text-muted-foreground sm:text-sm">
                             Choose how you'd like to pay.
                         </p>
 
-                        <div className="grid grid-cols-2 gap-3">
+                        <div className="grid grid-cols-2 gap-2.5 sm:gap-3">
                             <button
                                 onClick={() =>
                                     setData("payment_method_type", "gcash")
                                 }
-                                className={`flex items-center gap-2 rounded-xl border p-3 text-sm font-medium ${
+                                className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium sm:p-3 sm:text-sm ${
                                     data.payment_method_type === "gcash"
-                                        ? "border-orange-500 bg-orange-950/30 text-white"
-                                        : "border-neutral-700 text-neutral-300"
+                                        ? "border-primary bg-primary/10 text-foreground"
+                                        : "border-border text-muted-foreground"
                                 }`}
                             >
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-blue-600 text-xs font-bold text-white">
                                     G
                                 </span>
                                 GCash
                                 {data.payment_method_type === "gcash" && (
-                                    <span className="ml-auto text-orange-400">
+                                    <span className="ml-auto text-primary">
                                         ✓
                                     </span>
                                 )}
@@ -104,91 +104,95 @@ export default function MembershipCheckout({
                                 onClick={() =>
                                     setData("payment_method_type", "paymaya")
                                 }
-                                className={`flex items-center gap-2 rounded-xl border p-3 text-sm font-medium ${
+                                className={`flex items-center gap-2 rounded-xl border p-2.5 text-xs font-medium sm:p-3 sm:text-sm ${
                                     data.payment_method_type === "paymaya"
-                                        ? "border-orange-500 bg-orange-950/30 text-white"
-                                        : "border-neutral-700 text-neutral-300"
+                                        ? "border-primary bg-primary/10 text-foreground"
+                                        : "border-border text-muted-foreground"
                                 }`}
                             >
-                                <span className="flex h-6 w-6 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
+                                <span className="flex h-6 w-6 shrink-0 items-center justify-center rounded-full bg-green-600 text-xs font-bold text-white">
                                     M
                                 </span>
                                 Maya
                                 {data.payment_method_type === "paymaya" && (
-                                    <span className="ml-auto text-orange-400">
+                                    <span className="ml-auto text-primary">
                                         ✓
                                     </span>
                                 )}
                             </button>
                         </div>
 
-                        <div className="my-6 border-t border-neutral-800" />
+                        <div className="my-5 border-t border-border sm:my-6" />
 
-                        <p className="mb-1 text-xs font-medium tracking-wide text-orange-400 uppercase">
+                        <p className="mb-1 text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                             02
                         </p>
-                        <h2 className="mb-1 text-lg font-semibold text-white">
+                        <h2 className="mb-1 text-base font-semibold text-foreground sm:text-lg">
                             Billing details
                         </h2>
-                        <p className="mb-4 text-sm text-neutral-400">
+                        <p className="mb-4 text-xs text-muted-foreground sm:text-sm">
                             A receipt will be sent to {billingEmail}
                         </p>
 
-                        <div className="grid grid-cols-2 gap-4 text-sm">
+                        <div className="grid grid-cols-2 gap-3 text-xs sm:gap-4 sm:text-sm">
                             <div>
-                                <p className="text-neutral-500">Name</p>
-                                <p className="text-white">{billingName}</p>
+                                <p className="text-muted-foreground">Name</p>
+                                <p className="truncate text-foreground">
+                                    {billingName}
+                                </p>
                             </div>
                             <div>
-                                <p className="text-neutral-500">Email</p>
-                                <p className="text-white">{billingEmail}</p>
+                                <p className="text-muted-foreground">Email</p>
+                                <p className="truncate text-foreground">
+                                    {billingEmail}
+                                </p>
                             </div>
                         </div>
 
                         {(errors as Record<string, string>).payment && (
-                            <p className="mt-4 text-sm text-red-400">
+                            <p className="mt-4 text-xs text-red-400 sm:text-sm">
                                 {(errors as Record<string, string>).payment}
                             </p>
                         )}
                     </div>
 
-                    <div className="rounded-2xl border border-orange-900/40 bg-neutral-900 p-6">
-                        <p className="mb-4 text-xs font-medium tracking-wide text-orange-400 uppercase">
+                    <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
+                        <p className="mb-4 text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                             Order summary
                         </p>
 
-                        <div className="mb-4 flex items-start justify-between">
-                            <div>
-                                <p className="font-semibold text-white">
+                        <div className="mb-4 flex items-start justify-between gap-3">
+                            <div className="min-w-0">
+                                <p className="truncate text-sm font-semibold text-foreground sm:text-base">
                                     {plan.name} membership
                                 </p>
-                                <p className="text-sm text-neutral-500">
+                                <p className="text-xs text-muted-foreground sm:text-sm">
                                     {plan.billing_cycle === "annual"
                                         ? "12 Months"
                                         : "1 Month"}
                                 </p>
                             </div>
-                            <p className="font-semibold text-orange-300">
+                            <p className="shrink-0 text-sm font-semibold text-primary sm:text-base">
                                 {formatPeso(amount)}
                             </p>
                         </div>
 
-                        <div className="space-y-2 border-t border-neutral-800 pt-4 text-sm">
-                            <div className="flex justify-between text-neutral-400">
+                        <div className="space-y-2 border-t border-border pt-4 text-xs sm:text-sm">
+                            <div className="flex justify-between text-muted-foreground">
                                 <span>Subtotal</span>
                                 <span>{formatPeso(amount)}</span>
                             </div>
-                            <div className="flex justify-between text-neutral-400">
+                            <div className="flex justify-between text-muted-foreground">
                                 <span>Processing fee</span>
                                 <span>₱0</span>
                             </div>
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between border-t border-neutral-800 pt-4">
-                            <span className="font-medium text-orange-300">
+                        <div className="mt-4 flex items-center justify-between border-t border-border pt-4">
+                            <span className="text-sm font-medium text-primary">
                                 Total due
                             </span>
-                            <span className="text-xl font-bold text-orange-300">
+                            <span className="text-lg font-bold text-primary sm:text-xl">
                                 {formatPeso(amount)}
                             </span>
                         </div>
@@ -196,14 +200,14 @@ export default function MembershipCheckout({
                         <button
                             onClick={submit}
                             disabled={processing}
-                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-orange-400 to-orange-500 py-3 text-sm font-semibold text-black hover:opacity-90 disabled:opacity-50"
+                            className="mt-6 w-full rounded-lg bg-gradient-to-r from-primary to-primary/80 py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50 sm:py-3"
                         >
                             {processing
                                 ? "Redirecting…"
                                 : `Pay ${formatPeso(amount)}`}
                         </button>
 
-                        <p className="mt-2 text-center text-xs text-neutral-500">
+                        <p className="mt-2 text-center text-[11px] text-muted-foreground sm:text-xs">
                             🔒 Secure payment · You can cancel anytime
                         </p>
                     </div>

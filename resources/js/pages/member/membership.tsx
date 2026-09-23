@@ -84,48 +84,50 @@ export default function Membership({
         <>
             <Head title="Membership" />
 
-            <div className="mx-auto max-w-6xl space-y-1 p-6">
-                <p className="text-xs font-medium tracking-wide text-orange-400 uppercase">
+            <div className="mx-auto max-w-6xl space-y-1 p-3 sm:p-6">
+                <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                     Membership &amp; Plans
                 </p>
-                <div className=" flex justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                     <div>
-                        <h1 className="text-3xl font-bold text-white">
+                        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
                             Your membership
                         </h1>
-                        <p className="text-sm text-neutral-400">
+                        <p className="text-xs text-muted-foreground sm:text-sm">
                             Keep your access active and make every session
                             count.
                         </p>
                     </div>
                     <div>
-                        <Button asChild>
+                        <Button asChild size="sm">
                             <Link href="/member/payments">Payments</Link>
                         </Button>
                     </div>
                 </div>
 
-                <div className="mt-6 grid grid-cols-1 gap-6 lg:grid-cols-[1fr_1fr]">
+                <div className="mt-4 grid grid-cols-1 gap-4 sm:mt-6 sm:gap-6 lg:grid-cols-[1fr_1fr]">
                     {/* Current plan */}
-                    <div className="rounded-2xl border border-orange-900/40 bg-gradient-to-br from-orange-950/40 to-neutral-900 p-6">
+                    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6">
+                        <div className="pointer-events-none absolute -right-14 -top-14 h-40 w-40 rounded-full bg-primary/20 blur-3xl" />
+
                         {currentSubscription ? (
-                            <>
-                                <div className="mb-3 flex items-center justify-between">
-                                    <p className="text-xs font-medium tracking-wide text-orange-300 uppercase">
+                            <div className="relative">
+                                <div className="mb-3 flex items-center justify-between gap-2">
+                                    <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                                         Your current plan
                                     </p>
-                                    <span className="rounded-full bg-green-500/10 px-3 py-1 text-xs font-medium text-green-400">
-                                        ●{" "}
+                                    <span className="inline-flex shrink-0 items-center gap-1 rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-400 sm:px-3 sm:text-xs">
+                                        <span className="h-1.5 w-1.5 rounded-full bg-current" />
                                         {currentSubscription.status === "active"
                                             ? "Active"
                                             : currentSubscription.status}
                                     </span>
                                 </div>
 
-                                <h2 className="text-2xl font-bold text-white">
+                                <h2 className="text-xl font-bold text-foreground sm:text-2xl">
                                     {currentSubscription.plan_name}
                                 </h2>
-                                <p className="mt-1 text-sm text-neutral-400">
+                                <p className="mt-1 text-xs text-muted-foreground sm:text-sm">
                                     Billed{" "}
                                     {currentSubscription.billing_cycle ===
                                     "annual"
@@ -133,50 +135,50 @@ export default function Membership({
                                         : "monthly"}
                                 </p>
 
-                                <div className="mt-6 grid grid-cols-3 gap-4 text-sm">
+                                <div className="mt-5 grid grid-cols-3 gap-3 text-xs sm:mt-6 sm:gap-4 sm:text-sm">
                                     <div>
-                                        <p className="text-neutral-500">
+                                        <p className="text-muted-foreground">
                                             Started
                                         </p>
-                                        <p className="font-medium text-orange-300">
+                                        <p className="font-medium text-primary">
                                             {currentSubscription.started_at ??
                                                 "—"}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-neutral-500">
+                                        <p className="text-muted-foreground">
                                             Valid until
                                         </p>
-                                        <p className="font-medium text-orange-300">
+                                        <p className="font-medium text-primary">
                                             {currentSubscription.valid_until ??
                                                 "—"}
                                         </p>
                                     </div>
                                     <div>
-                                        <p className="text-neutral-500">
+                                        <p className="text-muted-foreground">
                                             Remaining
                                         </p>
-                                        <p className="font-medium text-orange-300">
+                                        <p className="font-medium text-primary">
                                             {currentSubscription.days_remaining}{" "}
                                             days
                                         </p>
                                     </div>
                                 </div>
 
-                                <div className="mt-6 h-2 w-full overflow-hidden rounded-full bg-neutral-800">
+                                <div className="mt-5 h-2 w-full overflow-hidden rounded-full bg-muted sm:mt-6">
                                     <div
-                                        className="h-full rounded-full bg-orange-500"
+                                        className="h-full rounded-full bg-primary"
                                         style={{
                                             width: `${currentSubscription.percent_used}%`,
                                         }}
                                     />
                                 </div>
-                                <p className="mt-1 text-xs text-neutral-500">
+                                <p className="mt-1 text-[11px] text-muted-foreground sm:text-xs">
                                     {currentSubscription.percent_used}% of your
                                     plan
                                 </p>
 
-                                <div className="mt-6 flex gap-3">
+                                <div className="mt-5 flex gap-3 sm:mt-6">
                                     <button
                                         onClick={() => {
                                             setSelectedPlanId(
@@ -196,14 +198,14 @@ export default function Membership({
                                                 { preserveScroll: true },
                                             );
                                         }}
-                                        className="flex items-center gap-2 rounded-lg bg-orange-500 px-4 py-2 text-sm font-medium text-black hover:bg-orange-400"
+                                        className="flex items-center gap-2 rounded-lg bg-primary px-4 py-2 text-xs font-medium text-primary-foreground transition hover:opacity-90 sm:text-sm"
                                     >
                                         ↻ Renew membership
                                     </button>
                                 </div>
-                            </>
+                            </div>
                         ) : (
-                            <p className="text-neutral-400">
+                            <p className="relative text-sm text-muted-foreground">
                                 You don't have an active membership yet.
                             </p>
                         )}
@@ -211,33 +213,33 @@ export default function Membership({
 
                     {/* Plan picker */}
                     <div>
-                        <div className="mb-4 flex items-center justify-between">
+                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
                             <div>
-                                <p className="text-xs font-medium tracking-wide text-orange-400 uppercase">
+                                <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                                     Find your fit
                                 </p>
-                                <h2 className="text-xl font-bold text-white">
+                                <h2 className="text-lg font-bold text-foreground sm:text-xl">
                                     Choose a plan
                                 </h2>
                             </div>
 
-                            <div className="flex rounded-lg border border-neutral-700 p-1 text-xs">
+                            <div className="flex w-fit rounded-lg border border-border p-1 text-xs">
                                 <button
                                     onClick={() => setCycle("monthly")}
-                                    className={`rounded-md px-3 py-1 font-medium ${
+                                    className={`rounded-md px-3 py-1 font-medium transition ${
                                         cycle === "monthly"
-                                            ? "bg-orange-500 text-black"
-                                            : "text-neutral-400"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground"
                                     }`}
                                 >
                                     Monthly
                                 </button>
                                 <button
                                     onClick={() => setCycle("annual")}
-                                    className={`rounded-md px-3 py-1 font-medium ${
+                                    className={`rounded-md px-3 py-1 font-medium transition ${
                                         cycle === "annual"
-                                            ? "bg-orange-500 text-black"
-                                            : "text-neutral-400"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground"
                                     }`}
                                 >
                                     Annual
@@ -245,7 +247,7 @@ export default function Membership({
                             </div>
                         </div>
 
-                        <div className="space-y-3">
+                        <div className="space-y-2.5 sm:space-y-3">
                             {plans.map((plan) => {
                                 const price = plan.pricing[cycle].total_amount;
                                 const isCurrent =
@@ -260,39 +262,39 @@ export default function Membership({
                                         onClick={() =>
                                             setSelectedPlanId(plan.id)
                                         }
-                                        className={`flex w-full items-center justify-between rounded-xl border p-4 text-left transition ${
+                                        className={`flex w-full items-center justify-between gap-3 rounded-xl border p-3 text-left transition sm:p-4 ${
                                             isSelected
-                                                ? "border-orange-500 bg-orange-950/30"
-                                                : "border-neutral-800 bg-neutral-900"
+                                                ? "border-primary bg-primary/10"
+                                                : "border-border bg-card"
                                         }`}
                                     >
-                                        <div>
-                                            <div className="flex items-center gap-2">
-                                                <span className="font-semibold text-white">
+                                        <div className="min-w-0">
+                                            <div className="flex flex-wrap items-center gap-1.5 sm:gap-2">
+                                                <span className="text-sm font-semibold text-foreground sm:text-base">
                                                     {plan.name}
                                                 </span>
                                                 {plan.highlighted && (
-                                                    <span className="rounded-full bg-orange-500/20 px-2 py-0.5 text-[10px] font-medium text-orange-400">
+                                                    <span className="rounded-full bg-primary/15 px-2 py-0.5 text-[10px] font-medium text-primary">
                                                         Most popular
                                                     </span>
                                                 )}
                                                 {isCurrent && (
-                                                    <span className="rounded-full bg-neutral-700 px-2 py-0.5 text-[10px] font-medium text-neutral-300">
+                                                    <span className="rounded-full bg-secondary px-2 py-0.5 text-[10px] font-medium text-secondary-foreground">
                                                         Current
                                                     </span>
                                                 )}
                                             </div>
-                                            <p className="text-sm text-neutral-400">
+                                            <p className="truncate text-xs text-muted-foreground sm:text-sm">
                                                 {plan.tagline}
                                             </p>
                                         </div>
 
-                                        <div className="text-right">
-                                            <p className="font-semibold text-orange-300">
+                                        <div className="shrink-0 text-right">
+                                            <p className="text-sm font-semibold text-primary sm:text-base">
                                                 {formatPeso(price)}
                                             </p>
-                                            
-                                            <p className="text-xs text-neutral-500">
+
+                                            <p className="text-[11px] text-muted-foreground sm:text-xs">
                                                 {cycle === "annual"
                                                     ? "per year"
                                                     : "per month"}
@@ -306,7 +308,7 @@ export default function Membership({
                         <button
                             onClick={goToCheckout}
                             disabled={!selectedPlan}
-                            className="mt-4 w-full rounded-lg bg-orange-500 py-3 text-sm font-semibold text-black hover:bg-orange-400 disabled:opacity-50"
+                            className="mt-4 w-full rounded-lg bg-primary py-2.5 text-sm font-semibold text-primary-foreground transition hover:opacity-90 disabled:opacity-50 sm:py-3"
                         >
                             {isSamePlanAndCycle
                                 ? `Renew ${selectedPlan?.name ?? ""}`
