@@ -1,4 +1,10 @@
-import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
+import {
+    useCallback,
+    useEffect,
+    useRef,
+    useState,
+    type ReactElement,
+} from "react";
 import { Head } from "@inertiajs/react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import {
@@ -22,6 +28,14 @@ type ScanResult = {
 
 type CameraOption = { id: string; label: string };
 type CameraState = "idle" | "requesting" | "ready" | "error";
+
+type StatusStyle = {
+    border: string;
+    bg: string;
+    text: string;
+    icon: ReactElement;
+    label: string;
+};
 
 const SCANNER_ID = "qr-reader";
 const DECODE_COOLDOWN_MS = 3000;
@@ -59,6 +73,30 @@ function Panel({
         </div>
     );
 }
+
+const STATUS_STYLES: Record<ScanResult["result"], StatusStyle> = {
+    success: {
+        border: "border-emerald-500/30",
+        bg: "bg-emerald-500/10",
+        text: "text-emerald-500",
+        icon: <ShieldCheck className="size-4 text-emerald-500 sm:size-5" />,
+        label: "Access Granted",
+    },
+    denied: {
+        border: "border-red-500/30",
+        bg: "bg-red-500/10",
+        text: "text-red-500",
+        icon: <XCircle className="size-4 text-red-500 sm:size-5" />,
+        label: "Access Denied",
+    },
+    duplicate: {
+        border: "border-amber-500/30",
+        bg: "bg-amber-500/10",
+        text: "text-amber-500",
+        icon: <AlertTriangle className="size-4 text-amber-500 sm:size-5" />,
+        label: "Already Scanned",
+    },
+};
 
 export default function QRCheckIn() {
     const [cameraState, setCameraState] = useState<CameraState>("idle");
@@ -222,41 +260,6 @@ export default function QRCheckIn() {
         }
     }, [cameras, cameraIndex, switching, safeStop, startWithCamera]);
 
-    const statusStyles: Record
-        ScanResult["result"],
-        {
-            border: string;
-            bg: string;
-            text: string;
-            icon: ReactElement;
-            label: string;
-        }
-    > = {
-        success: {
-            border: "border-emerald-500/30",
-            bg: "bg-emerald-500/10",
-            text: "text-emerald-500",
-            icon: <ShieldCheck className="size-4 text-emerald-500 sm:size-5" />,
-            label: "Access Granted",
-        },
-        denied: {
-            border: "border-red-500/30",
-            bg: "bg-red-500/10",
-            text: "text-red-500",
-            icon: <XCircle className="size-4 text-red-500 sm:size-5" />,
-            label: "Access Denied",
-        },
-        duplicate: {
-            border: "border-amber-500/30",
-            bg: "bg-amber-500/10",
-            text: "text-amber-500",
-            icon: (
-                <AlertTriangle className="size-4 text-amber-500 sm:size-5" />
-            ),
-            label: "Already Scanned",
-        },
-    };
-
     return (
         <>
             <Head title="QR Check-in" />
@@ -303,7 +306,8 @@ export default function QRCheckIn() {
                                 {cameraState === "requesting" &&
                                     "Requesting camera access…"}
                                 {cameraState === "idle" && "Camera is off"}
-                                {cameraState === "error" && "Camera unavailable"}
+                                {cameraState === "error" &&
+                                    "Camera unavailable"}
                             </span>
 
                             {cameraState === "ready" && cameras.length > 1 && (
@@ -398,45 +402,49 @@ export default function QRCheckIn() {
                                 Fast entry, zero friction.
                             </p>
                             <p className="text-muted-foreground mt-1 text-[11px] sm:text-[12px]">
-                                Verify active memberships in under a second
-                                and keep your lobby moving.
+                                Verify active memberships in under a second and
+                                keep your lobby moving.
                             </p>
                         </Panel>
 
-                        {lastResult && (
-                            <Panel
-                                className={`${statusStyles[lastResult.result].border} ${statusStyles[lastResult.result].bg}`}
-                            >
-                                <div className="mb-1.5 flex items-center gap-2">
-                                    {statusStyles[lastResult.result].icon}
-                                    <p
-                                        className={`text-[12px] font-semibold sm:text-[13px] ${statusStyles[lastResult.result].text}`}
+                        {lastResult &&
+                            (() => {
+                                const style = STATUS_STYLES[lastResult.result];
+                                return (
+                                    <Panel
+                                        className={`${style.border} ${style.bg}`}
                                     >
-                                        {lastResult.reason ??
-                                            statusStyles[lastResult.result]
-                                                .label}
-                                    </p>
-                                </div>
-                                {lastResult.member && (
-                                    <p className="text-foreground text-[12px] font-medium sm:text-[13px]">
-                                        {lastResult.member.name}
-                                        {lastResult.member.plan
-                                            ? ` · ${lastResult.member.plan}`
-                                            : ""}
-                                    </p>
-                                )}
-                                {lastResult.message && (
-                                    <p className="text-muted-foreground mt-1 text-[10px] sm:text-[11px]">
-                                        {lastResult.message}
-                                    </p>
-                                )}
-                                {lastResult.scannedAt && (
-                                    <p className="text-muted-foreground mt-1.5 text-[10px] sm:text-[11px]">
-                                        Scanned at {lastResult.scannedAt}
-                                    </p>
-                                )}
-                            </Panel>
-                        )}
+                                        <div className="mb-1.5 flex items-center gap-2">
+                                            {style.icon}
+                                            <p
+                                                className={`text-[12px] font-semibold sm:text-[13px] ${style.text}`}
+                                            >
+                                                {lastResult.reason ??
+                                                    style.label}
+                                            </p>
+                                        </div>
+                                        {lastResult.member && (
+                                            <p className="text-foreground text-[12px] font-medium sm:text-[13px]">
+                                                {lastResult.member.name}
+                                                {lastResult.member.plan
+                                                    ? ` · ${lastResult.member.plan}`
+                                                    : ""}
+                                            </p>
+                                        )}
+                                        {lastResult.message && (
+                                            <p className="text-muted-foreground mt-1 text-[10px] sm:text-[11px]">
+                                                {lastResult.message}
+                                            </p>
+                                        )}
+                                        {lastResult.scannedAt && (
+                                            <p className="text-muted-foreground mt-1.5 text-[10px] sm:text-[11px]">
+                                                Scanned at{" "}
+                                                {lastResult.scannedAt}
+                                            </p>
+                                        )}
+                                    </Panel>
+                                );
+                            })()}
                     </div>
                 </div>
             </div>
