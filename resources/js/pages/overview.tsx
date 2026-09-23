@@ -78,6 +78,11 @@ const DONUT_COLORS: Record<string, string> = {
     Expired: "#52525b",
 };
 
+// Live financial activity is capped to roughly this many rows so its card
+// naturally lands close to Member Activity's height (donut + legend) —
+// see the note on the bottom row below for why this matters.
+const MAX_FINANCIAL_ACTIVITY_ROWS = 4;
+
 // ---------------------------------------------------------------------------
 // Small helpers
 // ---------------------------------------------------------------------------
@@ -143,7 +148,10 @@ function timeAgo(dateString: string | null) {
 //
 // Cards deliberately size themselves to their own content. Avoid h-full,
 // flex-1, auto-rows-fr and other rules that make unrelated cards inherit
-// the height of the tallest card beside them.
+// the height of the tallest card beside them — except where a grid row is
+// specifically meant to keep two cards height-matched (see the bottom row
+// in the page layout below), in which case the default grid stretch is
+// left in place on purpose.
 // ---------------------------------------------------------------------------
 
 function Panel({
@@ -248,6 +256,12 @@ function HeroCard({
     );
 }
 
+// Restructured so the card's content spreads across whatever height the
+// grid gives it (label+icon pinned to the top, value+growth pinned to the
+// bottom via justify-between) instead of being centered as one small block
+// in the middle — which is what happened when this row stretched every
+// card to match the taller HeroCard beside it, but only vertically centered
+// a compact row of content inside that extra height.
 function StatCard({
     icon: Icon,
     iconClassName,
@@ -262,24 +276,26 @@ function StatCard({
     growth: number | null;
 }) {
     return (
-        <Panel className="flex-row items-center justify-between gap-3">
-            <div className="flex flex-col gap-1">
+        <Panel className="justify-between">
+            <div className="flex items-start justify-between gap-3">
                 <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                     {label}
                 </span>
+                <div
+                    className={cn(
+                        "flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9",
+                        iconClassName ??
+                            "bg-orange-500/10 text-orange-500 dark:text-orange-400",
+                    )}
+                >
+                    <Icon className="size-3.5 sm:size-4" />
+                </div>
+            </div>
+            <div className="mt-2 flex flex-col gap-1">
                 <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl">
                     {value}
                 </span>
                 <GrowthBadge growth={growth} />
-            </div>
-            <div
-                className={cn(
-                    "flex size-8 shrink-0 items-center justify-center rounded-md sm:size-9",
-                    iconClassName ??
-                        "bg-orange-500/10 text-orange-500 dark:text-orange-400",
-                )}
-            >
-                <Icon className="size-3.5 sm:size-4" />
             </div>
         </Panel>
     );
@@ -586,15 +602,20 @@ function RetentionGauge({
     );
 }
 
+// className passthrough so this can be given h-full/flex-1 by the bottom
+// row of the page layout, where it's paired with Live Financial Activity
+// and the two are meant to match height.
 function MemberActivityDonut({
     total,
     breakdown,
+    className,
 }: {
     total: number;
     breakdown: { label: string; value: number; percent: number }[];
+    className?: string;
 }) {
     return (
-        <Panel>
+        <Panel className={cn("justify-center", className)}>
             <PanelHeader title="Member activity" subtitle="Current status" />
 
             <div className="flex items-center gap-3 sm:gap-4">
@@ -664,13 +685,24 @@ function MemberActivityDonut({
     );
 }
 
+// className passthrough for the same reason as MemberActivityDonut above.
+// The list itself is capped to MAX_FINANCIAL_ACTIVITY_ROWS so this card's
+// natural (unstretched) height stays in the same ballpark as Member
+// Activity's — that's what keeps the grid's height-matching from having to
+// stretch either card by a large, obviously-empty amount. "View all" is
+// there specifically so capping the list here doesn't lose access to the
+// rest of the history.
 function LiveFinancialActivity({
     items,
+    className,
 }: {
     items: OverviewProps["liveFinancialActivity"];
+    className?: string;
 }) {
+    const visibleItems = items.slice(0, MAX_FINANCIAL_ACTIVITY_ROWS);
+
     return (
-        <Panel>
+        <Panel className={className}>
             <PanelHeader
                 title="Live financial activity"
                 action={
@@ -683,14 +715,14 @@ function LiveFinancialActivity({
                 }
             />
 
-            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-col divide-y">
-                {items.length === 0 && (
+            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-1 flex-col justify-center divide-y">
+                {visibleItems.length === 0 && (
                     <li className="text-muted-foreground py-8 text-center text-[12px]">
                         No payments yet
                     </li>
                 )}
 
-                {items.map((item) => (
+                {visibleItems.map((item) => (
                     <li
                         key={item.id}
                         className="hover:bg-accent flex items-center justify-between gap-3 rounded-md px-1 py-2 transition-colors sm:py-2.5"
@@ -725,28 +757,25 @@ function LiveFinancialActivity({
 // ---------------------------------------------------------------------------
 // Page layout
 //
-// The page is intentionally split into three independent areas:
-//
-// 1. Summary row
-// 2. Primary analytics row
-// 3. Activity row
-//
-// This avoids one tall card determining the height of unrelated cards.
-//
-// At desktop:
+// Two independent grid rows share the same two-column template, so the
+// columns line up visually as one continuous stack even though each row
+// aligns its own cards independently:
 //
 //   ┌──────────────────────────────────────────────────────────────┐
 //   │ Hero │ Revenue KPI │ Members KPI │ Payment KPI               │
-//   ├──────────────────────────────────────────────┬───────────────┤
-//   │ Revenue performance                           │ Attendance    │
-//   │                                               ├───────────────┤
-//   │                                               │ Retention     │
-//   ├───────────────────────┬───────────────────────┴───────────────┤
-//   │ Member activity       │ Live financial activity               │
-//   └───────────────────────┴───────────────────────────────────────┘
+//   ├──────────────────────────────────────┬─────────────────────  ┤
+//   │ Revenue performance                   │ Attendance overview  │  <- row A: items-start,
+//   │                                        ├─────────────────────┤     each column sized to
+//   │                                        │ Retention health    │     its own content
+//   ├──────────────────────────────────────┬─────────────────────  ┤
+//   │ Live financial activity               │ Member activity     │  <- row B: items-stretch,
+//   │                                        │                     │     these two are matched
+//   └──────────────────────────────────────┴─────────────────────  ┘     to the same height
 //
-// The activity section is deliberately full-width. This prevents the
-// financial activity card from leaving a large unused area beside it.
+// Row B is deliberately its own grid (not just "more content in the same
+// column stack") so it can stretch Live Financial Activity and Member
+// Activity to match each other without also pulling Revenue Performance or
+// Attendance/Retention into that height calculation.
 // ---------------------------------------------------------------------------
 
 export default function Overview({
@@ -802,16 +831,12 @@ export default function Overview({
                 </section>
 
                 {/* =========================================================
-                    PRIMARY ANALYTICS
+                    ROW A — Revenue performance | Attendance + Retention
 
-                    Revenue is the main analytical component and receives
-                    the majority of the horizontal space.
-
-                    Attendance + Retention are intentionally stacked on
-                    the right because they are compact secondary metrics.
-
-                    This section ends where its content ends. Nothing
-                    below is forced to match the height of either column.
+                    items-start: each column sizes to its own content. The
+                    right column is naturally shorter than the revenue
+                    chart, and that's fine here — nothing below depends on
+                    these two matching height.
                     ========================================================= */}
 
                 <section className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
@@ -839,26 +864,26 @@ export default function Overview({
                 </section>
 
                 {/* =========================================================
-                    ACTIVITY
+                    ROW B — Live financial activity | Member activity
 
-                    This is a separate full-width section.
-
-                    Member activity is compact on the left.
-                    Financial activity receives the larger area on the right.
-
-                    Keeping this section independent means a tall payment
-                    list cannot create a dead gap beside Member Activity,
-                    and Member Activity cannot create a blank area beside
-                    the transaction list.
+                    Same column template as Row A so the page still reads as
+                    two continuous columns, but this is a separate grid with
+                    the default items-stretch: Live Financial Activity and
+                    Member Activity are the two cards meant to match height,
+                    so they — and only they — stretch to each other here.
                     ========================================================= */}
 
-                <section className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,2fr)]">
+                <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
+                    <LiveFinancialActivity
+                        items={liveFinancialActivity}
+                        className="h-full"
+                    />
+
                     <MemberActivityDonut
                         total={memberActivity.total}
                         breakdown={memberActivity.breakdown}
+                        className="h-full"
                     />
-
-                    <LiveFinancialActivity items={liveFinancialActivity} />
                 </section>
             </div>
         </>
