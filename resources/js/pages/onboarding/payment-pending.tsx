@@ -7,13 +7,9 @@ const BACKOFF_AFTER_MS = 60000; // switch to slow polling after this long
 const GIVE_UP_AFTER_MS = 5 * 60000; // stop polling entirely after this long
 
 export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
-    const [checking, setChecking] = useState(false);
-    const [error, setError] = useState<string | null>(null);
     const [slowMode, setSlowMode] = useState(false);
-    const [gaveUp, setGaveUp] = useState(false);
 
     const checkStatus = useCallback(async () => {
-        setChecking(true);
         try {
             const res = await fetch(
                 `/onboarding/invoices/${invoice_id}/status`,
@@ -22,9 +18,7 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
                 },
             );
 
-            if (!res.ok) {
-                throw new Error(`Status check failed: ${res.status}`);
-            }
+            if (!res.ok) return;
 
             const json = await res.json();
 
@@ -33,15 +27,8 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
             } else if (json.status === "failed") {
                 router.visit("/onboarding", { data: { failed: 1 } });
             }
-            // still pending — clear any stale error and keep polling
-            setError(null);
         } catch (err) {
             console.error("Payment status check failed", err);
-            setError(
-                "Having trouble checking your payment status. You can try again below.",
-            );
-        } finally {
-            setChecking(false);
         }
     }, [invoice_id]);
 
@@ -59,7 +46,6 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
             checkStatusRef.current();
 
             if (elapsed >= GIVE_UP_AFTER_MS) {
-                setGaveUp(true);
                 clearInterval(intervalId);
                 return;
             }
@@ -86,30 +72,14 @@ export default function PaymentPending({ invoice_id }: { invoice_id: number }) {
     return (
         <>
             <Head title="Confirming payment..." />
-            <div className="min-h-screen bg-neutral-950 text-white flex flex-col items-center justify-center px-6">
-                <div className="w-12 h-12 border-4 border-neutral-700 border-t-amber-500 rounded-full animate-spin mb-6" />
-                <h1 className="text-2xl font-bold mb-2">
+            <div className="flex min-h-svh flex-col items-center justify-center bg-background px-6 text-foreground">
+                <div className="h-10 w-10 animate-spin rounded-full border-4 border-muted border-t-primary sm:h-12 sm:w-12" />
+                <h1 className="mt-6 text-xl font-bold sm:text-2xl">
                     Confirming your payment
                 </h1>
-                <p className="text-neutral-400 text-center max-w-sm mb-2">
-                    {gaveUp
-                        ? "This is taking much longer than usual. Your membership will still activate automatically once payment is confirmed — check back later, or check now."
-                        : slowMode
-                          ? "Still waiting on confirmation — this can take a little longer under load."
-                          : "If you cancelled or your GCash/Maya session expired, you can safely close that tab and check your status here."}
+                <p className="mt-2 max-w-sm text-center text-sm text-muted-foreground sm:text-base">
+                    This usually takes a few seconds.
                 </p>
-                {error && (
-                    <p className="text-red-400 text-sm text-center max-w-sm mb-4">
-                        {error}
-                    </p>
-                )}
-                <button
-                    onClick={checkStatus}
-                    disabled={checking}
-                    className="text-amber-400 text-sm underline underline-offset-2 disabled:opacity-50"
-                >
-                    {checking ? "Checking..." : "Check status now"}
-                </button>
             </div>
         </>
     );
