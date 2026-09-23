@@ -1,6 +1,7 @@
 import { Head, Link } from "@inertiajs/react";
 import { Users, ShieldCheck, Flame, QrCode, XCircle } from "lucide-react";
 import { dashboard } from "@/routes";
+import { cn } from "@/lib/utils";
 
 type Stats = {
     checkInsToday: { value: number; change: number; compareLabel: string };
@@ -28,6 +29,83 @@ type ActivityItem = {
     time: string;
     isToday: boolean;
 };
+
+function Panel({
+    className,
+    children,
+}: {
+    className?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-3 sm:p-4",
+                className,
+            )}
+        >
+            {children}
+        </div>
+    );
+}
+
+function StatCard({
+    icon: Icon,
+    iconClassName,
+    label,
+    value,
+    change,
+    changeLabel,
+    neutral,
+}: {
+    icon: React.ElementType;
+    iconClassName: string;
+    label: string;
+    value: string;
+    change?: number;
+    changeLabel?: string;
+    neutral?: boolean;
+}) {
+    return (
+        <Panel className="flex flex-col gap-2">
+            <div
+                className={cn(
+                    "flex size-7 items-center justify-center rounded-md sm:size-8",
+                    iconClassName,
+                )}
+            >
+                <Icon className="size-3.5 sm:size-4" />
+            </div>
+            <div className="flex flex-col gap-0.5">
+                <p className="text-muted-foreground text-[10px] sm:text-[11px]">
+                    {label}
+                </p>
+                <p className="text-foreground text-lg font-semibold tracking-tight tabular-nums sm:text-xl">
+                    {value}
+                </p>
+                {neutral ? (
+                    <p className="text-muted-foreground text-[10px] sm:text-[11px]">
+                        {changeLabel}
+                    </p>
+                ) : (
+                    change !== undefined && (
+                        <p
+                            className={cn(
+                                "text-[10px] font-medium sm:text-[11px]",
+                                change >= 0
+                                    ? "text-emerald-500"
+                                    : "text-red-500",
+                            )}
+                        >
+                            {change >= 0 ? "↗" : "↘"} {Math.abs(change)}%{" "}
+                            {changeLabel}
+                        </p>
+                    )
+                )}
+            </div>
+        </Panel>
+    );
+}
 
 export default function Dashboard({
     greeting,
@@ -63,17 +141,17 @@ export default function Dashboard({
         <>
             <Head title="Dashboard" />
 
-            <div className="flex flex-col gap-6 p-4 md:p-6">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-6">
                 {/* Greeting */}
-                <div className="flex flex-col gap-4 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
-                        <p className="text-xs font-semibold uppercase tracking-widest text-amber-500">
+                        <p className="text-[10px] font-semibold tracking-widest text-orange-500 uppercase sm:text-[11px]">
                             {greeting.dateLabel}
                         </p>
-                        <h1 className="mt-2 text-3xl font-semibold text-white">
+                        <h1 className="text-foreground mt-1 text-lg font-semibold sm:text-xl">
                             Good {greeting.timeOfDay}, {greeting.name}
                         </h1>
-                        <p className="mt-1 text-sm text-neutral-500">
+                        <p className="text-muted-foreground mt-0.5 text-[11px] sm:text-[12px]">
                             Here&apos;s what&apos;s happening at the front desk
                             today.
                         </p>
@@ -81,105 +159,64 @@ export default function Dashboard({
 
                     <Link
                         href="/staff/qr-checkin"
-                        className="inline-flex items-center gap-2 rounded-lg bg-amber-500 px-4 py-2.5 text-sm font-semibold text-black transition hover:bg-amber-400 focus-visible:outline focus-visible:outline-2 focus-visible:outline-offset-2 focus-visible:outline-amber-400"
+                        className="bg-primary text-primary-foreground inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
                     >
-                        <QrCode className="h-4 w-4" />
+                        <QrCode className="size-3.5 sm:size-4" />
                         Scan member
                     </Link>
                 </div>
 
-                {/* Stat cards */}
-                <div className="grid grid-cols-1 gap-4 sm:grid-cols-2 lg:grid-cols-4">
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
-                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-amber-500/10 text-amber-400">
-                            <Users className="h-4 w-4" />
-                        </div>
-                        <p className="text-xs text-neutral-500">
-                            Today&apos;s check-ins
-                        </p>
-                        <p className="mt-1 text-2xl font-semibold text-white">
-                            {stats.checkInsToday.value.toLocaleString()}
-                        </p>
-                        <p
-                            className={`mt-1 text-xs ${
-                                stats.checkInsToday.change >= 0
-                                    ? "text-emerald-400"
-                                    : "text-rose-400"
-                            }`}
-                        >
-                            {stats.checkInsToday.change >= 0 ? "↗" : "↘"}{" "}
-                            {Math.abs(stats.checkInsToday.change)}% vs{" "}
-                            {stats.checkInsToday.compareLabel}
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
-                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-emerald-500/10 text-emerald-400">
-                            <Users className="h-4 w-4" />
-                        </div>
-                        <p className="text-xs text-neutral-500">
-                            New members this month
-                        </p>
-                        <p className="mt-1 text-2xl font-semibold text-white">
-                            {stats.newMembersThisMonth.value.toLocaleString()}
-                        </p>
-                        <p
-                            className={`mt-1 text-xs ${
-                                stats.newMembersThisMonth.change >= 0
-                                    ? "text-emerald-400"
-                                    : "text-rose-400"
-                            }`}
-                        >
-                            {stats.newMembersThisMonth.change >= 0 ? "↗" : "↘"}{" "}
-                            {Math.abs(stats.newMembersThisMonth.change)}% vs
-                            last month
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
-                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-blue-500/10 text-blue-400">
-                            <ShieldCheck className="h-4 w-4" />
-                        </div>
-                        <p className="text-xs text-neutral-500">
-                            Active members
-                        </p>
-                        <p className="mt-1 text-2xl font-semibold text-white">
-                            {stats.activeMembers.value.toLocaleString()}
-                        </p>
-                        <p className="mt-1 text-xs text-neutral-500">
-                            Currently active
-                        </p>
-                    </div>
-
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-5">
-                        <div className="mb-3 flex h-9 w-9 items-center justify-center rounded-lg bg-orange-500/10 text-orange-400">
-                            <Flame className="h-4 w-4" />
-                        </div>
-                        <p className="text-xs text-neutral-500">Peak hours</p>
-                        <p className="mt-1 text-2xl font-semibold text-white">
-                            {stats.peakHours}
-                        </p>
-                        <p className="mt-1 text-xs text-neutral-500">
-                            Highest traffic window · last 7 days
-                        </p>
-                    </div>
+                {/* Stat cards — 2x2 on mobile, 4 across from lg up */}
+                <div className="grid grid-cols-2 gap-2 sm:gap-3 lg:grid-cols-4 lg:gap-4">
+                    <StatCard
+                        icon={Users}
+                        iconClassName="bg-orange-500/10 text-orange-500"
+                        label="Today's check-ins"
+                        value={stats.checkInsToday.value.toLocaleString()}
+                        change={stats.checkInsToday.change}
+                        changeLabel={`vs ${stats.checkInsToday.compareLabel}`}
+                    />
+                    <StatCard
+                        icon={Users}
+                        iconClassName="bg-emerald-500/10 text-emerald-500"
+                        label="New members this month"
+                        value={stats.newMembersThisMonth.value.toLocaleString()}
+                        change={stats.newMembersThisMonth.change}
+                        changeLabel="vs last month"
+                    />
+                    <StatCard
+                        icon={ShieldCheck}
+                        iconClassName="bg-blue-500/10 text-blue-500"
+                        label="Active members"
+                        value={stats.activeMembers.value.toLocaleString()}
+                        neutral
+                        changeLabel="Currently active"
+                    />
+                    <StatCard
+                        icon={Flame}
+                        iconClassName="bg-amber-500/10 text-amber-500"
+                        label="Peak hours"
+                        value={stats.peakHours}
+                        neutral
+                        changeLabel="Highest traffic · last 7 days"
+                    />
                 </div>
 
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1.6fr_1fr]">
                     {/* Attendance overview */}
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-                        <div className="flex items-start justify-between">
+                    <Panel className="flex flex-col">
+                        <div className="mb-3 flex items-start justify-between">
                             <div>
-                                <h2 className="text-lg font-semibold text-white">
+                                <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
                                     Attendance overview
                                 </h2>
-                                <p className="text-xs text-neutral-500">
+                                <p className="text-muted-foreground text-[10px] sm:text-[11px]">
                                     Last 7 days
                                 </p>
                             </div>
                         </div>
 
-                        <div className="relative mt-6 h-48 w-full">
+                        <div className="relative h-28 w-full sm:h-36">
                             <svg
                                 viewBox="0 0 100 100"
                                 preserveAspectRatio="none"
@@ -202,35 +239,36 @@ export default function Dashboard({
                             </svg>
                         </div>
 
-                        <div className="mt-2 grid grid-cols-7 text-center text-xs text-neutral-500">
+                        <div className="text-muted-foreground mt-1.5 grid grid-cols-7 text-center text-[9px] sm:text-[10px]">
                             {attendanceOverview.series.map((d) => (
                                 <span key={d.label}>{d.label}</span>
                             ))}
                         </div>
 
-                        <div className="mt-4 flex items-center justify-between border-t border-neutral-800 pt-4 text-xs">
-                            <div className="flex items-center gap-4">
-                                <span className="flex items-center gap-1.5 text-neutral-400">
-                                    <span className="h-2 w-2 rounded-full bg-amber-500" />
+                        <div className="border-sidebar-border/70 dark:border-sidebar-border mt-3 flex items-center justify-between border-t pt-3 text-[10px] sm:text-[11px]">
+                            <div className="flex items-center gap-3 sm:gap-4">
+                                <span className="text-muted-foreground flex items-center gap-1.5">
+                                    <span className="size-1.5 rounded-full bg-orange-500" />
                                     Check-ins{" "}
-                                    <span className="font-medium text-white">
+                                    <span className="text-foreground font-medium">
                                         {attendanceOverview.totalCheckIns}
                                     </span>
                                 </span>
-                                <span className="flex items-center gap-1.5 text-neutral-400">
-                                    <span className="h-2 w-2 rounded-full bg-rose-500" />
+                                <span className="text-muted-foreground flex items-center gap-1.5">
+                                    <span className="size-1.5 rounded-full bg-rose-500" />
                                     Denied{" "}
-                                    <span className="font-medium text-white">
+                                    <span className="text-foreground font-medium">
                                         {attendanceOverview.totalDenied}
                                     </span>
                                 </span>
                             </div>
                             <span
-                                className={
+                                className={cn(
+                                    "font-medium",
                                     attendanceOverview.changeVsLastWeek >= 0
-                                        ? "text-emerald-400"
-                                        : "text-rose-400"
-                                }
+                                        ? "text-emerald-500"
+                                        : "text-red-500",
+                                )}
                             >
                                 {attendanceOverview.changeVsLastWeek >= 0
                                     ? "↗"
@@ -239,67 +277,67 @@ export default function Dashboard({
                                 from last week
                             </span>
                         </div>
-                    </div>
+                    </Panel>
 
                     {/* Recent activity */}
-                    <div className="rounded-xl border border-neutral-800 bg-neutral-900/50 p-6">
-                        <h2 className="text-lg font-semibold text-white">
+                    <Panel className="flex flex-col">
+                        <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
                             Recent activity
                         </h2>
 
                         {liveActivity.length === 0 ? (
-                            <p className="mt-6 text-sm text-neutral-500">
+                            <p className="text-muted-foreground py-6 text-center text-[12px]">
                                 No scans yet today.
                             </p>
                         ) : (
-                            <div className="mt-4 divide-y divide-neutral-800">
+                            <div className="divide-sidebar-border/50 dark:divide-sidebar-border/50 mt-2 flex flex-col divide-y">
                                 {liveActivity.map((item) => (
                                     <div
                                         key={item.id}
-                                        className="flex items-center justify-between py-3"
+                                        className="hover:bg-accent flex items-center justify-between gap-3 rounded-md px-1 py-2 transition-colors"
                                     >
-                                        <div className="flex items-center gap-3">
+                                        <div className="flex min-w-0 items-center gap-2.5">
                                             {item.status === "success" ? (
-                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-amber-500/10 text-xs font-semibold text-amber-400">
+                                                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-orange-500/10 text-[10px] font-semibold text-orange-500 sm:size-8">
                                                     {item.initials}
                                                 </div>
                                             ) : (
-                                                <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-400">
-                                                    <XCircle className="h-4 w-4" />
+                                                <div className="flex size-7 shrink-0 items-center justify-center rounded-full bg-rose-500/10 text-rose-500 sm:size-8">
+                                                    <XCircle className="size-3.5" />
                                                 </div>
                                             )}
-                                            <div>
-                                                <p className="text-sm font-medium text-neutral-100">
+                                            <div className="min-w-0">
+                                                <p className="text-foreground truncate text-[12px] font-medium sm:text-[13px]">
                                                     {item.name}
                                                 </p>
-                                                <p className="text-xs">
+                                                <p className="truncate text-[10px] sm:text-[11px]">
                                                     {item.status ===
                                                     "success" ? (
-                                                        <span className="text-emerald-400">
+                                                        <span className="text-emerald-500">
                                                             checked in
                                                         </span>
                                                     ) : (
-                                                        <span className="text-rose-400">
+                                                        <span className="text-rose-500">
                                                             denied
                                                             {item.reason
                                                                 ? ` · ${item.reason}`
                                                                 : ""}
                                                         </span>
                                                     )}{" "}
-                                                    <span className="text-neutral-500">
+                                                    <span className="text-muted-foreground">
                                                         · {item.method}
                                                     </span>
                                                 </p>
                                             </div>
                                         </div>
-                                        <span className="text-xs text-neutral-500">
+                                        <span className="text-muted-foreground shrink-0 text-[10px] sm:text-[11px]">
                                             {item.time}
                                         </span>
                                     </div>
                                 ))}
                             </div>
                         )}
-                    </div>
+                    </Panel>
                 </div>
             </div>
         </>
