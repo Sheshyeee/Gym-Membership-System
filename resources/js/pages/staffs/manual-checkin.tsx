@@ -1,7 +1,14 @@
 import { Head } from "@inertiajs/react";
-import { Check, Search, ShieldCheck, XCircle, AlertTriangle } from "lucide-react";
+import {
+    Check,
+    Search,
+    ShieldCheck,
+    XCircle,
+    AlertTriangle,
+} from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { dashboard } from "@/routes";
+import { cn } from "@/lib/utils";
 
 type MemberStatus = "active" | "expiring_soon" | "expired";
 
@@ -34,22 +41,23 @@ const statusLabels: Record<MemberStatus, string> = {
 };
 
 const statusStyles: Record<MemberStatus, string> = {
-    active: "text-emerald-400",
-    expiring_soon: "text-amber-400",
-    expired: "text-red-400",
+    active: "text-emerald-500",
+    expiring_soon: "text-amber-500",
+    expired: "text-red-500",
 };
 
 const avatarColors = [
-    "bg-orange-500/20 text-orange-400",
-    "bg-emerald-500/20 text-emerald-400",
-    "bg-blue-500/20 text-blue-400",
-    "bg-red-500/20 text-red-400",
-    "bg-purple-500/20 text-purple-400",
+    "bg-orange-500/15 text-orange-500",
+    "bg-emerald-500/15 text-emerald-500",
+    "bg-blue-500/15 text-blue-500",
+    "bg-red-500/15 text-red-500",
+    "bg-purple-500/15 text-purple-500",
 ];
 
 function colorFor(name: string) {
     let hash = 0;
-    for (let i = 0; i < name.length; i++) hash = name.charCodeAt(i) + ((hash << 5) - hash);
+    for (let i = 0; i < name.length; i++)
+        hash = name.charCodeAt(i) + ((hash << 5) - hash);
     return avatarColors[Math.abs(hash) % avatarColors.length];
 }
 
@@ -63,7 +71,30 @@ function initials(name: string) {
 }
 
 function csrfToken() {
-    return document.querySelector('meta[name="csrf-token"]')?.getAttribute("content") ?? "";
+    return (
+        document
+            .querySelector('meta[name="csrf-token"]')
+            ?.getAttribute("content") ?? ""
+    );
+}
+
+function Panel({
+    className,
+    children,
+}: {
+    className?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-3 sm:p-4",
+                className,
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 export default function ManualCheckIn({
@@ -76,7 +107,9 @@ export default function ManualCheckIn({
     const [searching, setSearching] = useState(false);
     const [hasSearched, setHasSearched] = useState(false);
     const [checkingInId, setCheckingInId] = useState<number | null>(null);
-    const [outcomes, setOutcomes] = useState<Record<number, CheckinOutcome>>({});
+    const [outcomes, setOutcomes] = useState<Record<number, CheckinOutcome>>(
+        {},
+    );
     const [recentCheckIns, setRecentCheckIns] = useState(initialRecent);
 
     const debounceRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -124,14 +157,17 @@ export default function ManualCheckIn({
         setCheckingInId(member.id);
 
         try {
-            const res = await fetch(`/staff/manual-checkin/${member.id}/checkin`, {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json",
-                    Accept: "application/json",
-                    "X-CSRF-TOKEN": csrfToken(),
+            const res = await fetch(
+                `/staff/manual-checkin/${member.id}/checkin`,
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type": "application/json",
+                        Accept: "application/json",
+                        "X-CSRF-TOKEN": csrfToken(),
+                    },
                 },
-            });
+            );
             const json = await res.json();
 
             setOutcomes((prev) => ({ ...prev, [member.id]: json.checkin }));
@@ -147,7 +183,10 @@ export default function ManualCheckIn({
         } catch {
             setOutcomes((prev) => ({
                 ...prev,
-                [member.id]: { result: "denied", message: "Network error — try again." },
+                [member.id]: {
+                    result: "denied",
+                    message: "Network error — try again.",
+                },
             }));
         } finally {
             setCheckingInId(null);
@@ -157,172 +196,217 @@ export default function ManualCheckIn({
     return (
         <>
             <Head title="Manual check-in" />
-            <div className="min-h-screen bg-neutral-950 p-6 text-neutral-100 md:p-10">
-                <div className="mx-auto max-w-5xl">
-                    <p className="mb-2 text-xs font-medium uppercase tracking-widest text-amber-500/80">
+            <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-6">
+                <div>
+                    <p className="mb-1 text-[10px] font-semibold tracking-widest text-orange-500 uppercase sm:text-[11px]">
                         Front desk operations
                     </p>
-                    <h1 className="mb-1 text-3xl font-semibold text-white">
+                    <h1 className="text-foreground text-lg font-semibold sm:text-xl">
                         Manual check-in
                     </h1>
-                    <p className="mb-8 text-sm text-neutral-400">
+                    <p className="text-muted-foreground mt-0.5 text-[11px] sm:text-[12px]">
                         Find a member and verify their membership before entry.
                     </p>
+                </div>
 
-                    <div className="grid grid-cols-1 gap-6 md:grid-cols-[1.3fr_1fr]">
-                        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-4">
-                            <div className="relative mb-4">
-                                <Search className="pointer-events-none absolute left-3 top-1/2 h-4 w-4 -translate-y-1/2 text-neutral-500" />
-                                <input
-                                    ref={inputRef}
-                                    value={query}
-                                    onChange={(e) => handleQueryChange(e.target.value)}
-                                    placeholder="Search by name or member ID..."
-                                    className="h-11 w-full rounded-xl border border-neutral-800 bg-neutral-950 pl-9 pr-14 text-sm text-neutral-100 placeholder:text-neutral-500 focus:border-amber-500/50 focus:outline-none"
-                                />
-                                <span className="pointer-events-none absolute right-3 top-1/2 -translate-y-1/2 rounded border border-neutral-800 bg-neutral-900 px-1.5 py-0.5 text-[10px] text-neutral-500">
-                                    ⌘K
-                                </span>
-                            </div>
-
-                            <div className="min-h-[380px]">
-                                {!hasSearched && !searching && (
-                                    <div className="flex h-[380px] flex-col items-center justify-center text-center">
-                                        <Search className="mb-3 h-8 w-8 text-neutral-700" />
-                                        <p className="font-semibold text-neutral-200">
-                                            Find a member to check in
-                                        </p>
-                                        <p className="mt-1 text-sm text-neutral-500">
-                                            Search by their name or member ID to get started.
-                                        </p>
-                                    </div>
-                                )}
-
-                                {searching && (
-                                    <p className="mt-6 text-center text-sm text-neutral-500">
-                                        Searching...
-                                    </p>
-                                )}
-
-                                {!searching && hasSearched && results.length === 0 && (
-                                    <p className="mt-6 text-center text-sm text-neutral-500">
-                                        No members found for &quot;{query}&quot;.
-                                    </p>
-                                )}
-
-                                {!searching && results.length > 0 && (
-                                    <div className="space-y-2">
-                                        {results.map((member) => {
-                                            const outcome = outcomes[member.id];
-                                            return (
-                                                <div
-                                                    key={member.id}
-                                                    className="flex items-center justify-between rounded-xl border border-neutral-800 bg-neutral-950/60 p-3"
-                                                >
-                                                    <div className="flex items-center gap-3">
-                                                        <div
-                                                            className={`flex h-10 w-10 items-center justify-center rounded-full text-sm font-semibold ${colorFor(member.name)}`}
-                                                        >
-                                                            {initials(member.name)}
-                                                        </div>
-                                                        <div>
-                                                            <p className="text-sm font-medium text-neutral-100">
-                                                                {member.name}
-                                                            </p>
-                                                            <p className="text-xs text-neutral-500">
-                                                                {member.code}
-                                                                {member.plan && ` · ${member.plan}`}
-                                                                {" · "}
-                                                                <span className={statusStyles[member.status]}>
-                                                                    {statusLabels[member.status]}
-                                                                </span>
-                                                            </p>
-                                                        </div>
-                                                    </div>
-
-                                                    <div className="flex flex-col items-end gap-1">
-                                                        <button
-                                                            onClick={() => handleCheckIn(member)}
-                                                            disabled={checkingInId === member.id}
-                                                            className="flex h-9 items-center gap-1.5 rounded-lg bg-amber-500 px-3 text-xs font-semibold text-black transition hover:bg-amber-400 disabled:cursor-not-allowed disabled:opacity-60"
-                                                        >
-                                                            {checkingInId === member.id ? (
-                                                                "Checking in..."
-                                                            ) : (
-                                                                <>
-                                                                    <Check className="h-3.5 w-3.5" />
-                                                                    Check in
-                                                                </>
-                                                            )}
-                                                        </button>
-                                                        {outcome && (
-                                                            <span
-                                                                className={`flex items-center gap-1 text-[11px] ${
-                                                                    outcome.result === "success"
-                                                                        ? "text-emerald-400"
-                                                                        : outcome.result === "duplicate"
-                                                                          ? "text-amber-400"
-                                                                          : "text-red-400"
-                                                                }`}
-                                                            >
-                                                                {outcome.result === "success" && (
-                                                                    <ShieldCheck className="h-3 w-3" />
-                                                                )}
-                                                                {outcome.result === "duplicate" && (
-                                                                    <AlertTriangle className="h-3 w-3" />
-                                                                )}
-                                                                {outcome.result === "denied" && (
-                                                                    <XCircle className="h-3 w-3" />
-                                                                )}
-                                                                {outcome.message}
-                                                            </span>
-                                                        )}
-                                                    </div>
-                                                </div>
-                                            );
-                                        })}
-                                    </div>
-                                )}
-                            </div>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+                    <Panel>
+                        <div className="relative mb-3">
+                            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-3 size-4 -translate-y-1/2" />
+                            <input
+                                ref={inputRef}
+                                value={query}
+                                onChange={(e) =>
+                                    handleQueryChange(e.target.value)
+                                }
+                                placeholder="Search by name or member ID..."
+                                className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:border-primary/50 h-9 w-full rounded-lg border pr-14 pl-9 text-[12px] focus:outline-none sm:h-10 sm:text-[13px]"
+                            />
+                            <span className="text-muted-foreground border-sidebar-border/70 dark:border-sidebar-border bg-muted pointer-events-none absolute top-1/2 right-3 -translate-y-1/2 rounded border px-1.5 py-0.5 text-[9px]">
+                                ⌘K
+                            </span>
                         </div>
 
-                        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-5">
-                            <p className="mb-1 text-sm font-semibold text-white">
-                                Recent check-ins
-                            </p>
-                            <p className="mb-4 text-xs text-neutral-500">Today</p>
+                        <div className="min-h-[320px] sm:min-h-[380px]">
+                            {!hasSearched && !searching && (
+                                <div className="flex h-[320px] flex-col items-center justify-center text-center sm:h-[380px]">
+                                    <Search className="text-muted-foreground/40 mb-3 size-7 sm:size-8" />
+                                    <p className="text-foreground text-[13px] font-semibold sm:text-[14px]">
+                                        Find a member to check in
+                                    </p>
+                                    <p className="text-muted-foreground mt-1 text-[11px] sm:text-[12px]">
+                                        Search by their name or member ID to get
+                                        started.
+                                    </p>
+                                </div>
+                            )}
 
-                            {recentCheckIns.length === 0 ? (
-                                <p className="text-sm text-neutral-500">
-                                    No check-ins yet today.
+                            {searching && (
+                                <p className="text-muted-foreground mt-6 text-center text-[12px]">
+                                    Searching...
                                 </p>
-                            ) : (
-                                <div className="space-y-1">
-                                    {recentCheckIns.map((c) => (
-                                        <div
-                                            key={c.id}
-                                            className="flex items-center justify-between rounded-lg px-1 py-2"
-                                        >
-                                            <div className="flex items-center gap-3">
-                                                <div
-                                                    className={`flex h-8 w-8 items-center justify-center rounded-full text-xs font-semibold ${colorFor(c.name)}`}
-                                                >
-                                                    {initials(c.name)}
+                            )}
+
+                            {!searching &&
+                                hasSearched &&
+                                results.length === 0 && (
+                                    <p className="text-muted-foreground mt-6 text-center text-[12px]">
+                                        No members found for &quot;{query}
+                                        &quot;.
+                                    </p>
+                                )}
+
+                            {!searching && results.length > 0 && (
+                                <div className="space-y-2">
+                                    {results.map((member) => {
+                                        const outcome = outcomes[member.id];
+                                        return (
+                                            <div
+                                                key={member.id}
+                                                className="border-sidebar-border/70 dark:border-sidebar-border bg-background flex flex-col gap-2.5 rounded-lg border p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
+                                            >
+                                                <div className="flex min-w-0 items-center gap-2.5">
+                                                    <div
+                                                        className={cn(
+                                                            "flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold sm:size-9 sm:text-[12px]",
+                                                            colorFor(
+                                                                member.name,
+                                                            ),
+                                                        )}
+                                                    >
+                                                        {initials(member.name)}
+                                                    </div>
+                                                    <div className="min-w-0">
+                                                        <p className="text-foreground truncate text-[12px] font-medium sm:text-[13px]">
+                                                            {member.name}
+                                                        </p>
+                                                        <p className="text-muted-foreground truncate text-[10px] sm:text-[11px]">
+                                                            {member.code}
+                                                            {member.plan &&
+                                                                ` · ${member.plan}`}
+                                                            {" · "}
+                                                            <span
+                                                                className={
+                                                                    statusStyles[
+                                                                        member
+                                                                            .status
+                                                                    ]
+                                                                }
+                                                            >
+                                                                {
+                                                                    statusLabels[
+                                                                        member
+                                                                            .status
+                                                                    ]
+                                                                }
+                                                            </span>
+                                                        </p>
+                                                    </div>
                                                 </div>
-                                                <div>
-                                                    <p className="text-sm font-medium text-neutral-100">
-                                                        {c.name}
-                                                    </p>
-                                                    <p className="text-xs text-neutral-500">{c.time}</p>
+
+                                                <div className="flex shrink-0 items-center justify-between gap-2 sm:flex-col sm:items-end">
+                                                    <button
+                                                        onClick={() =>
+                                                            handleCheckIn(
+                                                                member,
+                                                            )
+                                                        }
+                                                        disabled={
+                                                            checkingInId ===
+                                                            member.id
+                                                        }
+                                                        className="bg-primary text-primary-foreground flex h-8 items-center gap-1.5 rounded-md px-2.5 text-[11px] font-semibold transition hover:opacity-90 disabled:cursor-not-allowed disabled:opacity-60"
+                                                    >
+                                                        {checkingInId ===
+                                                        member.id ? (
+                                                            "Checking in..."
+                                                        ) : (
+                                                            <>
+                                                                <Check className="size-3.5" />
+                                                                Check in
+                                                            </>
+                                                        )}
+                                                    </button>
+                                                    {outcome && (
+                                                        <span
+                                                            className={cn(
+                                                                "flex items-center gap-1 text-[10px] sm:text-[11px]",
+                                                                outcome.result ===
+                                                                    "success"
+                                                                    ? "text-emerald-500"
+                                                                    : outcome.result ===
+                                                                        "duplicate"
+                                                                      ? "text-amber-500"
+                                                                      : "text-red-500",
+                                                            )}
+                                                        >
+                                                            {outcome.result ===
+                                                                "success" && (
+                                                                <ShieldCheck className="size-3" />
+                                                            )}
+                                                            {outcome.result ===
+                                                                "duplicate" && (
+                                                                <AlertTriangle className="size-3" />
+                                                            )}
+                                                            {outcome.result ===
+                                                                "denied" && (
+                                                                <XCircle className="size-3" />
+                                                            )}
+                                                            {outcome.message}
+                                                        </span>
+                                                    )}
                                                 </div>
                                             </div>
-                                            <ShieldCheck className="h-4 w-4 text-emerald-500" />
-                                        </div>
-                                    ))}
+                                        );
+                                    })}
                                 </div>
                             )}
                         </div>
-                    </div>
+                    </Panel>
+
+                    <Panel>
+                        <p className="text-foreground text-[13px] font-semibold sm:text-[14px]">
+                            Recent check-ins
+                        </p>
+                        <p className="text-muted-foreground mb-3 text-[10px] sm:text-[11px]">
+                            Today
+                        </p>
+
+                        {recentCheckIns.length === 0 ? (
+                            <p className="text-muted-foreground text-[12px]">
+                                No check-ins yet today.
+                            </p>
+                        ) : (
+                            <div className="space-y-0.5">
+                                {recentCheckIns.map((c) => (
+                                    <div
+                                        key={c.id}
+                                        className="hover:bg-accent flex items-center justify-between rounded-md px-1 py-1.5 transition-colors"
+                                    >
+                                        <div className="flex items-center gap-2.5">
+                                            <div
+                                                className={cn(
+                                                    "flex size-7 items-center justify-center rounded-full text-[10px] font-semibold sm:size-8",
+                                                    colorFor(c.name),
+                                                )}
+                                            >
+                                                {initials(c.name)}
+                                            </div>
+                                            <div>
+                                                <p className="text-foreground text-[12px] font-medium sm:text-[13px]">
+                                                    {c.name}
+                                                </p>
+                                                <p className="text-muted-foreground text-[10px] sm:text-[11px]">
+                                                    {c.time}
+                                                </p>
+                                            </div>
+                                        </div>
+                                        <ShieldCheck className="size-4 text-emerald-500" />
+                                    </div>
+                                ))}
+                            </div>
+                        )}
+                    </Panel>
                 </div>
             </div>
         </>

@@ -1,11 +1,4 @@
-import {
-  JSX,
-    useCallback,
-    useEffect,
-    useRef,
-    useState,
-    type ReactElement,
-} from "react";
+import { JSX, useCallback, useEffect, useRef, useState } from "react";
 import { Head } from "@inertiajs/react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import {
@@ -16,6 +9,7 @@ import {
     RotateCw,
 } from "lucide-react";
 import { dashboard } from "@/routes";
+import { cn } from "@/lib/utils";
 
 type ScanResult = {
     result: "success" | "denied" | "duplicate";
@@ -38,12 +32,30 @@ function csrfToken() {
     );
 }
 
-// Rough heuristic to start on the rear camera when labels are available.
 function pickInitialCameraIndex(cameras: CameraOption[]) {
     const backIndex = cameras.findIndex((c) =>
         /back|rear|environment/i.test(c.label),
     );
     return backIndex >= 0 ? backIndex : 0;
+}
+
+function Panel({
+    className,
+    children,
+}: {
+    className?: string;
+    children: React.ReactNode;
+}) {
+    return (
+        <div
+            className={cn(
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-3 sm:p-4",
+                className,
+            )}
+        >
+            {children}
+        </div>
+    );
 }
 
 export default function QRCheckIn() {
@@ -148,8 +160,6 @@ export default function QRCheckIn() {
                     setCameraIndex(initialIndex);
                     await startWithCamera(options[initialIndex].id);
                 } else {
-                    // Fallback if enumeration returns nothing (some browsers
-                    // require this facingMode form before permission is granted).
                     await scanner.start(
                         { facingMode: "environment" },
                         {
@@ -210,24 +220,24 @@ export default function QRCheckIn() {
         }
     > = {
         success: {
-            border: "border-emerald-800",
-            bg: "bg-emerald-950/40",
-            text: "text-emerald-400",
-            icon: <ShieldCheck className="h-5 w-5 text-emerald-400" />,
+            border: "border-emerald-500/30",
+            bg: "bg-emerald-500/10",
+            text: "text-emerald-500",
+            icon: <ShieldCheck className="size-4 text-emerald-500 sm:size-5" />,
             label: "Access Granted",
         },
         denied: {
-            border: "border-red-900",
-            bg: "bg-red-950/40",
-            text: "text-red-400",
-            icon: <XCircle className="h-5 w-5 text-red-400" />,
+            border: "border-red-500/30",
+            bg: "bg-red-500/10",
+            text: "text-red-500",
+            icon: <XCircle className="size-4 text-red-500 sm:size-5" />,
             label: "Access Denied",
         },
         duplicate: {
-            border: "border-amber-900",
-            bg: "bg-amber-950/40",
-            text: "text-amber-400",
-            icon: <AlertTriangle className="h-5 w-5 text-amber-400" />,
+            border: "border-amber-500/30",
+            bg: "bg-amber-500/10",
+            text: "text-amber-500",
+            icon: <AlertTriangle className="size-4 text-amber-500 sm:size-5" />,
             label: "Already Scanned",
         },
     };
@@ -235,63 +245,71 @@ export default function QRCheckIn() {
     return (
         <>
             <Head title="QR Check-in" />
-            <div className="min-h-screen bg-neutral-950 text-neutral-100 p-6 md:p-10">
-                <div className="max-w-5xl mx-auto">
-                    <div className="flex items-start justify-between mb-8">
-                        <div>
-                            <p className="text-xs font-medium tracking-widest text-amber-500/80 uppercase mb-2">
-                                Front Desk Operations
-                            </p>
-                            <h1 className="text-3xl font-semibold text-white mb-1">
-                                QR check-in
-                            </h1>
-                            <p className="text-sm text-neutral-400">
-                                Scan a member's code to verify access instantly.
-                            </p>
-                        </div>
-                        <span className="hidden md:inline-flex items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-3 py-1 text-xs font-medium text-emerald-400">
-                            <ShieldCheck className="h-3.5 w-3.5" />
-                            Secure scanner
-                        </span>
+            <div className="mx-auto flex w-full max-w-[1200px] flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-6">
+                <div className="flex items-start justify-between gap-3">
+                    <div>
+                        <p className="mb-1 text-[10px] font-semibold tracking-widest text-orange-500 uppercase sm:text-[11px]">
+                            Front desk operations
+                        </p>
+                        <h1 className="text-foreground text-lg font-semibold sm:text-xl">
+                            QR check-in
+                        </h1>
+                        <p className="text-muted-foreground mt-0.5 text-[11px] sm:text-[12px]">
+                            Scan a member&apos;s code to verify access
+                            instantly.
+                        </p>
                     </div>
+                    <span className="hidden shrink-0 items-center gap-1.5 rounded-full border border-emerald-500/30 bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-500 md:inline-flex">
+                        <ShieldCheck className="size-3.5" />
+                        Secure scanner
+                    </span>
+                </div>
 
-                    <div className="grid grid-cols-1 md:grid-cols-[1.3fr_1fr] gap-6">
-                        <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                            <div className="flex items-center justify-between mb-4 text-xs">
-                                <span
-                                    className={`inline-flex items-center gap-1.5 ${scanning ? "text-emerald-400" : "text-neutral-500"}`}
-                                >
-                                    <span
-                                        className={`h-1.5 w-1.5 rounded-full ${scanning ? "bg-emerald-400" : "bg-neutral-600"}`}
-                                    />
-                                    {scanning
-                                        ? "Scanner ready"
-                                        : "Starting camera…"}
-                                </span>
-
-                                {cameras.length > 1 && (
-                                    <button
-                                        type="button"
-                                        onClick={handleFlipCamera}
-                                        disabled={switching}
-                                        className="inline-flex items-center gap-1.5 rounded-full border border-neutral-700 bg-neutral-800/80 px-3 py-1 text-neutral-300 hover:bg-neutral-700 hover:text-white disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
-                                    >
-                                        <RotateCw
-                                            className={`h-3.5 w-3.5 ${switching ? "animate-spin" : ""}`}
-                                        />
-                                        {switching
-                                            ? "Switching…"
-                                            : "Flip camera"}
-                                    </button>
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.3fr_1fr]">
+                    <Panel>
+                        <div className="mb-3 flex items-center justify-between text-[11px] sm:text-[12px]">
+                            <span
+                                className={cn(
+                                    "inline-flex items-center gap-1.5",
+                                    scanning
+                                        ? "text-emerald-500"
+                                        : "text-muted-foreground",
                                 )}
-                            </div>
-
-                            <div className="relative aspect-square rounded-xl border border-amber-600/30 bg-black overflow-hidden">
-                                <div
-                                    id={SCANNER_ID}
-                                    className="w-full h-full"
+                            >
+                                <span
+                                    className={cn(
+                                        "size-1.5 rounded-full",
+                                        scanning
+                                            ? "bg-emerald-500"
+                                            : "bg-muted-foreground/50",
+                                    )}
                                 />
-                                <style>{`
+                                {scanning
+                                    ? "Scanner ready"
+                                    : "Starting camera…"}
+                            </span>
+
+                            {cameras.length > 1 && (
+                                <button
+                                    type="button"
+                                    onClick={handleFlipCamera}
+                                    disabled={switching}
+                                    className="border-sidebar-border/70 dark:border-sidebar-border bg-background text-foreground/80 hover:bg-muted inline-flex items-center gap-1.5 rounded-full border px-2.5 py-1 transition-colors disabled:cursor-not-allowed disabled:opacity-50"
+                                >
+                                    <RotateCw
+                                        className={cn(
+                                            "size-3.5",
+                                            switching && "animate-spin",
+                                        )}
+                                    />
+                                    {switching ? "Switching…" : "Flip camera"}
+                                </button>
+                            )}
+                        </div>
+
+                        <div className="border-primary/30 relative aspect-square overflow-hidden rounded-xl border bg-black">
+                            <div id={SCANNER_ID} className="h-full w-full" />
+                            <style>{`
         #${SCANNER_ID} {
             width: 100% !important;
             height: 100% !important;
@@ -302,66 +320,65 @@ export default function QRCheckIn() {
             object-fit: cover !important;
         }
     `}</style>
-                            </div>
-
-                            {error ? (
-                                <p className="text-center text-sm text-red-400 mt-4">
-                                    {error}
-                                </p>
-                            ) : (
-                                <p className="text-center text-xs text-neutral-500 mt-4">
-                                    Position the member QR code inside the frame
-                                </p>
-                            )}
                         </div>
 
-                        <div className="flex flex-col gap-6">
-                            <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                                <Camera className="h-6 w-6 text-amber-500 mb-3" />
-                                <p className="font-semibold text-white mb-1">
-                                    Fast entry, zero friction.
-                                </p>
-                                <p className="text-sm text-neutral-400">
-                                    Verify active memberships in under a second
-                                    and keep your lobby moving.
-                                </p>
-                            </div>
+                        {error ? (
+                            <p className="mt-3 text-center text-[11px] text-red-500 sm:text-[12px]">
+                                {error}
+                            </p>
+                        ) : (
+                            <p className="text-muted-foreground mt-3 text-center text-[10px] sm:text-[11px]">
+                                Position the member QR code inside the frame
+                            </p>
+                        )}
+                    </Panel>
 
-                            {lastResult && (
-                                <div
-                                    className={`rounded-2xl border p-6 ${statusStyles[lastResult.result].border} ${statusStyles[lastResult.result].bg}`}
-                                >
-                                    <div className="flex items-center gap-2 mb-2">
-                                        {statusStyles[lastResult.result].icon}
-                                        <p
-                                            className={`text-sm font-semibold ${statusStyles[lastResult.result].text}`}
-                                        >
-                                            {lastResult.reason ??
-                                                statusStyles[lastResult.result]
-                                                    .label}
-                                        </p>
-                                    </div>
-                                    {lastResult.member && (
-                                        <p className="font-medium text-white">
-                                            {lastResult.member.name}
-                                            {lastResult.member.plan
-                                                ? ` · ${lastResult.member.plan}`
-                                                : ""}
-                                        </p>
-                                    )}
-                                    {lastResult.message && (
-                                        <p className="text-xs text-neutral-500 mt-1">
-                                            {lastResult.message}
-                                        </p>
-                                    )}
-                                    {lastResult.scannedAt && (
-                                        <p className="text-xs text-neutral-500 mt-2">
-                                            Scanned at {lastResult.scannedAt}
-                                        </p>
-                                    )}
+                    <div className="flex flex-col gap-4">
+                        <Panel>
+                            <Camera className="mb-2.5 size-5 text-orange-500 sm:size-6" />
+                            <p className="text-foreground text-[13px] font-semibold sm:text-[14px]">
+                                Fast entry, zero friction.
+                            </p>
+                            <p className="text-muted-foreground mt-1 text-[11px] sm:text-[12px]">
+                                Verify active memberships in under a second and
+                                keep your lobby moving.
+                            </p>
+                        </Panel>
+
+                        {lastResult && (
+                            <Panel
+                                className={`${statusStyles[lastResult.result].border} ${statusStyles[lastResult.result].bg}`}
+                            >
+                                <div className="mb-1.5 flex items-center gap-2">
+                                    {statusStyles[lastResult.result].icon}
+                                    <p
+                                        className={`text-[12px] font-semibold sm:text-[13px] ${statusStyles[lastResult.result].text}`}
+                                    >
+                                        {lastResult.reason ??
+                                            statusStyles[lastResult.result]
+                                                .label}
+                                    </p>
                                 </div>
-                            )}
-                        </div>
+                                {lastResult.member && (
+                                    <p className="text-foreground text-[12px] font-medium sm:text-[13px]">
+                                        {lastResult.member.name}
+                                        {lastResult.member.plan
+                                            ? ` · ${lastResult.member.plan}`
+                                            : ""}
+                                    </p>
+                                )}
+                                {lastResult.message && (
+                                    <p className="text-muted-foreground mt-1 text-[10px] sm:text-[11px]">
+                                        {lastResult.message}
+                                    </p>
+                                )}
+                                {lastResult.scannedAt && (
+                                    <p className="text-muted-foreground mt-1.5 text-[10px] sm:text-[11px]">
+                                        Scanned at {lastResult.scannedAt}
+                                    </p>
+                                )}
+                            </Panel>
+                        )}
                     </div>
                 </div>
             </div>

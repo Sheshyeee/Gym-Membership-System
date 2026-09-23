@@ -143,7 +143,7 @@ export default function Dashboard({
 
             <div className="mx-auto flex w-full max-w-[1440px] flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-6">
                 {/* Greeting */}
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-end sm:justify-between">
+                <div className="flex flex-col items-start gap-3 sm:flex-row sm:items-end sm:justify-between">
                     <div>
                         <p className="text-[10px] font-semibold tracking-widest text-orange-500 uppercase sm:text-[11px]">
                             {greeting.dateLabel}
@@ -159,7 +159,7 @@ export default function Dashboard({
 
                     <Link
                         href="/staff/qr-checkin"
-                        className="bg-primary text-primary-foreground inline-flex items-center justify-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
+                        className="bg-primary text-primary-foreground inline-flex shrink-0 items-center gap-1.5 self-start rounded-md px-2.5 py-1.5 text-[11px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
                     >
                         <QrCode className="size-3.5 sm:size-4" />
                         Scan member
@@ -202,9 +202,9 @@ export default function Dashboard({
                     />
                 </div>
 
-                <div className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[1.6fr_1fr]">
-                    {/* Attendance overview */}
-                    <Panel className="flex flex-col">
+                <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1.6fr_1fr]">
+                    {/* Attendance overview — stretches to match Recent activity's height */}
+                    <Panel className="flex h-full flex-col">
                         <div className="mb-3 flex items-start justify-between">
                             <div>
                                 <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
@@ -216,7 +216,7 @@ export default function Dashboard({
                             </div>
                         </div>
 
-                        <div className="relative h-28 w-full sm:h-36">
+                        <div className="relative min-h-28 w-full flex-1 sm:min-h-36">
                             <svg
                                 viewBox="0 0 100 100"
                                 preserveAspectRatio="none"
@@ -279,8 +279,10 @@ export default function Dashboard({
                         </div>
                     </Panel>
 
-                    {/* Recent activity */}
-                    <Panel className="flex flex-col">
+                    {/* Recent activity — capped list with its own scroll so it
+                        never forces the page (or the attendance card) taller
+                        than a reasonable height */}
+                    <Panel className="flex h-full max-h-[420px] flex-col lg:max-h-none">
                         <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
                             Recent activity
                         </h2>
@@ -290,7 +292,7 @@ export default function Dashboard({
                                 No scans yet today.
                             </p>
                         ) : (
-                            <div className="divide-sidebar-border/50 dark:divide-sidebar-border/50 mt-2 flex flex-col divide-y">
+                            <div className="scrollbar-thin divide-sidebar-border/50 dark:divide-sidebar-border/50 mt-2 flex flex-1 flex-col divide-y overflow-y-auto">
                                 {liveActivity.map((item) => (
                                     <div
                                         key={item.id}
