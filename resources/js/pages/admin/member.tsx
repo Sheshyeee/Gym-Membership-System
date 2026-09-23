@@ -67,7 +67,7 @@ function memberInitials(member: MemberRow) {
 function StatusPill({ status }: { status: MemberStatus }) {
     return (
         <span
-            className={`rounded-full px-2 py-0.5 text-[11px] font-medium ${statusStyles[status]}`}
+            className={`shrink-0 rounded-full px-2 py-0.5 text-[11px] font-medium whitespace-nowrap ${statusStyles[status]}`}
         >
             {statusLabels[status]}
         </span>
@@ -124,8 +124,8 @@ export default function Member({
         setSheetOpen(true);
     }
 
-    // Bars now measure the same active / expiring_soon / expired counts
-    // shown in the list below, instead of an unrelated signups timeline.
+    // Bars measure the same active / expiring_soon / expired counts shown
+    // in the list below.
     const statusBars = [
         { label: "Active", count: stats.active, color: "bg-emerald-500/70" },
         {
@@ -158,26 +158,35 @@ export default function Member({
                     </p>
                 </div>
 
-                <div className="-mx-3 flex items-center gap-2 overflow-x-auto px-3 pb-0.5 sm:mx-0 sm:flex-wrap sm:gap-3 sm:overflow-visible sm:px-0">
+                {/* Mobile: search sits on its own full-width row, and the
+                    two filter buttons sit together on the row below, each
+                    taking half the width — both always visible, nothing to
+                    scroll to reach. At sm+, "sm:contents" un-wraps the
+                    button pair so they flow inline with the search input
+                    again, matching the desktop layout. */}
+                <div className="flex flex-col gap-2 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3">
                     <input
                         value={search}
                         onChange={(e) => handleSearchChange(e.target.value)}
                         placeholder="Search by name or email..."
-                        className="h-10 w-full min-w-[220px] flex-1 rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:ring-ring focus:ring-1 focus:outline-none sm:min-w-[260px] sm:text-sm"
+                        className="h-10 w-full rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground placeholder:text-muted-foreground focus:ring-ring focus:ring-1 focus:outline-none sm:min-w-[260px] sm:flex-1 sm:text-sm"
                     />
-                    <button className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/80 hover:bg-muted sm:text-sm">
-                        All members
-                    </button>
-                    <button className="flex h-10 shrink-0 items-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/80 hover:bg-muted sm:text-sm">
-                        More filters
-                    </button>
+                    <div className="flex gap-2 sm:contents">
+                        <button className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/80 hover:bg-muted sm:h-10 sm:flex-none sm:justify-start sm:text-sm">
+                            All members
+                        </button>
+                        <button className="flex h-10 flex-1 items-center justify-center gap-2 rounded-lg border border-border bg-muted/50 px-3 text-[13px] text-foreground/80 hover:bg-muted sm:h-10 sm:flex-none sm:justify-start sm:text-sm">
+                            More filters
+                        </button>
+                    </div>
                 </div>
 
                 {/* items-stretch (default) so the stats sidebar and the
                     members panel share the same height on desktop — the
-                    sidebar's content is spread with flex-1/mt-auto below so
-                    it fills that height instead of stopping halfway down
-                    with a gap under it. */}
+                    sidebar's content is spread with mt-auto below so it
+                    fills that height instead of stopping halfway down with
+                    a gap under it. On mobile the two stack in their own
+                    rows and just size to their own content. */}
                 <div className="grid flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[280px_1fr]">
                     <div className="flex flex-col rounded-2xl border border-border bg-card p-4 sm:rounded-xl">
                         <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
@@ -190,7 +199,7 @@ export default function Member({
                             </span>
                         </p>
 
-                        <div className="mt-4 flex h-16 flex-1 items-end gap-1.5">
+                        <div className="mt-4 flex h-16 items-end gap-1.5">
                             {statusBars.map((s) => (
                                 <div
                                     key={s.label}
@@ -353,7 +362,9 @@ export default function Member({
                         {/* Mobile: stacked cards. A 7-column table squeezed
                             into a phone width is the classic "cheap
                             template" tell — this gives each member a proper
-                            compact card instead. */}
+                            compact card instead. Status pill no longer
+                            wraps/shrinks (shrink-0 + whitespace-nowrap) so
+                            it can't get squeezed against a long name. */}
                         <ul className="flex-1 divide-y divide-border sm:hidden">
                             {members.data.length === 0 && (
                                 <li className="px-4 py-10 text-center text-[13px] text-muted-foreground">
@@ -384,7 +395,7 @@ export default function Member({
                                     </div>
 
                                     <div className="mt-2.5 grid grid-cols-2 gap-y-1 text-[11px]">
-                                        <span className="text-muted-foreground">
+                                        <span className="truncate text-muted-foreground">
                                             {member.plan ?? "No plan"} ·{" "}
                                             {member.code}
                                         </span>
@@ -404,33 +415,40 @@ export default function Member({
                             ))}
                         </ul>
 
-                        <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-[11px] text-muted-foreground sm:px-5 sm:text-xs">
+                        {/* Pagination: stacked on mobile so "Showing X-Y of
+                            Z members" (which can run long) never squeezes
+                            Prev/Next out of view — they get their own full-
+                            width row underneath instead of fighting for
+                            space on one line. */}
+                        <div className="mt-auto flex flex-col gap-2 border-t border-border px-4 py-3 text-[11px] text-muted-foreground sm:flex-row sm:items-center sm:justify-between sm:gap-3 sm:text-xs">
                             <span>
                                 Showing {members.from ?? 0}-{members.to ?? 0} of{" "}
                                 {members.total} members
                             </span>
-                            <div className="flex items-center gap-2">
+                            <div className="flex items-center justify-between gap-2 sm:justify-end">
                                 <span>
                                     {members.current_page}/{members.last_page}
                                 </span>
-                                {members.prev_page_url && (
-                                    <Link
-                                        href={members.prev_page_url}
-                                        preserveScroll
-                                        className="rounded border border-border px-2 py-1 text-foreground/80 hover:bg-muted"
-                                    >
-                                        Prev
-                                    </Link>
-                                )}
-                                {members.next_page_url && (
-                                    <Link
-                                        href={members.next_page_url}
-                                        preserveScroll
-                                        className="rounded border border-border px-2 py-1 text-foreground/80 hover:bg-muted"
-                                    >
-                                        Next
-                                    </Link>
-                                )}
+                                <div className="flex items-center gap-2">
+                                    {members.prev_page_url && (
+                                        <Link
+                                            href={members.prev_page_url}
+                                            preserveScroll
+                                            className="rounded border border-border px-2.5 py-1 text-foreground/80 hover:bg-muted"
+                                        >
+                                            Prev
+                                        </Link>
+                                    )}
+                                    {members.next_page_url && (
+                                        <Link
+                                            href={members.next_page_url}
+                                            preserveScroll
+                                            className="rounded border border-border px-2.5 py-1 text-foreground/80 hover:bg-muted"
+                                        >
+                                            Next
+                                        </Link>
+                                    )}
+                                </div>
                             </div>
                         </div>
                     </div>

@@ -310,11 +310,11 @@ export default function Attendance({
                             />
                         </div>
                         {hourly.data.every((d) => d.total === 0) ? (
-                            <div className="flex h-40 items-center justify-center text-center text-[12px] text-muted-foreground sm:h-56 sm:text-[13px] md:h-64">
+                            <div className="flex h-28 items-center justify-center text-center text-[12px] text-muted-foreground sm:h-32 sm:text-[13px]">
                                 No check-ins recorded for this day.
                             </div>
                         ) : (
-                            <div className="h-40 sm:h-56 md:h-64">
+                            <div className="h-28 sm:h-32 md:h-36">
                                 <ResponsiveContainer width="100%" height="100%">
                                     <BarChart data={hourly.data}>
                                         <XAxis
@@ -370,26 +370,22 @@ export default function Attendance({
                                 </button>
                             </div>
                         </div>
-                        <p className="mb-2.5 text-[10px] text-muted-foreground sm:mb-4 sm:text-[11px]">
+                        <p className="mb-2 text-[10px] text-muted-foreground sm:mb-3 sm:text-[11px]">
                             {heatmap.weekLabel}
                         </p>
 
-                        {/* flex-1 + justify-center: this is what makes the
-                            card match the hourly-attendance panel's height
-                            without a dead gap. The grid itself is a fixed
-                            size (9 rows), so on desktop — where this panel
-                            gets stretched taller to match its neighbor — the
-                            extra space is distributed evenly above/below the
-                            grid instead of appearing as empty space
-                            underneath it. overflow-x-auto + min-width guard
-                            keeps the 7-day grid from being crushed illegibly
-                            on very narrow phones instead of silently
-                            clipping. Row height is capped (not aspect-square)
-                            on mobile so 9 stacked buckets don't blow up the
-                            panel — each cell reads fine as a short rounded
-                            bar instead of a full square at this size. */}
+                        {/* flex-1 + justify-center still absorbs any small
+                            leftover height difference from the grid's equal
+                            stretch, but the cells themselves are now a
+                            small fixed size (not aspect-square) so the
+                            heatmap stays visually compact instead of
+                            growing large cells to fill the available
+                            height. overflow-x-auto + min-width guard keeps
+                            the 7-day grid from being crushed illegibly on
+                            very narrow phones instead of silently
+                            clipping. */}
                         <div className="flex flex-1 flex-col justify-center overflow-x-auto">
-                            <div className="grid min-w-[230px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1 text-[9px] sm:gap-2 sm:text-[11px]">
+                            <div className="grid min-w-[210px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1 text-[9px] sm:gap-1.5 sm:text-[10px]">
                                 <span />
                                 {DAY_LABELS.map((d, i) => (
                                     <span
@@ -411,7 +407,7 @@ export default function Attendance({
                                             <div
                                                 key={ci}
                                                 title={`${cell.count} check-ins`}
-                                                className={`h-4 rounded sm:aspect-square sm:h-auto ${heatColor(cell.intensity)}`}
+                                                className={`h-3 rounded sm:h-3.5 ${heatColor(cell.intensity)}`}
                                             />
                                         ))}
                                     </>
@@ -423,13 +419,13 @@ export default function Attendance({
                             regardless of how much extra height flex-1 above
                             absorbed, so it lines up with the bottom of the
                             hourly-attendance card next to it. */}
-                        <div className="mt-auto flex items-center justify-end gap-1 pt-2.5 text-[9px] text-muted-foreground sm:gap-1.5 sm:pt-4 sm:text-[11px]">
+                        <div className="mt-auto flex items-center justify-end gap-1 pt-2 text-[9px] text-muted-foreground sm:gap-1.5 sm:pt-3 sm:text-[10px]">
                             Less
-                            <span className="h-2.5 w-2.5 rounded bg-muted sm:h-3 sm:w-3" />
-                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/20 sm:h-3 sm:w-3" />
-                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/40 sm:h-3 sm:w-3" />
-                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/70 sm:h-3 sm:w-3" />
-                            <span className="h-2.5 w-2.5 rounded bg-emerald-500 sm:h-3 sm:w-3" />
+                            <span className="h-2 w-2 rounded bg-muted sm:h-2.5 sm:w-2.5" />
+                            <span className="h-2 w-2 rounded bg-emerald-500/20 sm:h-2.5 sm:w-2.5" />
+                            <span className="h-2 w-2 rounded bg-emerald-500/40 sm:h-2.5 sm:w-2.5" />
+                            <span className="h-2 w-2 rounded bg-emerald-500/70 sm:h-2.5 sm:w-2.5" />
+                            <span className="h-2 w-2 rounded bg-emerald-500 sm:h-2.5 sm:w-2.5" />
                             More
                         </div>
                     </Panel>

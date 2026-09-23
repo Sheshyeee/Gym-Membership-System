@@ -60,18 +60,18 @@ export default function MembershipPlans({ plans }: { plans: Plan[] }) {
         <>
             <Head title="Membership Plans" />
 
-            <div className="flex flex-col gap-6 p-6">
-                <div className="flex flex-wrap items-start justify-between gap-4">
-                    <div className="flex items-start gap-3">
-                        <span className="mt-1.5 size-2 rounded-full bg-emerald-500" />
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-2.5 sm:gap-6 sm:p-6 lg:p-8">
+                <div className="flex flex-col gap-3 sm:flex-row sm:flex-wrap sm:items-start sm:justify-between sm:gap-4">
+                    <div className="flex items-start gap-2.5 sm:gap-3">
+                        <span className="mt-1.5 size-1.5 shrink-0 rounded-full bg-emerald-500 sm:size-2" />
                         <div>
-                            <p className="text-xs font-medium text-emerald-500">
+                            <p className="text-[10px] font-medium text-emerald-500 sm:text-xs">
                                 Live workspace
                             </p>
-                            <h1 className="mt-1 text-2xl font-semibold text-foreground">
+                            <h1 className="mt-1 text-lg font-semibold text-foreground sm:text-2xl">
                                 Membership Plans
                             </h1>
-                            <p className="mt-1 text-sm text-muted-foreground">
+                            <p className="mt-1 text-[12px] text-muted-foreground sm:text-sm">
                                 Manage your pricing, benefits, and member
                                 distribution.
                             </p>
@@ -81,7 +81,7 @@ export default function MembershipPlans({ plans }: { plans: Plan[] }) {
 
                 <RevenueMixChart data={revenueMix} />
 
-                <div className="grid gap-4 sm:grid-cols-2 lg:grid-cols-3">
+                <div className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 lg:grid-cols-3">
                     {plans.map((plan) => (
                         <PlanCard
                             key={plan.id}
