@@ -276,15 +276,17 @@ export default function Attendance({
                     />
                 </div>
 
-                {/* items-start: without this, a CSS grid row stretches every
-                    cell to match the tallest one. The heatmap panel is
-                    naturally tall (9 stacked time-bucket rows), so the
-                    "Hourly attendance" panel next to it was being stretched
-                    to match — but its chart stayed a fixed h-64, leaving a
-                    big dead gap below it. items-start lets each panel size
-                    to its own content instead. */}
-                <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 md:grid-cols-[1.4fr_1fr]">
-                    <Panel>
+                {/* items-stretch (default): both panels match the taller
+                    one's height. The hourly-attendance card's own content
+                    (header + fixed-height chart) naturally fits that height
+                    with room to spare, so it's left flex flex-col — no
+                    stretch needed there. The heatmap card is the one that
+                    needs to actively fill the extra height: see the
+                    flex-1/mt-auto layout inside it below, which centers the
+                    day-grid vertically and pins the legend to the bottom
+                    instead of leaving a dead gap under a top-aligned grid. */}
+                <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-[1.4fr_1fr]">
+                    <Panel className="flex flex-col">
                         <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 sm:mb-4 sm:gap-3">
                             <div>
                                 <p className="text-[12px] font-semibold text-foreground sm:text-sm">
@@ -345,7 +347,7 @@ export default function Attendance({
                         )}
                     </Panel>
 
-                    <Panel>
+                    <Panel className="flex flex-col">
                         <div className="mb-1 flex items-center justify-between">
                             <p className="text-[12px] font-semibold text-foreground sm:text-sm">
                                 Weekly heatmap
@@ -372,15 +374,22 @@ export default function Attendance({
                             {heatmap.weekLabel}
                         </p>
 
-                        {/* overflow-x-auto + min-width guard keeps the 7-day
-                            grid from being crushed illegibly on very narrow
-                            phones instead of silently clipping. Row height
-                            is capped (not aspect-square) on mobile so 9
-                            stacked buckets don't blow up the panel — each
-                            cell reads fine as a short rounded bar instead
-                            of a full square at this size. */}
-                        <div className="overflow-x-auto">
-                            <div className="grid min-w-[230px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1 text-[9px] sm:gap-1.5 sm:text-[11px]">
+                        {/* flex-1 + justify-center: this is what makes the
+                            card match the hourly-attendance panel's height
+                            without a dead gap. The grid itself is a fixed
+                            size (9 rows), so on desktop — where this panel
+                            gets stretched taller to match its neighbor — the
+                            extra space is distributed evenly above/below the
+                            grid instead of appearing as empty space
+                            underneath it. overflow-x-auto + min-width guard
+                            keeps the 7-day grid from being crushed illegibly
+                            on very narrow phones instead of silently
+                            clipping. Row height is capped (not aspect-square)
+                            on mobile so 9 stacked buckets don't blow up the
+                            panel — each cell reads fine as a short rounded
+                            bar instead of a full square at this size. */}
+                        <div className="flex flex-1 flex-col justify-center overflow-x-auto">
+                            <div className="grid min-w-[230px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1 text-[9px] sm:gap-2 sm:text-[11px]">
                                 <span />
                                 {DAY_LABELS.map((d, i) => (
                                     <span
@@ -410,7 +419,11 @@ export default function Attendance({
                             </div>
                         </div>
 
-                        <div className="mt-2.5 flex items-center justify-end gap-1 text-[9px] text-muted-foreground sm:mt-4 sm:gap-1.5 sm:text-[11px]">
+                        {/* mt-auto pins the legend to the card's bottom edge
+                            regardless of how much extra height flex-1 above
+                            absorbed, so it lines up with the bottom of the
+                            hourly-attendance card next to it. */}
+                        <div className="mt-auto flex items-center justify-end gap-1 pt-2.5 text-[9px] text-muted-foreground sm:gap-1.5 sm:pt-4 sm:text-[11px]">
                             Less
                             <span className="h-2.5 w-2.5 rounded bg-muted sm:h-3 sm:w-3" />
                             <span className="h-2.5 w-2.5 rounded bg-emerald-500/20 sm:h-3 sm:w-3" />

@@ -77,10 +77,6 @@ export default function MembershipPlans({ plans }: { plans: Plan[] }) {
                             </p>
                         </div>
                     </div>
-                    <Button className="gap-2">
-                        <FileBarChart className="size-4" />
-                        Create report
-                    </Button>
                 </div>
 
                 <RevenueMixChart data={revenueMix} />
