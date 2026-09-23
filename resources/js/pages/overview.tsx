@@ -867,23 +867,21 @@ export default function Overview({
                         peakHour={attendanceOverview.peakHour}
                         week={attendanceOverview.week}
                     />
-
-                    <RetentionGauge
-                        rate={retentionHealth.rate}
-                        change={retentionHealth.change}
-                        label={retentionHealth.label}
-                        status={retentionHealth.status}
+                    <MemberActivityDonut
+                        total={memberActivity.total}
+                        breakdown={memberActivity.breakdown}
+                        className="h-full"
                     />
 
                     <LiveFinancialActivity
                         items={liveFinancialActivity}
                         className="h-full"
                     />
-
-                    <MemberActivityDonut
-                        total={memberActivity.total}
-                        breakdown={memberActivity.breakdown}
-                        className="h-full"
+                    <RetentionGauge
+                        rate={retentionHealth.rate}
+                        change={retentionHealth.change}
+                        label={retentionHealth.label}
+                        status={retentionHealth.status}
                     />
                 </section>
             </div>
