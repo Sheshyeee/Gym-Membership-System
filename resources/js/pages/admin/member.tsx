@@ -144,7 +144,7 @@ export default function Member({
     return (
         <>
             <Head title="Member Management" />
-            <div className="flex h-full flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4">
+            <div className="flex h-full flex-1 flex-col gap-3 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 sm:pb-4">
                 <div>
                     <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-600 sm:text-xs dark:text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
@@ -188,7 +188,7 @@ export default function Member({
                     a gap under it. On mobile the two stack in their own
                     rows and just size to their own content. */}
                 <div className="grid flex-1 grid-cols-1 gap-3 sm:gap-4 lg:grid-cols-[280px_1fr]">
-                    <div className="flex flex-col rounded-2xl border border-border bg-card p-4 sm:rounded-xl">
+                    <div className="flex h-full flex-col rounded-2xl border border-border bg-card p-4 sm:rounded-xl">
                         <p className="text-[11px] font-medium tracking-wide text-muted-foreground">
                             MEMBERS OVERVIEW
                         </p>
@@ -199,7 +199,7 @@ export default function Member({
                             </span>
                         </p>
 
-                        <div className="mt-4 flex h-16 items-end gap-1.5">
+                        <div className="mt-4 flex min-h-16 flex-1 items-end gap-1.5">
                             {statusBars.map((s) => (
                                 <div
                                     key={s.label}
