@@ -327,7 +327,7 @@ function RevenueChart({
     className?: string;
 }) {
     return (
-        <Panel className={cn("h-full", className)}>
+        <Panel className={cn("self-start", className)}>
             <PanelHeader title="Revenue performance" subtitle="This year" />
 
             <div className="mb-2 flex items-baseline gap-2">
@@ -337,7 +337,7 @@ function RevenueChart({
                 <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
-            <div className="min-h-36 w-full flex-1 sm:min-h-44 lg:min-h-48">
+            <div className="h-36 w-full sm:h-44 lg:h-48">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
@@ -429,14 +429,16 @@ function AttendanceOverview({
     checkInsGrowth,
     peakHour,
     week,
+    className,
 }: {
     checkInsToday: number;
     checkInsGrowth: number | null;
     peakHour: string | null;
     week: { label: string; count: number; isToday: boolean }[];
+    className?: string;
 }) {
     return (
-        <Panel>
+        <Panel className={cn("self-start", className)}>
             <PanelHeader title="Attendance overview" subtitle="Today" />
 
             <div className="mb-2 grid grid-cols-2 gap-3">
@@ -539,18 +541,20 @@ function RetentionGauge({
     change,
     label,
     status,
+    className,
 }: {
     rate: number;
     change: number;
     label: string;
     status: "healthy" | "warning" | "risk" | "neutral";
+    className?: string;
 }) {
     const styles =
         RETENTION_STATUS_STYLES[status] ?? RETENTION_STATUS_STYLES.neutral;
     const data = [{ name: "retention", value: rate, fill: styles.bar }];
 
     return (
-        <Panel>
+        <Panel className={cn("self-start", className)}>
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
             {status === "neutral" ? (
@@ -769,29 +773,31 @@ function LiveFinancialActivity({
 // ---------------------------------------------------------------------------
 // Page layout
 //
-// One grid handles the whole two-column area below the top summary, using
-// three explicit rows on xl (auto / auto / 1fr):
+// One grid handles the whole two-column area below the top summary. Every
+// card gets an explicit xl:col-start + xl:row-start (needed because the
+// two columns hold a different number of cards — plain auto-placement
+// can't group them correctly on its own, and explicit placement also
+// means the DOM order below can stay in a sensible reading order for the
+// single-column mobile layout). Rows are left as plain "auto" so each
+// card keeps its own natural, compact size:
 //
 //   ┌────────────────────────────┬─────────────────────────┐
-//   │                            │ Attendance overview      │  row 1 (auto)
-//   │  Revenue performance       ├─────────────────────────┤
-//   │  (row-span-2, stretches    │ Retention health         │  row 2 (auto)
-//   │   to fill rows 1+2)        ├─────────────────────────┤
-//   │                            │                          │
-//   │  Live financial activity   │ Member activity          │  row 3
+//   │  Revenue performance       │ Attendance overview      │  row 1 (auto)
+//   ├────────────────────────────┼─────────────────────────┤
+//   │                            │ Retention health          │  row 2 (auto,
+//   │  Live financial activity   │ (self-start: sized to its │   Retention
+//   │  (row-span-2, stretches    │  own content, never       │   stays
+//   │   to match rows 2+3)       │  stretched)                │   compact)
+//   │                            ├─────────────────────────┤
+//   │                            │ Member activity           │  row 3
 //   └────────────────────────────┴─────────────────────────┘
 //
-// Source order (Revenue, Attendance, Retention, LiveFinancial,
-// MemberActivity) plus grid's default row-first auto-placement is what
-// produces this shape — no manual grid-column/row placement needed beyond
-// Revenue's row-span-2. Two things fall out of this for free, by default
-// grid stretch (no items-start override):
-//   - Revenue performance grows to fill the same height as Attendance +
-//     Retention combined, so there's no dead gap above Live Financial
-//     Activity — the chart itself expands to use that space.
-//   - Live Financial Activity and Member Activity are the only two cells
-//     in row 3, so they're automatically stretched to match each other's
-//     height exactly (compressing or growing as needed).
+// It's Live Financial Activity — a list — that spans rows 2–3 and stretches
+// to absorb whatever height difference is left over (growing or shrinking
+// to match Retention + Member Activity combined). That keeps Revenue
+// Performance the same compact size as Live Financial Activity, and keeps
+// Retention free of dead space, while the two columns still end up the
+// same total height.
 // ---------------------------------------------------------------------------
 
 export default function Overview({
@@ -853,12 +859,12 @@ export default function Overview({
                     the row-span + default stretch produces the shape.
                     ========================================================= */}
 
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)] xl:grid-rows-[auto_auto_1fr]">
+                <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
                     <RevenueChart
                         data={revenuePerformance}
                         total={totalRevenue}
                         growth={stats.monthlyRevenueGrowth}
-                        className="xl:row-span-2"
+                        className="xl:col-start-1 xl:row-start-1"
                     />
 
                     <AttendanceOverview
@@ -866,22 +872,26 @@ export default function Overview({
                         checkInsGrowth={attendanceOverview.checkInsGrowth}
                         peakHour={attendanceOverview.peakHour}
                         week={attendanceOverview.week}
-                    />
-                    <MemberActivityDonut
-                        total={memberActivity.total}
-                        breakdown={memberActivity.breakdown}
-                        className="h-full"
+                        className="xl:col-start-2 xl:row-start-1"
                     />
 
-                    <LiveFinancialActivity
-                        items={liveFinancialActivity}
-                        className="h-full"
-                    />
                     <RetentionGauge
                         rate={retentionHealth.rate}
                         change={retentionHealth.change}
                         label={retentionHealth.label}
                         status={retentionHealth.status}
+                        className="xl:col-start-2 xl:row-start-2"
+                    />
+
+                    <LiveFinancialActivity
+                        items={liveFinancialActivity}
+                        className="h-full xl:col-start-1 xl:row-start-2 xl:row-span-2"
+                    />
+
+                    <MemberActivityDonut
+                        total={memberActivity.total}
+                        breakdown={memberActivity.breakdown}
+                        className="h-full xl:col-start-2 xl:row-start-3"
                     />
                 </section>
             </div>
