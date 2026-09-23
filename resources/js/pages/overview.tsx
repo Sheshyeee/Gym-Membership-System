@@ -78,10 +78,8 @@ const DONUT_COLORS: Record<string, string> = {
     Expired: "#52525b",
 };
 
-// Live financial activity is capped to roughly this many rows so its card
-// naturally lands close to Member Activity's height (donut + legend) —
-// on top of that, the bottom row of the page grid explicitly stretches
-// both cards to match each other exactly (see the page layout note below).
+// Live financial activity is capped to roughly this many rows just to
+// keep the card from growing indefinitely as more payments come in.
 const MAX_FINANCIAL_ACTIVITY_ROWS = 4;
 
 // ---------------------------------------------------------------------------
@@ -311,10 +309,8 @@ function StatCard({
     );
 }
 
-// className passthrough: on the page, this card is given "xl:row-span-2"
-// so it stretches to match the combined height of Attendance overview +
-// Retention health beside it, and h-full so the chart itself grows to fill
-// that space instead of leaving dead air above Live Financial Activity.
+// className passthrough: cards are now independently sized, so no
+// stretch/self-start juggling is needed here.
 function RevenueChart({
     data,
     total,
@@ -327,7 +323,7 @@ function RevenueChart({
     className?: string;
 }) {
     return (
-        <Panel className={cn("self-start", className)}>
+        <Panel className={className}>
             <PanelHeader title="Revenue performance" subtitle="This year" />
 
             <div className="mb-2 flex items-baseline gap-2">
@@ -438,7 +434,7 @@ function AttendanceOverview({
     className?: string;
 }) {
     return (
-        <Panel className={cn("self-start", className)}>
+        <Panel className={className}>
             <PanelHeader title="Attendance overview" subtitle="Today" />
 
             <div className="mb-2 grid grid-cols-2 gap-3">
@@ -554,7 +550,7 @@ function RetentionGauge({
     const data = [{ name: "retention", value: rate, fill: styles.bar }];
 
     return (
-        <Panel className={cn("self-start", className)}>
+        <Panel className={className}>
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
             {status === "neutral" ? (
@@ -622,9 +618,8 @@ function RetentionGauge({
     );
 }
 
-// className passthrough so this can be given h-full by the page layout,
-// where it's paired with Live Financial Activity in the same grid row and
-// the two are meant to match height exactly.
+// Sizes to its own content, same as every other card on this page — no
+// longer stretched to match Live Financial Activity.
 function MemberActivityDonut({
     total,
     breakdown,
@@ -705,9 +700,10 @@ function MemberActivityDonut({
     );
 }
 
-// className passthrough for the same reason as MemberActivityDonut above.
 // The list itself is capped to MAX_FINANCIAL_ACTIVITY_ROWS, and "View all"
-// gives access to the rest of the history once the list is capped.
+// gives access to the rest of the history once the list is capped. The
+// card sizes to its own content — it's no longer stretched to match
+// anything beside it.
 function LiveFinancialActivity({
     items,
     className,
@@ -731,7 +727,7 @@ function LiveFinancialActivity({
                 }
             />
 
-            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-1 flex-col justify-center divide-y">
+            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-col divide-y">
                 {visibleItems.length === 0 && (
                     <li className="text-muted-foreground py-8 text-center text-[12px]">
                         No payments yet
@@ -773,31 +769,12 @@ function LiveFinancialActivity({
 // ---------------------------------------------------------------------------
 // Page layout
 //
-// One grid handles the whole two-column area below the top summary. Every
-// card gets an explicit xl:col-start + xl:row-start (needed because the
-// two columns hold a different number of cards — plain auto-placement
-// can't group them correctly on its own, and explicit placement also
-// means the DOM order below can stay in a sensible reading order for the
-// single-column mobile layout). Rows are left as plain "auto" so each
-// card keeps its own natural, compact size:
-//
-//   ┌────────────────────────────┬─────────────────────────┐
-//   │  Revenue performance       │ Attendance overview      │  row 1 (auto)
-//   ├────────────────────────────┼─────────────────────────┤
-//   │                            │ Retention health          │  row 2 (auto,
-//   │  Live financial activity   │ (self-start: sized to its │   Retention
-//   │  (row-span-2, stretches    │  own content, never       │   stays
-//   │   to match rows 2+3)       │  stretched)                │   compact)
-//   │                            ├─────────────────────────┤
-//   │                            │ Member activity           │  row 3
-//   └────────────────────────────┴─────────────────────────┘
-//
-// It's Live Financial Activity — a list — that spans rows 2–3 and stretches
-// to absorb whatever height difference is left over (growing or shrinking
-// to match Retention + Member Activity combined). That keeps Revenue
-// Performance the same compact size as Live Financial Activity, and keeps
-// Retention free of dead space, while the two columns still end up the
-// same total height.
+// Two independent flex columns, side by side. Each card sizes purely to
+// its own content — nothing spans rows, nothing stretches to match its
+// neighbor, and the two columns are free to end at different heights.
+// That trades an exact height match between the columns for the thing
+// that actually matters: no card ever has dead, empty space inside it,
+// and no gap opens up next to a shorter card.
 // ---------------------------------------------------------------------------
 
 export default function Overview({
@@ -859,40 +836,37 @@ export default function Overview({
                     the row-span + default stretch produces the shape.
                     ========================================================= */}
 
-                <section className="grid grid-cols-1 gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
-                    <RevenueChart
-                        data={revenuePerformance}
-                        total={totalRevenue}
-                        growth={stats.monthlyRevenueGrowth}
-                        className="xl:col-start-1 xl:row-start-1"
-                    />
+                <section className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
+                    <div className="flex min-w-0 flex-col gap-4">
+                        <RevenueChart
+                            data={revenuePerformance}
+                            total={totalRevenue}
+                            growth={stats.monthlyRevenueGrowth}
+                        />
 
-                    <AttendanceOverview
-                        checkInsToday={attendanceOverview.checkInsToday}
-                        checkInsGrowth={attendanceOverview.checkInsGrowth}
-                        peakHour={attendanceOverview.peakHour}
-                        week={attendanceOverview.week}
-                        className="xl:col-start-2 xl:row-start-1"
-                    />
+                        <LiveFinancialActivity items={liveFinancialActivity} />
+                    </div>
 
-                    <RetentionGauge
-                        rate={retentionHealth.rate}
-                        change={retentionHealth.change}
-                        label={retentionHealth.label}
-                        status={retentionHealth.status}
-                        className="xl:col-start-2 xl:row-start-2"
-                    />
+                    <div className="flex min-w-0 flex-col gap-4">
+                        <AttendanceOverview
+                            checkInsToday={attendanceOverview.checkInsToday}
+                            checkInsGrowth={attendanceOverview.checkInsGrowth}
+                            peakHour={attendanceOverview.peakHour}
+                            week={attendanceOverview.week}
+                        />
 
-                    <LiveFinancialActivity
-                        items={liveFinancialActivity}
-                        className="h-full xl:col-start-1 xl:row-start-2 xl:row-span-2"
-                    />
+                        <RetentionGauge
+                            rate={retentionHealth.rate}
+                            change={retentionHealth.change}
+                            label={retentionHealth.label}
+                            status={retentionHealth.status}
+                        />
 
-                    <MemberActivityDonut
-                        total={memberActivity.total}
-                        breakdown={memberActivity.breakdown}
-                        className="h-full xl:col-start-2 xl:row-start-3"
-                    />
+                        <MemberActivityDonut
+                            total={memberActivity.total}
+                            breakdown={memberActivity.breakdown}
+                        />
+                    </div>
                 </section>
             </div>
         </>

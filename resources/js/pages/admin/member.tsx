@@ -144,7 +144,7 @@ export default function Member({
     return (
         <>
             <Head title="Member Management" />
-            <div className="flex h-full flex-1 flex-col gap-3 p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:gap-4 sm:p-4 sm:pb-4">
+            <div className="flex h-full flex-1 flex-col gap-3 overflow-y-auto p-3 pb-[calc(5.5rem+env(safe-area-inset-bottom))] sm:gap-4 sm:overflow-visible sm:p-4 sm:pb-4">
                 <div>
                     <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-600 sm:text-xs dark:text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
