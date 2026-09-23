@@ -238,7 +238,7 @@ function HeroCard({
                     href="/members"
                     className="bg-primary text-primary-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
                 >
-                    View members
+                    Members
                     <span aria-hidden>›</span>
                 </Link>
                 <span className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md border px-2 py-1 text-[10px] sm:px-2.5 sm:py-1.5 sm:text-[11px]">
