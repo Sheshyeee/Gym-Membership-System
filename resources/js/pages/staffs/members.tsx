@@ -1,5 +1,11 @@
 import { StaffMemberProfileSheet } from "@/components/staff-member-profile-sheet";
 import { Head, Link, router } from "@inertiajs/react";
+import {
+    Search,
+    ChevronLeft,
+    ChevronRight,
+    ChevronRight as ChevronRightIcon,
+} from "lucide-react";
 import { useRef, useState } from "react";
 
 type MemberStatus = "active" | "expiring_soon" | "expired";
@@ -53,6 +59,26 @@ const statusDot: Record<MemberStatus, string> = {
     expired: "bg-red-500",
 };
 
+function initialsOf(nameOrEmail: string) {
+    return nameOrEmail
+        .split(" ")
+        .map((n) => n[0])
+        .slice(0, 2)
+        .join("")
+        .toUpperCase();
+}
+
+function StatusBadge({ status }: { status: MemberStatus }) {
+    return (
+        <span
+            className={`inline-flex items-center gap-1 rounded-full px-2 py-0.5 text-[10px] font-medium sm:text-[11px] ${statusStyles[status]}`}
+        >
+            <span className={`size-1.5 rounded-full ${statusDot[status]}`} />
+            {statusLabels[status]}
+        </span>
+    );
+}
+
 export default function StaffMembers({
     members,
     filters,
@@ -99,58 +125,62 @@ export default function StaffMembers({
     }
 
     function handleCheckinSuccess() {
-        // Partial reload: re-fetch just the table + tab counts from thepay
+        // Partial reload: re-fetch just the table + tab counts for the
         // current URL/filters, without a full navigation or losing scroll.
         router.reload({
             only: ["members", "statusCounts"],
         });
     }
 
+    function openMember(id: number) {
+        setSelectedMemberId(id);
+        setSheetOpen(true);
+    }
+
+    const tabs: [StatusFilter, string][] = [
+        ["all", "All"],
+        ["active", "Active"],
+        ["expiring_soon", "Expiring"],
+        ["expired", "Expired"],
+    ];
+
     return (
         <>
             <Head title="Members" />
-            <div className="flex h-full flex-1 flex-col gap-6 p-4">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-6">
                 <div>
-                    <p className="text-xs font-semibold tracking-wide text-orange-500">
-                        MEMBER DIRECTORY
+                    <p className="text-[10px] font-semibold tracking-widest text-orange-500 uppercase sm:text-[11px]">
+                        Member directory
                     </p>
-                    <h1 className="mt-1 text-3xl font-bold text-foreground">
+                    <h1 className="text-foreground mt-1 text-lg font-semibold sm:text-xl">
                         Members
                     </h1>
-                    <p className="text-sm text-muted-foreground">
+                    <p className="text-muted-foreground mt-0.5 text-[11px] sm:text-[12px]">
                         Manage member access, plans, and membership health.
                     </p>
                 </div>
 
-                <div className="rounded-xl border border-border bg-card">
-                    <div className="flex flex-wrap items-center gap-3 border-b border-border p-4">
-                        <div className="relative min-w-[240px] flex-1">
-                            <span className="pointer-events-none absolute left-3 top-1/2 -translate-y-1/2 text-muted-foreground">
-                                🔍
-                            </span>
+                <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border">
+                    {/* Toolbar */}
+                    <div className="border-sidebar-border/70 dark:border-sidebar-border flex flex-col gap-2.5 border-b p-3 sm:flex-row sm:flex-wrap sm:items-center sm:gap-3 sm:p-4">
+                        <div className="relative min-w-0 flex-1 sm:min-w-[200px]">
+                            <Search className="text-muted-foreground pointer-events-none absolute top-1/2 left-2.5 size-3.5 -translate-y-1/2" />
                             <input
                                 value={search}
                                 onChange={(e) =>
                                     handleSearchChange(e.target.value)
                                 }
                                 placeholder="Search members..."
-                                className="h-10 w-full rounded-lg border border-border bg-background pl-9 pr-3 text-sm text-foreground placeholder:text-muted-foreground focus:outline-none focus:ring-1 focus:ring-ring"
+                                className="border-input bg-background text-foreground placeholder:text-muted-foreground focus:ring-ring h-8 w-full rounded-md border pr-3 pl-8 text-[12px] focus:ring-1 focus:outline-none sm:h-9 sm:text-[13px]"
                             />
                         </div>
 
-                        <div className="flex items-center gap-1 rounded-lg border border-border bg-background p-1">
-                            {(
-                                [
-                                    ["all", "All members"],
-                                    ["active", "Active"],
-                                    ["expiring_soon", "Expiring Soon"],
-                                    ["expired", "Expired"],
-                                ] as [StatusFilter, string][]
-                            ).map(([value, label]) => (
+                        <div className="scrollbar-thin border-input bg-background flex items-center gap-0.5 overflow-x-auto rounded-md border p-0.5">
+                            {tabs.map(([value, label]) => (
                                 <button
                                     key={value}
                                     onClick={() => handleTabChange(value)}
-                                    className={`flex items-center gap-1.5 rounded-md px-3 py-1.5 text-sm ${
+                                    className={`flex shrink-0 items-center gap-1 rounded px-2 py-1 text-[11px] whitespace-nowrap transition-colors sm:px-2.5 sm:py-1.5 sm:text-[12px] ${
                                         filters.status === value
                                             ? "bg-muted text-foreground"
                                             : "text-muted-foreground hover:text-foreground"
@@ -159,45 +189,72 @@ export default function StaffMembers({
                                     {label}
                                     {value === "expiring_soon" &&
                                         statusCounts.expiring_soon > 0 && (
-                                            <span className="flex h-4 w-4 items-center justify-center rounded-full bg-orange-500 text-[10px] font-semibold text-white">
+                                            <span className="flex size-3.5 items-center justify-center rounded-full bg-orange-500 text-[9px] font-semibold text-white">
                                                 {statusCounts.expiring_soon}
                                             </span>
                                         )}
                                 </button>
                             ))}
                         </div>
-
-                        <button className="flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-foreground/80 hover:bg-muted">
-                            All plans
-                        </button>
-                        <button className="flex h-10 items-center gap-2 rounded-lg border border-border bg-background px-3 text-sm text-foreground/80 hover:bg-muted">
-                            Filters
-                        </button>
                     </div>
 
-                    <div className="overflow-x-auto">
-                        <table className="w-full text-left text-sm">
+                    {/* Mobile: card list */}
+                    <div className="divide-sidebar-border/60 flex flex-col divide-y sm:hidden">
+                        {members.data.length === 0 && (
+                            <p className="text-muted-foreground px-4 py-8 text-center text-[12px]">
+                                No members found.
+                            </p>
+                        )}
+                        {members.data.map((member) => (
+                            <button
+                                key={member.id}
+                                onClick={() => openMember(member.id)}
+                                className="hover:bg-muted/40 flex w-full items-center gap-3 px-3 py-2.5 text-left"
+                            >
+                                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[11px] font-semibold text-orange-500">
+                                    {initialsOf(member.name || member.email)}
+                                </div>
+                                <div className="min-w-0 flex-1">
+                                    <div className="flex items-center justify-between gap-2">
+                                        <p className="text-foreground truncate text-[12px] font-medium">
+                                            {member.name || "—"}
+                                        </p>
+                                        <StatusBadge status={member.status} />
+                                    </div>
+                                    <p className="text-muted-foreground mt-0.5 truncate text-[10px]">
+                                        {member.plan ?? "No plan"} ·{" "}
+                                        {member.visits ?? 0} visits
+                                    </p>
+                                </div>
+                                <ChevronRightIcon className="text-muted-foreground size-4 shrink-0" />
+                            </button>
+                        ))}
+                    </div>
+
+                    {/* Desktop / tablet: table */}
+                    <div className="scrollbar-thin hidden overflow-x-auto sm:block">
+                        <table className="w-full text-left text-[12px] lg:text-[13px]">
                             <thead>
-                                <tr className="border-b border-border text-xs uppercase tracking-wide text-muted-foreground">
-                                    <th className="px-4 py-3 font-medium">
+                                <tr className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground border-b text-[10px] tracking-wide uppercase lg:text-[11px]">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Member
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Plan
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Status
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Valid Until
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Last Visit
                                     </th>
-                                    <th className="px-4 py-3 font-medium">
+                                    <th className="px-4 py-2.5 font-medium">
                                         Visits
                                     </th>
-                                    <th className="px-4 py-3" />
+                                    <th className="px-4 py-2.5" />
                                 </tr>
                             </thead>
                             <tbody>
@@ -205,7 +262,7 @@ export default function StaffMembers({
                                     <tr>
                                         <td
                                             colSpan={7}
-                                            className="px-4 py-8 text-center text-muted-foreground"
+                                            className="text-muted-foreground px-4 py-8 text-center"
                                         >
                                             No members found.
                                         </td>
@@ -214,64 +271,51 @@ export default function StaffMembers({
                                 {members.data.map((member) => (
                                     <tr
                                         key={member.id}
-                                        className="border-b border-border/60 last:border-0 hover:bg-muted/40"
+                                        className="border-sidebar-border/60 hover:bg-muted/40 border-b last:border-0"
                                     >
-                                        <td className="px-4 py-3">
-                                            <div className="flex items-center gap-3">
-                                                <div className="flex h-9 w-9 items-center justify-center rounded-full bg-orange-500/15 text-xs font-semibold text-orange-500">
-                                                    {(
+                                        <td className="px-4 py-2.5">
+                                            <div className="flex items-center gap-2.5">
+                                                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[10px] font-semibold text-orange-500">
+                                                    {initialsOf(
                                                         member.name ||
-                                                        member.email
-                                                    )
-                                                        .split(" ")
-                                                        .map((n) => n[0])
-                                                        .slice(0, 2)
-                                                        .join("")
-                                                        .toUpperCase()}
+                                                            member.email,
+                                                    )}
                                                 </div>
-                                                <div>
-                                                    <p className="font-medium text-foreground">
+                                                <div className="min-w-0">
+                                                    <p className="text-foreground truncate font-medium">
                                                         {member.name || "—"}
                                                     </p>
-                                                    <p className="text-xs text-muted-foreground">
+                                                    <p className="text-muted-foreground truncate text-[10px] lg:text-[11px]">
                                                         {member.code}
                                                     </p>
                                                 </div>
                                             </div>
                                         </td>
-                                        <td className="px-4 py-3 text-orange-500">
+                                        <td className="px-4 py-2.5 text-orange-500">
                                             {member.plan ?? "—"}
                                         </td>
-                                        <td className="px-4 py-3">
-                                            <span
-                                                className={`inline-flex items-center gap-1.5 rounded-full px-2.5 py-1 text-xs font-medium ${statusStyles[member.status]}`}
-                                            >
-                                                <span
-                                                    className={`h-1.5 w-1.5 rounded-full ${statusDot[member.status]}`}
-                                                />
-                                                {statusLabels[member.status]}
-                                            </span>
+                                        <td className="px-4 py-2.5">
+                                            <StatusBadge
+                                                status={member.status}
+                                            />
                                         </td>
-                                        <td className="px-4 py-3 text-foreground/80">
+                                        <td className="text-foreground/80 px-4 py-2.5">
                                             {member.valid_until ?? "—"}
                                         </td>
-                                        <td className="px-4 py-3 text-foreground/80">
+                                        <td className="text-foreground/80 px-4 py-2.5">
                                             {member.last_visit ?? "—"}
                                         </td>
-                                        <td className="px-4 py-3 text-foreground/80">
+                                        <td className="text-foreground/80 px-4 py-2.5">
                                             {member.visits ?? "—"}
                                         </td>
-                                        <td className="px-4 py-3 text-right">
+                                        <td className="px-4 py-2.5 text-right">
                                             <button
-                                                onClick={() => {
-                                                    setSelectedMemberId(
-                                                        member.id,
-                                                    );
-                                                    setSheetOpen(true);
-                                                }}
+                                                onClick={() =>
+                                                    openMember(member.id)
+                                                }
                                                 className="text-muted-foreground hover:text-foreground"
                                             >
-                                                &gt;
+                                                <ChevronRightIcon className="size-4" />
                                             </button>
                                         </td>
                                     </tr>
@@ -280,33 +324,42 @@ export default function StaffMembers({
                         </table>
                     </div>
 
-                    <div className="flex items-center justify-between px-4 py-3 text-xs text-muted-foreground">
+                    {/* Pagination */}
+                    <div className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground flex items-center justify-between gap-2 border-t px-3 py-2.5 text-[10px] sm:px-4 sm:py-3 sm:text-[11px]">
                         <span>
-                            Showing {members.from ?? 0}-{members.to ?? 0} of{" "}
-                            {members.total} members
+                            {members.from ?? 0}-{members.to ?? 0} of{" "}
+                            {members.total}
                         </span>
-                        <div className="flex items-center gap-2">
-                            {members.prev_page_url && (
+                        <div className="flex items-center gap-1.5">
+                            {members.prev_page_url ? (
                                 <Link
                                     href={members.prev_page_url}
                                     preserveScroll
-                                    className="rounded border border-border px-2 py-1 text-foreground/80 hover:bg-muted"
+                                    className="border-input text-foreground/80 hover:bg-muted flex size-6 items-center justify-center rounded border"
                                 >
-                                    ‹
+                                    <ChevronLeft className="size-3.5" />
                                 </Link>
+                            ) : (
+                                <span className="border-input flex size-6 items-center justify-center rounded border opacity-30">
+                                    <ChevronLeft className="size-3.5" />
+                                </span>
                             )}
-                            <span className="rounded border border-orange-500 bg-orange-500/10 px-2 py-1 text-orange-500">
+                            <span className="rounded border border-orange-500 bg-orange-500/10 px-1.5 py-0.5 text-orange-500">
                                 {members.current_page}
                             </span>
                             <span>/ {members.last_page}</span>
-                            {members.next_page_url && (
+                            {members.next_page_url ? (
                                 <Link
                                     href={members.next_page_url}
                                     preserveScroll
-                                    className="rounded border border-border px-2 py-1 text-foreground/80 hover:bg-muted"
+                                    className="border-input text-foreground/80 hover:bg-muted flex size-6 items-center justify-center rounded border"
                                 >
-                                    ›
+                                    <ChevronRight className="size-3.5" />
                                 </Link>
+                            ) : (
+                                <span className="border-input flex size-6 items-center justify-center rounded border opacity-30">
+                                    <ChevronRight className="size-3.5" />
+                                </span>
                             )}
                         </div>
                     </div>
