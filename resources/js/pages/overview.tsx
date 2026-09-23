@@ -125,8 +125,12 @@ function timeAgo(dateString: string | null) {
     if (diffMins < 1) return "Just now";
     if (diffMins < 60) return `${diffMins}m ago`;
     const diffHours = Math.round(diffMins / 60);
-    if (diffHours < 24)
-        return `Today, ${date.toLocaleTimeString(undefined, { hour: "numeric", minute: "2-digit" })}`;
+    if (diffHours < 24) {
+        return `Today, ${date.toLocaleTimeString(undefined, {
+            hour: "numeric",
+            minute: "2-digit",
+        })}`;
+    }
 
     return date.toLocaleDateString(undefined, {
         month: "short",
@@ -135,7 +139,11 @@ function timeAgo(dateString: string | null) {
 }
 
 // ---------------------------------------------------------------------------
-// Shared card shell — sizes to its own content only. No h-full, no flex-1.
+// Shared card shell
+//
+// Cards deliberately size themselves to their own content. Avoid h-full,
+// flex-1, auto-rows-fr and other rules that make unrelated cards inherit
+// the height of the tallest card beside them.
 // ---------------------------------------------------------------------------
 
 function Panel({
@@ -297,9 +305,7 @@ function RevenueChart({
                 <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
-            {/* Fixed, content-appropriate height. Not stretched, not
-                shrunk below readability. */}
-            <div className="h-40 w-full sm:h-48">
+            <div className="h-36 w-full sm:h-44 lg:h-48">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
@@ -401,7 +407,7 @@ function AttendanceOverview({
         <Panel>
             <PanelHeader title="Attendance overview" subtitle="Today" />
 
-            <div className="mb-2.5 grid grid-cols-2 gap-3">
+            <div className="mb-2 grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check-ins
@@ -426,7 +432,7 @@ function AttendanceOverview({
                 </div>
             </div>
 
-            <div className="h-14 w-full">
+            <div className="h-12 w-full sm:h-14">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={week}
@@ -476,7 +482,7 @@ function AttendanceOverview({
 
             <Link
                 href="/attendance"
-                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-2.5 flex w-full items-center justify-center gap-1 rounded-md border py-1.5 text-[10px] font-medium transition-colors sm:text-[11px]"
+                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-2 flex w-full items-center justify-center gap-1 rounded-md border py-1.5 text-[10px] font-medium transition-colors sm:text-[11px]"
             >
                 View attendance analytics
                 <span aria-hidden>›</span>
@@ -516,7 +522,7 @@ function RetentionGauge({
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
             {status === "neutral" ? (
-                <div className="flex h-14 flex-col items-center justify-center gap-1 text-center">
+                <div className="flex min-h-12 flex-col items-center justify-center gap-1 py-1 text-center">
                     <span className="text-xl font-semibold tabular-nums opacity-30">
                         —
                     </span>
@@ -559,7 +565,7 @@ function RetentionGauge({
                 </div>
             )}
 
-            <div className="mt-2.5 flex items-center justify-between">
+            <div className="mt-2 flex items-center justify-between gap-2">
                 {status === "neutral" ? (
                     <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check back after 30 days
@@ -717,23 +723,30 @@ function LiveFinancialActivity({
 }
 
 // ---------------------------------------------------------------------------
-// Page
+// Page layout
 //
-// LAYOUT LOGIC — two fully independent vertical columns, not shared grid
-// rows. This is the actual fix: a CSS Grid/Flexbox "row" always reserves
-// height equal to its tallest item, even with items-start — so anything
-// placed after that row still has to wait for the tallest sibling, which is
-// exactly what produced the dead gaps before. Independent columns have no
-// such row boundary: each one stacks its own cards and the next card's
-// position depends only on what's above it in ITS column.
+// The page is intentionally split into three independent areas:
 //
-//   Column A (wide):   Revenue performance → Live financial activity
-//   Column B (narrow): Attendance overview → Retention health → Member activity
+// 1. Summary row
+// 2. Primary analytics row
+// 3. Activity row
 //
-// This pairing isn't arbitrary — Column A holds the two content-heavy pieces
-// (a 12-point chart, a transaction list) and Column B holds the three
-// compact status cards, so the two columns land at comparable total heights
-// by construction, not by forcing anything to match.
+// This avoids one tall card determining the height of unrelated cards.
+//
+// At desktop:
+//
+//   ┌──────────────────────────────────────────────────────────────┐
+//   │ Hero │ Revenue KPI │ Members KPI │ Payment KPI               │
+//   ├──────────────────────────────────────────────┬───────────────┤
+//   │ Revenue performance                           │ Attendance    │
+//   │                                               ├───────────────┤
+//   │                                               │ Retention     │
+//   ├───────────────────────┬───────────────────────┴───────────────┤
+//   │ Member activity       │ Live financial activity               │
+//   └───────────────────────┴───────────────────────────────────────┘
+//
+// The activity section is deliberately full-width. This prevents the
+// financial activity card from leaving a large unused area beside it.
 // ---------------------------------------------------------------------------
 
 export default function Overview({
@@ -744,24 +757,33 @@ export default function Overview({
     attendanceOverview,
     liveFinancialActivity,
 }: OverviewProps) {
+    const totalRevenue = revenuePerformance.reduce(
+        (sum, point) => sum + (point.revenue ?? 0),
+        0,
+    );
+
     return (
         <>
             <Head title="Overview" />
-            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-2.5 p-2.5 sm:gap-4 sm:p-4 lg:p-6">
-                {/* Hero + KPI row — unrelated to what follows, so its own
-                    natural height difference (hero taller than the compact
-                    KPI chips) has no downstream effect. */}
-                <div className="grid grid-cols-2 items-start gap-2.5 sm:gap-4 xl:grid-cols-5">
+
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-4 p-3 sm:gap-5 sm:p-4 lg:p-5 xl:p-6">
+                {/* =========================================================
+                    TOP SUMMARY
+                    ========================================================= */}
+
+                <section className="grid grid-cols-1 gap-3 sm:grid-cols-2 sm:gap-4 xl:grid-cols-5">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
                     />
+
                     <StatCard
                         icon={CircleDollarSign}
                         label="Monthly revenue"
                         value={`₱${stats.monthlyRevenue.toLocaleString()}`}
                         growth={stats.monthlyRevenueGrowth}
                     />
+
                     <StatCard
                         icon={Users}
                         iconClassName="bg-blue-500/10 text-blue-500 dark:text-blue-400"
@@ -769,6 +791,7 @@ export default function Overview({
                         value={stats.activeMembers.toLocaleString()}
                         growth={stats.activeMembersGrowth}
                     />
+
                     <StatCard
                         icon={ShieldCheck}
                         iconClassName="bg-emerald-500/10 text-emerald-500"
@@ -776,44 +799,67 @@ export default function Overview({
                         value={`${stats.paymentSuccessRate}%`}
                         growth={stats.paymentSuccessGrowth}
                     />
-                </div>
+                </section>
 
-                {/* Two independent columns — see comment above. items-start
-                    here only governs the two columns' own top alignment
-                    against each other; it has no effect on what happens
-                    inside either column, since each is a plain flex-col. */}
-                <div className="grid grid-cols-1 items-start gap-2.5 sm:gap-4 xl:grid-cols-3">
-                    <div className="flex flex-col gap-2.5 sm:gap-4 xl:col-span-2">
-                        <RevenueChart
-                            data={revenuePerformance}
-                            total={revenuePerformance.reduce(
-                                (sum, point) => sum + (point.revenue ?? 0),
-                                0,
-                            )}
-                            growth={stats.monthlyRevenueGrowth}
-                        />
-                        <LiveFinancialActivity items={liveFinancialActivity} />
-                    </div>
+                {/* =========================================================
+                    PRIMARY ANALYTICS
 
-                    <div className="flex flex-col gap-2.5 sm:gap-4">
+                    Revenue is the main analytical component and receives
+                    the majority of the horizontal space.
+
+                    Attendance + Retention are intentionally stacked on
+                    the right because they are compact secondary metrics.
+
+                    This section ends where its content ends. Nothing
+                    below is forced to match the height of either column.
+                    ========================================================= */}
+
+                <section className="grid grid-cols-1 items-start gap-4 xl:grid-cols-[minmax(0,2fr)_minmax(300px,0.9fr)]">
+                    <RevenueChart
+                        data={revenuePerformance}
+                        total={totalRevenue}
+                        growth={stats.monthlyRevenueGrowth}
+                    />
+
+                    <div className="flex min-w-0 flex-col gap-4">
                         <AttendanceOverview
                             checkInsToday={attendanceOverview.checkInsToday}
                             checkInsGrowth={attendanceOverview.checkInsGrowth}
                             peakHour={attendanceOverview.peakHour}
                             week={attendanceOverview.week}
                         />
+
                         <RetentionGauge
                             rate={retentionHealth.rate}
                             change={retentionHealth.change}
                             label={retentionHealth.label}
                             status={retentionHealth.status}
                         />
-                        <MemberActivityDonut
-                            total={memberActivity.total}
-                            breakdown={memberActivity.breakdown}
-                        />
                     </div>
-                </div>
+                </section>
+
+                {/* =========================================================
+                    ACTIVITY
+
+                    This is a separate full-width section.
+
+                    Member activity is compact on the left.
+                    Financial activity receives the larger area on the right.
+
+                    Keeping this section independent means a tall payment
+                    list cannot create a dead gap beside Member Activity,
+                    and Member Activity cannot create a blank area beside
+                    the transaction list.
+                    ========================================================= */}
+
+                <section className="grid grid-cols-1 items-start gap-4 lg:grid-cols-[minmax(260px,0.85fr)_minmax(0,2fr)]">
+                    <MemberActivityDonut
+                        total={memberActivity.total}
+                        breakdown={memberActivity.breakdown}
+                    />
+
+                    <LiveFinancialActivity items={liveFinancialActivity} />
+                </section>
             </div>
         </>
     );

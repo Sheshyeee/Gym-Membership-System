@@ -83,6 +83,10 @@ function Panel({
     );
 }
 
+// Compact on mobile (small icon, tight type scale) and a bit more generous
+// from sm: up — three of these used to stack full-width on phones, which
+// read as oversized empty cards. They now stay in a tight 3-up row at every
+// size, so the mobile view matches the density of the desktop one.
 function StatCard({
     icon,
     iconBg,
@@ -97,19 +101,21 @@ function StatCard({
     sub: string;
 }) {
     return (
-        <Panel>
+        <Panel className="!p-2.5 sm:!p-4">
             <div
-                className={`inline-flex h-9 w-9 items-center justify-center rounded-lg sm:h-10 sm:w-10 ${iconBg}`}
+                className={`inline-flex h-7 w-7 items-center justify-center rounded-lg sm:h-10 sm:w-10 ${iconBg}`}
             >
                 {icon}
             </div>
-            <p className="mt-3 text-[11px] text-muted-foreground sm:mt-4">
+            <p className="mt-2 truncate text-[10px] text-muted-foreground sm:mt-4 sm:text-[11px]">
                 {label}
             </p>
-            <p className="mt-0.5 text-xl font-semibold text-foreground sm:text-2xl">
+            <p className="mt-0.5 text-base leading-tight font-semibold text-foreground sm:text-2xl">
                 {value}
             </p>
-            <p className="mt-0.5 text-[11px] text-muted-foreground">{sub}</p>
+            <p className="mt-0.5 truncate text-[9px] text-muted-foreground sm:text-[11px]">
+                {sub}
+            </p>
         </Panel>
     );
 }
@@ -118,17 +124,17 @@ function StatusBadge({ record }: { record: Record_ }) {
     return (
         <span className="inline-flex flex-wrap items-center gap-1.5">
             {record.status === "denied" ? (
-                <span className="rounded-full bg-red-500/10 px-2.5 py-1 text-[11px] font-medium text-red-600 dark:text-red-400">
+                <span className="rounded-full bg-red-500/10 px-2 py-0.5 text-[10px] font-medium text-red-600 sm:px-2.5 sm:py-1 sm:text-[11px] dark:text-red-400">
                     Denied
                 </span>
             ) : (
-                <span className="rounded-full bg-emerald-500/10 px-2.5 py-1 text-[11px] font-medium text-emerald-600 dark:text-emerald-400">
+                <span className="rounded-full bg-emerald-500/10 px-2 py-0.5 text-[10px] font-medium text-emerald-600 sm:px-2.5 sm:py-1 sm:text-[11px] dark:text-emerald-400">
                     Check-in
                 </span>
             )}
             {record.status !== "denied" && record.plan && (
                 <span
-                    className={`rounded-full px-2.5 py-1 text-[11px] font-medium ${PLAN_STYLES[record.plan] ?? "bg-muted text-muted-foreground"}`}
+                    className={`rounded-full px-2 py-0.5 text-[10px] font-medium sm:px-2.5 sm:py-1 sm:text-[11px] ${PLAN_STYLES[record.plan] ?? "bg-muted text-muted-foreground"}`}
                 >
                     {record.plan}
                 </span>
@@ -221,21 +227,26 @@ export default function Attendance({
             {/* No hardcoded bg/text here — the layout shell already supplies
                 bg-background/text-foreground, and those tokens flip with
                 the app's dark: class, same as Overview/Staff/Member. */}
-            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-3 p-3 sm:gap-4 sm:p-4 lg:p-6">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-2.5 p-2.5 sm:gap-4 sm:p-4 lg:p-6">
                 <div>
-                    <div className="flex items-center gap-2 text-[11px] font-medium text-emerald-600 sm:text-xs dark:text-emerald-400">
+                    <div className="flex items-center gap-2 text-[10px] font-medium text-emerald-600 sm:text-xs dark:text-emerald-400">
                         <span className="h-1.5 w-1.5 rounded-full bg-emerald-500" />
                         Live workspace
                     </div>
-                    <h1 className="mt-1 text-xl font-semibold text-foreground sm:text-2xl">
+                    <h1 className="mt-1 text-lg font-semibold text-foreground sm:text-2xl">
                         Attendance Analytics
                     </h1>
-                    <p className="text-[13px] text-muted-foreground sm:text-sm">
+                    <p className="text-[12px] text-muted-foreground sm:text-sm">
                         Track member activity and peak gym utilization.
                     </p>
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:grid-cols-3 sm:gap-4">
+                {/* grid-cols-3 (not grid-cols-1) even on phones: the old
+                    mobile layout stacked these three cards full-width,
+                    which made each one look oversized with a lot of
+                    unused padding. Keeping them in a compact row matches
+                    how the rest of the dashboard reads on mobile. */}
+                <div className="grid grid-cols-3 gap-2 sm:gap-4">
                     <StatCard
                         icon={
                             <Activity className="h-4 w-4 text-amber-600 dark:text-amber-400 sm:h-5 sm:w-5" />
@@ -265,14 +276,21 @@ export default function Attendance({
                     />
                 </div>
 
-                <div className="grid grid-cols-1 gap-3 sm:gap-4 md:grid-cols-[1.4fr_1fr]">
+                {/* items-start: without this, a CSS grid row stretches every
+                    cell to match the tallest one. The heatmap panel is
+                    naturally tall (9 stacked time-bucket rows), so the
+                    "Hourly attendance" panel next to it was being stretched
+                    to match — but its chart stayed a fixed h-64, leaving a
+                    big dead gap below it. items-start lets each panel size
+                    to its own content instead. */}
+                <div className="grid grid-cols-1 items-start gap-3 sm:gap-4 md:grid-cols-[1.4fr_1fr]">
                     <Panel>
-                        <div className="mb-3 flex flex-wrap items-center justify-between gap-3 sm:mb-4">
+                        <div className="mb-2.5 flex flex-wrap items-center justify-between gap-2 sm:mb-4 sm:gap-3">
                             <div>
-                                <p className="text-[13px] font-semibold text-foreground sm:text-sm">
+                                <p className="text-[12px] font-semibold text-foreground sm:text-sm">
                                     Hourly attendance
                                 </p>
-                                <p className="text-[11px] text-muted-foreground">
+                                <p className="text-[10px] text-muted-foreground sm:text-[11px]">
                                     {hourlyDate ===
                                     new Date().toISOString().slice(0, 10)
                                         ? "Today"
@@ -286,44 +304,50 @@ export default function Attendance({
                                     applyHourlyDate(e.target.value)
                                 }
                                 max={new Date().toISOString().slice(0, 10)}
-                                className="rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-[13px] text-foreground"
+                                className="rounded-lg border border-border bg-muted/50 px-2 py-1 text-[11px] text-foreground sm:px-3 sm:py-1.5 sm:text-[13px]"
                             />
                         </div>
-                        <div className="h-48 sm:h-56 md:h-64">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <BarChart data={hourly.data}>
-                                    <XAxis
-                                        dataKey="label"
-                                        stroke="currentColor"
-                                        className="text-muted-foreground"
-                                        fontSize={10}
-                                        tickLine={false}
-                                        axisLine={false}
-                                        interval={2}
-                                    />
-                                    <YAxis hide />
-                                    <Tooltip
-                                        contentStyle={{
-                                            background:
-                                                "var(--color-card, #171717)",
-                                            border: "1px solid rgba(128,128,128,0.2)",
-                                            borderRadius: 8,
-                                            fontSize: 12,
-                                        }}
-                                    />
-                                    <Bar
-                                        dataKey="total"
-                                        fill="#f59e0b"
-                                        radius={[4, 4, 0, 0]}
-                                    />
-                                </BarChart>
-                            </ResponsiveContainer>
-                        </div>
+                        {hourly.data.every((d) => d.total === 0) ? (
+                            <div className="flex h-40 items-center justify-center text-center text-[12px] text-muted-foreground sm:h-56 sm:text-[13px] md:h-64">
+                                No check-ins recorded for this day.
+                            </div>
+                        ) : (
+                            <div className="h-40 sm:h-56 md:h-64">
+                                <ResponsiveContainer width="100%" height="100%">
+                                    <BarChart data={hourly.data}>
+                                        <XAxis
+                                            dataKey="label"
+                                            stroke="currentColor"
+                                            className="text-muted-foreground"
+                                            fontSize={10}
+                                            tickLine={false}
+                                            axisLine={false}
+                                            interval={2}
+                                        />
+                                        <YAxis hide domain={[0, "dataMax"]} />
+                                        <Tooltip
+                                            contentStyle={{
+                                                background:
+                                                    "var(--color-card, #171717)",
+                                                border: "1px solid rgba(128,128,128,0.2)",
+                                                borderRadius: 8,
+                                                fontSize: 12,
+                                            }}
+                                        />
+                                        <Bar
+                                            dataKey="total"
+                                            fill="#f59e0b"
+                                            radius={[4, 4, 0, 0]}
+                                        />
+                                    </BarChart>
+                                </ResponsiveContainer>
+                            </div>
+                        )}
                     </Panel>
 
                     <Panel>
                         <div className="mb-1 flex items-center justify-between">
-                            <p className="text-[13px] font-semibold text-foreground sm:text-sm">
+                            <p className="text-[12px] font-semibold text-foreground sm:text-sm">
                                 Weekly heatmap
                             </p>
                             <div className="flex items-center gap-1">
@@ -332,7 +356,7 @@ export default function Attendance({
                                     className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground"
                                     aria-label="Previous week"
                                 >
-                                    <ChevronLeft className="h-4 w-4" />
+                                    <ChevronLeft className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </button>
                                 <button
                                     onClick={() => navigateWeek(1)}
@@ -340,19 +364,23 @@ export default function Attendance({
                                     className="rounded-md p-1 text-muted-foreground hover:bg-muted hover:text-foreground disabled:opacity-30 disabled:hover:bg-transparent"
                                     aria-label="Next week"
                                 >
-                                    <ChevronRight className="h-4 w-4" />
+                                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
                                 </button>
                             </div>
                         </div>
-                        <p className="mb-3 text-[11px] text-muted-foreground sm:mb-4">
+                        <p className="mb-2.5 text-[10px] text-muted-foreground sm:mb-4 sm:text-[11px]">
                             {heatmap.weekLabel}
                         </p>
 
                         {/* overflow-x-auto + min-width guard keeps the 7-day
                             grid from being crushed illegibly on very narrow
-                            phones instead of silently clipping. */}
+                            phones instead of silently clipping. Row height
+                            is capped (not aspect-square) on mobile so 9
+                            stacked buckets don't blow up the panel — each
+                            cell reads fine as a short rounded bar instead
+                            of a full square at this size. */}
                         <div className="overflow-x-auto">
-                            <div className="grid min-w-[260px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1.5 text-[11px]">
+                            <div className="grid min-w-[230px] grid-cols-[auto_repeat(7,1fr)] items-center gap-1 text-[9px] sm:gap-1.5 sm:text-[11px]">
                                 <span />
                                 {DAY_LABELS.map((d, i) => (
                                     <span
@@ -366,7 +394,7 @@ export default function Attendance({
                                     <>
                                         <span
                                             key={bucket.label}
-                                            className="pr-2 whitespace-nowrap text-muted-foreground"
+                                            className="pr-1.5 whitespace-nowrap text-muted-foreground sm:pr-2"
                                         >
                                             {bucket.label}
                                         </span>
@@ -374,7 +402,7 @@ export default function Attendance({
                                             <div
                                                 key={ci}
                                                 title={`${cell.count} check-ins`}
-                                                className={`aspect-square rounded ${heatColor(cell.intensity)}`}
+                                                className={`h-4 rounded sm:aspect-square sm:h-auto ${heatColor(cell.intensity)}`}
                                             />
                                         ))}
                                     </>
@@ -382,25 +410,25 @@ export default function Attendance({
                             </div>
                         </div>
 
-                        <div className="mt-3 flex items-center justify-end gap-1.5 text-[10px] text-muted-foreground sm:mt-4 sm:text-[11px]">
+                        <div className="mt-2.5 flex items-center justify-end gap-1 text-[9px] text-muted-foreground sm:mt-4 sm:gap-1.5 sm:text-[11px]">
                             Less
-                            <span className="h-3 w-3 rounded bg-muted" />
-                            <span className="h-3 w-3 rounded bg-emerald-500/20" />
-                            <span className="h-3 w-3 rounded bg-emerald-500/40" />
-                            <span className="h-3 w-3 rounded bg-emerald-500/70" />
-                            <span className="h-3 w-3 rounded bg-emerald-500" />
+                            <span className="h-2.5 w-2.5 rounded bg-muted sm:h-3 sm:w-3" />
+                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/20 sm:h-3 sm:w-3" />
+                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/40 sm:h-3 sm:w-3" />
+                            <span className="h-2.5 w-2.5 rounded bg-emerald-500/70 sm:h-3 sm:w-3" />
+                            <span className="h-2.5 w-2.5 rounded bg-emerald-500 sm:h-3 sm:w-3" />
                             More
                         </div>
                     </Panel>
                 </div>
 
                 <div className="rounded-2xl border border-border bg-card sm:rounded-xl">
-                    <div className="flex flex-wrap items-start justify-between gap-3 border-b border-border px-4 py-3.5 sm:px-5">
+                    <div className="flex flex-wrap items-start justify-between gap-2 border-b border-border px-3 py-3 sm:gap-3 sm:px-5 sm:py-3.5">
                         <div>
-                            <p className="text-[13px] font-semibold text-foreground sm:text-sm">
+                            <p className="text-[12px] font-semibold text-foreground sm:text-sm">
                                 Recent attendance records
                             </p>
-                            <p className="mt-0.5 text-[11px] text-muted-foreground">
+                            <p className="mt-0.5 text-[10px] text-muted-foreground sm:text-[11px]">
                                 {recordDate
                                     ? `Showing ${recordDate}`
                                     : "Click a record to view details"}
@@ -409,14 +437,14 @@ export default function Attendance({
                         <div className="relative">
                             <button
                                 onClick={() => setShowFilter((s) => !s)}
-                                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-[13px] text-foreground/80 hover:bg-muted"
+                                className="inline-flex items-center gap-1.5 rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[11px] text-foreground/80 hover:bg-muted sm:px-3 sm:py-1.5 sm:text-[13px]"
                             >
-                                <Filter className="h-3.5 w-3.5" />
+                                <Filter className="h-3 w-3 sm:h-3.5 sm:w-3.5" />
                                 Filter
                             </button>
                             {showFilter && (
-                                <div className="absolute right-0 z-10 mt-2 w-64 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-4 shadow-xl">
-                                    <label className="mb-2 block text-[11px] text-muted-foreground">
+                                <div className="absolute right-0 z-10 mt-2 w-56 max-w-[calc(100vw-2rem)] rounded-xl border border-border bg-card p-3 shadow-xl sm:w-64 sm:p-4">
+                                    <label className="mb-2 block text-[10px] text-muted-foreground sm:text-[11px]">
                                         Select date
                                     </label>
                                     <input
@@ -425,18 +453,18 @@ export default function Attendance({
                                         onChange={(e) =>
                                             setDateInput(e.target.value)
                                         }
-                                        className="mb-3 w-full rounded-lg border border-border bg-muted/50 px-3 py-1.5 text-[13px] text-foreground"
+                                        className="mb-3 w-full rounded-lg border border-border bg-muted/50 px-2.5 py-1 text-[12px] text-foreground sm:px-3 sm:py-1.5 sm:text-[13px]"
                                     />
                                     <div className="flex gap-2">
                                         <button
                                             onClick={applyRecordDate}
-                                            className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-[13px] font-medium text-primary-foreground hover:opacity-90"
+                                            className="flex-1 rounded-lg bg-primary px-3 py-1.5 text-[12px] font-medium text-primary-foreground hover:opacity-90 sm:text-[13px]"
                                         >
                                             Apply
                                         </button>
                                         <button
                                             onClick={clearRecordDate}
-                                            className="rounded-lg border border-border px-3 py-1.5 text-[13px] text-foreground/80 hover:bg-muted"
+                                            className="rounded-lg border border-border px-3 py-1.5 text-[12px] text-foreground/80 hover:bg-muted sm:text-[13px]"
                                         >
                                             Clear
                                         </button>
@@ -509,23 +537,23 @@ export default function Attendance({
                                 5-column table. */}
                             <ul className="divide-y divide-border sm:hidden">
                                 {recentRecords.map((r) => (
-                                    <li key={r.id} className="px-4 py-3.5">
-                                        <div className="flex items-start justify-between gap-3">
-                                            <div>
-                                                <p className="text-[13px] font-semibold text-foreground">
+                                    <li key={r.id} className="px-3 py-2.5">
+                                        <div className="flex items-start justify-between gap-2">
+                                            <div className="min-w-0">
+                                                <p className="text-[12px] font-semibold text-foreground">
                                                     ATT-
                                                     {String(r.id).padStart(
                                                         4,
                                                         "0",
                                                     )}
                                                 </p>
-                                                <p className="text-[12px] text-foreground/80">
+                                                <p className="truncate text-[11px] text-foreground/80">
                                                     {r.name}
                                                 </p>
                                             </div>
                                             <StatusBadge record={r} />
                                         </div>
-                                        <p className="mt-2 text-[11px] text-muted-foreground">
+                                        <p className="mt-1.5 text-[10px] text-muted-foreground">
                                             {r.time} · {r.date}
                                         </p>
                                     </li>
