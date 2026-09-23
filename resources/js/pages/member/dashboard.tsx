@@ -211,18 +211,10 @@ export default function Dashboard({
                     </div>
                 )}
 
-                {/*
-                    Top block. DOM order = hero, stats, quick, visits so mobile
-                    (single column, no grid-area applied) stacks in exactly
-                    that order. At lg+ the same four blocks are repositioned
-                    with grid-template-areas: hero/quick share row 1, and
-                    stats/visits share row 2 — since visits sits in the same
-                    row as the stat cards, grid's default stretch keeps their
-                    bottom edges aligned automatically.
-                */}
-                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr] lg:[grid-template-areas:'hero_quick'_'stats_visits']">
+              
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
                     {/* Membership hero */}
-                    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6 lg:[grid-area:hero]">
+                    <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-4 sm:p-6 lg:col-start-1 lg:row-start-1">
                         <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-primary/25 blur-3xl" />
 
                         {currentMembership ? (
@@ -339,7 +331,7 @@ export default function Dashboard({
                     </div>
 
                     {/* Stat cards — fixed 3-column grid, never scrolls */}
-                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:[grid-area:stats]">
+                    <div className="grid grid-cols-3 gap-1.5 sm:gap-3 lg:col-start-1 lg:row-start-2">
                         {statCards.map((s) => {
                             const Icon = s.icon;
                             return (
@@ -384,7 +376,7 @@ export default function Dashboard({
                     </div>
 
                     {/* Quick access — mother card holding 3 individually-carded buttons, horizontal at every breakpoint */}
-                    <div className="self-start rounded-2xl border border-border bg-card p-3 sm:p-4 lg:[grid-area:quick] lg:self-start">
+                    <div className="self-start rounded-2xl border border-border bg-card p-3 sm:p-4 lg:col-start-2 lg:row-start-1 lg:self-start">
                         <div className="grid grid-cols-3 gap-2">
                             {quickLinks.map((q) => {
                                 const Icon = q.icon;
@@ -414,7 +406,7 @@ export default function Dashboard({
                     </div>
 
                     {/* Visits over time — sits under the quick access card, bottom-aligned with the stat row */}
-                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5 lg:[grid-area:visits]">
+                    <div className="flex h-full flex-col rounded-xl border border-border bg-card p-4 sm:p-5 lg:col-start-2 lg:row-start-2">
                         <div className="flex items-baseline justify-between">
                             <h3 className="text-sm font-medium text-foreground">
                                 Visits over time
@@ -551,8 +543,8 @@ export default function Dashboard({
 
                         {recentCheckIns.length === 0 ? (
                             <p className="mt-4 text-sm text-muted-foreground">
-                                No check-ins yet — scan in at the front desk to
-                                get started.
+                                No check-ins yet — scan in at the front desk
+                                to get started.
                             </p>
                         ) : (
                             <div className="mt-1 flex-1 divide-y divide-border overflow-y-auto">

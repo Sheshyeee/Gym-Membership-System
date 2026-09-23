@@ -208,21 +208,6 @@ export default function QrAccess({ member }: { member: Member }) {
                                         : "Your membership isn't active. Renew your plan to enable access."}
                                 </p>
                             </div>
-
-                            <div className="rounded-2xl border border-border bg-card p-4 sm:p-6">
-                                <Clock className="mb-2.5 h-5 w-5 text-primary sm:mb-3 sm:h-6 sm:w-6" />
-                                <p className="mb-1 text-sm font-semibold text-primary sm:text-base">
-                                    Last check-in
-                                </p>
-                                {/* Static placeholder — wire up once attendance records exist */}
-                                <p className="mb-3 text-xs text-muted-foreground sm:text-sm">
-                                    Today, 5:42 PM
-                                </p>
-                                <button className="inline-flex items-center gap-1 text-xs font-medium text-primary transition hover:opacity-80 sm:text-sm">
-                                    View activity
-                                    <ChevronRight className="h-3.5 w-3.5 sm:h-4 sm:w-4" />
-                                </button>
-                            </div>
                         </div>
                     </div>
                 </div>

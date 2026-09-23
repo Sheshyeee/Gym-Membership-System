@@ -88,18 +88,22 @@ export default function Membership({
                 <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                     Membership &amp; Plans
                 </p>
-                <div className="flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                    <div>
-                        <h1 className="text-2xl font-bold text-foreground sm:text-3xl">
+                <div className="flex flex-row items-center justify-between gap-2">
+                    <div className="min-w-0">
+                        <h1 className="truncate text-lg font-bold text-foreground sm:text-3xl">
                             Your membership
                         </h1>
-                        <p className="text-xs text-muted-foreground sm:text-sm">
+                        <p className="truncate text-[11px] text-muted-foreground sm:text-sm">
                             Keep your access active and make every session
                             count.
                         </p>
                     </div>
-                    <div>
-                        <Button asChild size="sm">
+                    <div className="shrink-0">
+                        <Button
+                            asChild
+                            size="sm"
+                            className="h-7 px-2.5 text-[11px] sm:h-9 sm:px-4 sm:text-sm"
+                        >
                             <Link href="/member/payments">Payments</Link>
                         </Button>
                     </div>
@@ -213,20 +217,20 @@ export default function Membership({
 
                     {/* Plan picker */}
                     <div>
-                        <div className="mb-4 flex flex-col gap-3 sm:flex-row sm:items-center sm:justify-between">
-                            <div>
-                                <p className="text-[11px] font-medium tracking-wide text-primary uppercase sm:text-xs">
+                        <div className="mb-4 flex flex-row items-center justify-between gap-2">
+                            <div className="min-w-0">
+                                <p className="truncate text-[10px] font-medium tracking-wide text-primary uppercase sm:text-xs">
                                     Find your fit
                                 </p>
-                                <h2 className="text-lg font-bold text-foreground sm:text-xl">
+                                <h2 className="truncate text-sm font-bold text-foreground sm:text-xl">
                                     Choose a plan
                                 </h2>
                             </div>
 
-                            <div className="flex w-fit rounded-lg border border-border p-1 text-xs">
+                            <div className="flex w-fit shrink-0 rounded-lg border border-border p-0.5 text-[10px] sm:p-1 sm:text-xs">
                                 <button
                                     onClick={() => setCycle("monthly")}
-                                    className={`rounded-md px-3 py-1 font-medium transition ${
+                                    className={`rounded-md px-2 py-0.5 font-medium transition sm:px-3 sm:py-1 ${
                                         cycle === "monthly"
                                             ? "bg-primary text-primary-foreground"
                                             : "text-muted-foreground"
@@ -236,7 +240,7 @@ export default function Membership({
                                 </button>
                                 <button
                                     onClick={() => setCycle("annual")}
-                                    className={`rounded-md px-3 py-1 font-medium transition ${
+                                    className={`rounded-md px-2 py-0.5 font-medium transition sm:px-3 sm:py-1 ${
                                         cycle === "annual"
                                             ? "bg-primary text-primary-foreground"
                                             : "text-muted-foreground"
