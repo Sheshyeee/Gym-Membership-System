@@ -20,6 +20,9 @@ use App\Http\Controllers\OnboardingController;
 use App\Http\Controllers\OverviewController;
 use App\Http\Controllers\StaffPaymentController;
 use App\Http\Controllers\PaymongoWebhookController;
+
+use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Auth;
 use App\Http\Controllers\QRAccessController;
 use App\Http\Controllers\StaffAttendanceController;
 use App\Http\Controllers\StaffCheckInsController;
@@ -69,6 +72,15 @@ Route::middleware(['auth'])->group(function () {
     Route::get('/staff/profile', [StaffProfileSettingsController::class, 'index'])
         ->middleware('role:staff')
         ->name('staff.profile');
+
+    Route::post('/logout', function (Request $request) {
+        Auth::logout();
+
+        $request->session()->invalidate();
+        $request->session()->regenerateToken();
+
+        return redirect('/');
+    })->middleware('auth')->name('logout');
 
 
 
