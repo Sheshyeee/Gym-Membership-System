@@ -1,24 +1,33 @@
-type Step = { label: string; status: "done" | "current" | "upcoming" };
+type StepStatus = "done" | "current" | "upcoming";
+type Step = { label: string; status: StepStatus };
 
 export function OnboardingStepper({ current }: { current: number }) {
-    const steps = ["Welcome", "Plan", "Payment", "Done"];
+    // "Welcome" step removed — the flow now starts at plan selection.
+    const steps = ["Plan", "Payment", "Done"];
 
     return (
-        <div className="flex items-center justify-center gap-2 mb-10">
+        <div className="flex items-center justify-center gap-1.5 sm:gap-2 mb-6 sm:mb-10">
             {steps.map((label, i) => {
                 const stepNum = i + 1;
                 const status: Step["status"] =
-                    stepNum < current ? "done" : stepNum === current ? "current" : "upcoming";
+                    stepNum < current
+                        ? "done"
+                        : stepNum === current
+                          ? "current"
+                          : "upcoming";
 
                 return (
                     <div key={label} className="flex items-center">
-                        <div className="flex items-center gap-2">
+                        <div className="flex items-center gap-1.5 sm:gap-2">
                             <div
                                 className={[
-                                    "flex h-8 w-8 items-center justify-center rounded-full text-sm font-semibold",
-                                    status === "done" && "bg-green-600 text-white",
-                                    status === "current" && "bg-amber-500 text-black",
-                                    status === "upcoming" && "border border-neutral-700 text-neutral-500",
+                                    "flex h-6 w-6 sm:h-8 sm:w-8 shrink-0 items-center justify-center rounded-full text-[11px] sm:text-sm font-semibold transition-colors",
+                                    status === "done" &&
+                                        "bg-emerald-500 text-white",
+                                    status === "current" &&
+                                        "bg-primary text-primary-foreground",
+                                    status === "upcoming" &&
+                                        "border border-border text-muted-foreground",
                                 ]
                                     .filter(Boolean)
                                     .join(" ")}
@@ -26,15 +35,23 @@ export function OnboardingStepper({ current }: { current: number }) {
                                 {status === "done" ? "✓" : stepNum}
                             </div>
                             <span
-                                className={
-                                    status === "upcoming" ? "text-neutral-500" : "text-neutral-200"
-                                }
+                                className={[
+                                    "text-[11px] sm:text-sm font-medium",
+                                    status === "upcoming"
+                                        ? "text-muted-foreground"
+                                        : "text-foreground",
+                                    // Keep phones compact: only the active label shows text,
+                                    // the rest are just numbered dots.
+                                    status === "current"
+                                        ? "inline"
+                                        : "hidden sm:inline",
+                                ].join(" ")}
                             >
                                 {label}
                             </span>
                         </div>
                         {stepNum < steps.length && (
-                            <div className="w-16 h-px bg-neutral-700 mx-3" />
+                            <div className="w-6 sm:w-16 h-px bg-border mx-2 sm:mx-3" />
                         )}
                     </div>
                 );

@@ -24,7 +24,8 @@ type Plan = {
     };
 };
 
-type Step = 1 | 2 | 3 | 4;
+// Welcome step removed — the flow now opens directly on plan selection.
+type Step = 1 | 2 | 3;
 
 export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
     const { auth } = usePage().props as any;
@@ -40,14 +41,10 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
         payment_method_type: "" as "" | "gcash" | "paymaya",
     });
 
-    function goToPlan() {
-        setStep(2);
-    }
-
     function choosePlan(plan: Plan) {
         setSelectedPlan(plan);
         setData((d) => ({ ...d, plan_id: plan.id, billing_cycle: cycle }));
-        setStep(3);
+        setStep(2);
     }
 
     function submitPayment(e: React.FormEvent) {
@@ -80,90 +77,66 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
     return (
         <>
             <Head title="Set up your membership" />
-            <div className="min-h-screen bg-neutral-950 text-white overflow-hidden">
-                <div className="px-6 py-12">
+            <div className="min-h-screen bg-background text-foreground overflow-hidden">
+                <div className="px-4 sm:px-6 py-8 sm:py-12">
                     <OnboardingStepper current={step} />
                 </div>
 
-                {/* Slider track */}
+                {/* Slider track — 3 panels now that Welcome is gone */}
                 <div
                     className="flex transition-transform duration-500 ease-in-out"
                     style={{ transform: `translateX(-${(step - 1) * 100}%)` }}
                 >
-                    {/* Step 1: Welcome */}
-                    <div className="w-full shrink-0 flex flex-col items-center justify-center px-6 pb-20">
-                        <div className="w-16 h-16 rounded-2xl bg-amber-500 flex items-center justify-center text-3xl mb-6 shadow-lg shadow-amber-500/20">
-                            🏋️
-                        </div>
-                        <h1 className="text-3xl font-bold mb-3 text-center">
-                            Welcome to FitFlow, {firstName} ✨
-                        </h1>
-                        <p className="text-neutral-400 text-center max-w-md mb-8">
-                            Let's get you set up with a membership so you can
-                            start training. It only takes a minute.
-                        </p>
-                        <button
-                            onClick={goToPlan}
-                            className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-3 rounded-full flex items-center gap-2"
-                        >
-                            Get started →
-                        </button>
-                        <p className="text-neutral-500 text-sm mt-6">
-                            Step 1 of 3 · Choose a plan and activate your
-                            membership
-                        </p>
-                    </div>
-
-                    {/* Step 2: Plan */}
-                    <div className="w-full shrink-0 px-6 pb-20">
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold mb-2">
+                    {/* Step 1: Plan */}
+                    <div className="w-full shrink-0 px-4 sm:px-6 pb-16 sm:pb-20">
+                        <div className="text-center mb-6 sm:mb-10">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
                                 Choose your plan
                             </h1>
-                            <p className="text-neutral-400">
-                                Pick the plan that fits your goals. You can
-                                upgrade anytime.
+                            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground">
+                                Hi {firstName} — pick the plan that fits your
+                                goals. You can upgrade anytime.
                             </p>
                         </div>
 
-                        <div className="flex justify-center mb-10">
-                            <div className="inline-flex rounded-full bg-neutral-900 p-1 border border-neutral-800">
+                        <div className="flex justify-center mb-8 sm:mb-10">
+                            <div className="inline-flex rounded-full bg-card border border-border p-1">
                                 <button
                                     onClick={() => setCycle("monthly")}
-                                    className={`px-5 py-2 rounded-full text-sm font-medium transition ${
+                                    className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition ${
                                         cycle === "monthly"
-                                            ? "bg-amber-500 text-black"
-                                            : "text-neutral-400"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground"
                                     }`}
                                 >
                                     Monthly
                                 </button>
                                 <button
                                     onClick={() => setCycle("annual")}
-                                    className={`px-5 py-2 rounded-full text-sm font-medium transition flex items-center gap-2 ${
+                                    className={`px-4 sm:px-5 py-1.5 sm:py-2 rounded-full text-xs sm:text-sm font-medium transition flex items-center gap-1.5 sm:gap-2 ${
                                         cycle === "annual"
-                                            ? "bg-amber-500 text-black"
-                                            : "text-neutral-400"
+                                            ? "bg-primary text-primary-foreground"
+                                            : "text-muted-foreground"
                                     }`}
                                 >
                                     Annual
-                                    <span className="text-[10px] bg-amber-900/40 text-amber-400 px-1.5 py-0.5 rounded-full">
+                                    <span className="text-[9px] sm:text-[10px] bg-emerald-950/60 text-emerald-400 px-1.5 py-0.5 rounded-full">
                                         Save 20%
                                     </span>
                                 </button>
                             </div>
                         </div>
 
-                        <div className="text-center mb-8">
+                        <div className="text-center mb-6 sm:mb-8">
                             <button
                                 onClick={() => router.post("/onboarding/skip")}
-                                className="text-sm text-neutral-500 hover:text-neutral-300 underline underline-offset-2"
+                                className="text-xs sm:text-sm text-muted-foreground hover:text-foreground underline underline-offset-2"
                             >
                                 Skip for now — explore without a membership
                             </button>
                         </div>
 
-                        <div className="grid gap-6 md:grid-cols-3 max-w-5xl mx-auto">
+                        <div className="grid gap-4 sm:gap-6 grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 max-w-5xl mx-auto">
                             {plans.map((plan) => {
                                 const p =
                                     plan.pricing[cycle].per_month_equivalent;
@@ -171,53 +144,53 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                 return (
                                     <div
                                         key={plan.id}
-                                        className={`relative rounded-2xl border p-6 flex flex-col ${
+                                        className={`relative rounded-xl sm:rounded-2xl border p-5 sm:p-6 flex flex-col bg-card ${
                                             plan.highlighted
-                                                ? "border-amber-500 bg-neutral-900"
-                                                : "border-neutral-800 bg-neutral-900/60"
+                                                ? "border-primary ring-1 ring-primary/20"
+                                                : "border-border"
                                         }`}
                                     >
                                         {plan.highlighted && (
-                                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-amber-500 text-black text-xs font-semibold px-3 py-1 rounded-full">
+                                            <span className="absolute -top-3 left-1/2 -translate-x-1/2 bg-primary text-primary-foreground text-[10px] sm:text-xs font-semibold px-3 py-1 rounded-full">
                                                 Most popular
                                             </span>
                                         )}
                                         <div
-                                            className={`w-10 h-10 rounded-lg flex items-center justify-center mb-4 ${
+                                            className={`w-9 h-9 sm:w-10 sm:h-10 rounded-lg flex items-center justify-center mb-3 sm:mb-4 ${
                                                 plan.highlighted
-                                                    ? "bg-amber-500/20"
-                                                    : "bg-neutral-800"
+                                                    ? "bg-primary/15"
+                                                    : "bg-secondary"
                                             }`}
                                         >
                                             ⚡
                                         </div>
                                         <h3
-                                            className={`text-xl font-bold ${
+                                            className={`text-lg sm:text-xl font-bold ${
                                                 plan.highlighted
-                                                    ? "text-amber-400"
-                                                    : "text-white"
+                                                    ? "text-primary"
+                                                    : "text-foreground"
                                             }`}
                                         >
                                             {plan.name}
                                         </h3>
-                                        <p className="text-sm text-neutral-400 mb-4">
+                                        <p className="text-xs sm:text-sm text-muted-foreground mb-3 sm:mb-4">
                                             {plan.tagline}
                                         </p>
-                                        <div className="mb-6">
-                                            <span className="text-3xl font-bold">
+                                        <div className="mb-5 sm:mb-6">
+                                            <span className="text-2xl sm:text-3xl font-bold">
                                                 ₱{(p / 100).toLocaleString()}
                                             </span>
-                                            <span className="text-neutral-400">
+                                            <span className="text-sm text-muted-foreground">
                                                 /month
                                             </span>
                                         </div>
-                                        <ul className="space-y-2 mb-6 flex-1">
+                                        <ul className="space-y-1.5 sm:space-y-2 mb-5 sm:mb-6 flex-1">
                                             {(plan.features ?? []).map((f) => (
                                                 <li
                                                     key={f}
-                                                    className="flex items-center gap-2 text-sm text-neutral-300"
+                                                    className="flex items-center gap-2 text-xs sm:text-sm text-foreground/80"
                                                 >
-                                                    <span className="text-green-500">
+                                                    <span className="text-emerald-500">
                                                         ✓
                                                     </span>
                                                     {f}
@@ -226,10 +199,10 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                         </ul>
                                         <button
                                             onClick={() => choosePlan(plan)}
-                                            className={`w-full py-3 rounded-lg font-semibold flex items-center justify-center gap-2 ${
+                                            className={`w-full py-2.5 sm:py-3 rounded-lg text-sm sm:text-base font-semibold flex items-center justify-center gap-2 transition-colors ${
                                                 plan.highlighted
-                                                    ? "bg-amber-500 text-black hover:bg-amber-400"
-                                                    : "bg-neutral-800 text-white hover:bg-neutral-700"
+                                                    ? "bg-primary text-primary-foreground hover:opacity-90"
+                                                    : "bg-secondary text-secondary-foreground hover:bg-secondary/70"
                                             }`}
                                         >
                                             Select {plan.name} →
@@ -240,46 +213,46 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                         </div>
                     </div>
 
-                    {/* Step 3: Payment */}
-                    <div className="w-full shrink-0 px-6 pb-20">
-                        <div className="text-center mb-8">
-                            <h1 className="text-4xl font-bold mb-2">
+                    {/* Step 2: Payment */}
+                    <div className="w-full shrink-0 px-4 sm:px-6 pb-16 sm:pb-20">
+                        <div className="text-center mb-6 sm:mb-8">
+                            <h1 className="text-2xl sm:text-3xl lg:text-4xl font-bold mb-2">
                                 Complete your membership
                             </h1>
-                            <p className="text-neutral-400">
+                            <p className="text-xs sm:text-sm lg:text-base text-muted-foreground">
                                 You're one step away from full access to
                                 FitFlow.
                             </p>
                         </div>
 
                         <button
-                            onClick={() => setStep(2)}
-                            className="inline-flex items-center gap-1 text-neutral-400 hover:text-white mb-6"
+                            onClick={() => setStep(1)}
+                            className="inline-flex items-center gap-1 text-xs sm:text-sm text-muted-foreground hover:text-foreground mb-4 sm:mb-6"
                         >
                             ← Back
                         </button>
 
                         {selectedPlan && pricing && (
-                            <div className="grid gap-6 md:grid-cols-2 max-w-3xl mx-auto">
-                                <div className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6">
-                                    <p className="text-xs uppercase tracking-wide text-neutral-500 mb-3">
+                            <div className="grid gap-4 sm:gap-6 grid-cols-1 md:grid-cols-2 max-w-3xl mx-auto">
+                                <div className="rounded-xl sm:rounded-2xl border border-border bg-card p-5 sm:p-6">
+                                    <p className="text-[10px] sm:text-xs uppercase tracking-wide text-muted-foreground mb-3">
                                         Order summary
                                     </p>
-                                    <p className="font-semibold text-amber-400">
+                                    <p className="font-semibold text-primary text-sm sm:text-base">
                                         {selectedPlan.name} membership
                                     </p>
-                                    <p className="text-sm text-neutral-400 mb-4 capitalize">
+                                    <p className="text-xs sm:text-sm text-muted-foreground mb-4 capitalize">
                                         {cycle} billing
                                     </p>
                                     <button
-                                        onClick={() => setStep(2)}
-                                        className="text-xs text-neutral-400 hover:text-white mb-4"
+                                        onClick={() => setStep(1)}
+                                        className="text-[11px] sm:text-xs text-muted-foreground hover:text-foreground mb-4"
                                     >
                                         ← Change plan
                                     </button>
 
-                                    <div className="border-t border-neutral-800 pt-4 space-y-2 text-sm">
-                                        <div className="flex justify-between text-neutral-300">
+                                    <div className="border-t border-border pt-4 space-y-2 text-xs sm:text-sm">
+                                        <div className="flex justify-between text-foreground/80">
                                             <span>
                                                 Plan price
                                                 {cycle === "annual"
@@ -290,7 +263,7 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                                 {fmt(pricing.base_amount)}
                                             </span>
                                         </div>
-                                        <div className="flex justify-between text-neutral-300">
+                                        <div className="flex justify-between text-foreground/80">
                                             <span>Tax (12% VAT)</span>
                                             <span>
                                                 {fmt(pricing.tax_amount)}
@@ -298,16 +271,16 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                         </div>
                                     </div>
 
-                                    <div className="border-t border-neutral-800 mt-4 pt-4">
+                                    <div className="border-t border-border mt-4 pt-4">
                                         <div className="flex justify-between items-baseline">
-                                            <span className="text-amber-400 font-semibold">
+                                            <span className="text-primary font-semibold text-sm sm:text-base">
                                                 Total due today
                                             </span>
-                                            <span className="text-2xl font-bold text-amber-400">
+                                            <span className="text-xl sm:text-2xl font-bold text-primary">
                                                 {fmt(pricing.total_amount)}
                                             </span>
                                         </div>
-                                        <p className="text-xs text-neutral-500 mt-1">
+                                        <p className="text-[11px] sm:text-xs text-muted-foreground mt-1">
                                             {cycle === "annual"
                                                 ? `Renews annually at ${fmt(pricing.total_amount)} (≈ ${fmt(pricing.per_month_equivalent)}/mo)`
                                                 : `Renews monthly at ${fmt(pricing.total_amount)}`}
@@ -315,156 +288,168 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                     </div>
                                 </div>
 
-                                <p className="text-xs text-neutral-500 mb-4">
-                                    You'll be redirected to{" "}
-                                    {data.payment_method_type === "gcash"
-                                        ? "GCash"
-                                        : "Maya"}{" "}
-                                    to approve the payment. If anything goes
-                                    wrong there, just return to this tab — we'll
-                                    pick up where you left off.
-                                </p>
-
-                                <form
-                                    onSubmit={submitPayment}
-                                    className="rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6"
-                                >
-                                    <p className="text-amber-400 font-semibold mb-4">
-                                        Choose payment method
+                                <div>
+                                    <p className="text-[11px] sm:text-xs text-muted-foreground mb-3 sm:mb-4">
+                                        You'll be redirected to{" "}
+                                        {data.payment_method_type === "gcash"
+                                            ? "GCash"
+                                            : "Maya"}{" "}
+                                        to approve the payment. If anything goes
+                                        wrong there, just return to this tab —
+                                        we'll pick up where you left off.
                                     </p>
 
-                                    <div className="space-y-3 mb-6">
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setData(
-                                                    "payment_method_type",
-                                                    "gcash",
-                                                )
-                                            }
-                                            className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
-                                                data.payment_method_type ===
-                                                "gcash"
-                                                    ? "border-amber-500 bg-amber-500/10"
-                                                    : "border-neutral-700 bg-neutral-800 hover:border-neutral-600"
-                                            }`}
-                                        >
-                                            <span className="text-2xl">💙</span>
-                                            <div>
-                                                <p className="font-semibold text-white">
-                                                    GCash
-                                                </p>
-                                                <p className="text-xs text-neutral-400">
-                                                    Pay using your GCash wallet
-                                                </p>
-                                            </div>
-                                        </button>
-
-                                        <button
-                                            type="button"
-                                            onClick={() =>
-                                                setData(
-                                                    "payment_method_type",
-                                                    "paymaya",
-                                                )
-                                            }
-                                            className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
-                                                data.payment_method_type ===
-                                                "paymaya"
-                                                    ? "border-amber-500 bg-amber-500/10"
-                                                    : "border-neutral-700 bg-neutral-800 hover:border-neutral-600"
-                                            }`}
-                                        >
-                                            <span className="text-2xl">💚</span>
-                                            <div>
-                                                <p className="font-semibold text-white">
-                                                    Maya
-                                                </p>
-                                                <p className="text-xs text-neutral-400">
-                                                    Pay using your Maya wallet
-                                                </p>
-                                            </div>
-                                        </button>
-                                    </div>
-
-                                    {errors.payment_method_type && (
-                                        <p className="text-red-400 text-xs mb-3">
-                                            {errors.payment_method_type}
-                                        </p>
-                                    )}
-                                    {(errors as Record<string, string>)
-                                        .payment && (
-                                        <p className="text-red-400 text-xs mb-3">
-                                            {
-                                                (
-                                                    errors as Record<
-                                                        string,
-                                                        string
-                                                    >
-                                                ).payment
-                                            }
-                                        </p>
-                                    )}
-
-                                    <button
-                                        type="submit"
-                                        disabled={
-                                            processing ||
-                                            !data.payment_method_type
-                                        }
-                                        className="w-full mt-2 bg-amber-500 hover:bg-amber-400 text-black font-semibold py-3 rounded-lg flex items-center justify-center gap-2 disabled:opacity-60"
+                                    <form
+                                        onSubmit={submitPayment}
+                                        className="rounded-xl sm:rounded-2xl border border-border bg-card p-5 sm:p-6"
                                     >
-                                        {processing
-                                            ? "Redirecting..."
-                                            : `Pay ${fmt(pricing.total_amount)} via ${data.payment_method_type === "gcash" ? "GCash" : data.payment_method_type === "paymaya" ? "Maya" : "..."} →`}
-                                    </button>
-                                </form>
+                                        <p className="text-primary font-semibold mb-4 text-sm sm:text-base">
+                                            Choose payment method
+                                        </p>
+
+                                        <div className="space-y-3 mb-5 sm:mb-6">
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setData(
+                                                        "payment_method_type",
+                                                        "gcash",
+                                                    )
+                                                }
+                                                className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                                                    data.payment_method_type ===
+                                                    "gcash"
+                                                        ? "border-primary bg-primary/10"
+                                                        : "border-border bg-secondary hover:border-muted-foreground/40"
+                                                }`}
+                                            >
+                                                <span className="text-xl sm:text-2xl">
+                                                    💙
+                                                </span>
+                                                <div>
+                                                    <p className="font-semibold text-foreground text-sm sm:text-base">
+                                                        GCash
+                                                    </p>
+                                                    <p className="text-[11px] sm:text-xs text-muted-foreground">
+                                                        Pay using your GCash
+                                                        wallet
+                                                    </p>
+                                                </div>
+                                            </button>
+
+                                            <button
+                                                type="button"
+                                                onClick={() =>
+                                                    setData(
+                                                        "payment_method_type",
+                                                        "paymaya",
+                                                    )
+                                                }
+                                                className={`w-full flex items-center gap-3 rounded-lg border px-4 py-3 text-left transition ${
+                                                    data.payment_method_type ===
+                                                    "paymaya"
+                                                        ? "border-primary bg-primary/10"
+                                                        : "border-border bg-secondary hover:border-muted-foreground/40"
+                                                }`}
+                                            >
+                                                <span className="text-xl sm:text-2xl">
+                                                    💚
+                                                </span>
+                                                <div>
+                                                    <p className="font-semibold text-foreground text-sm sm:text-base">
+                                                        Maya
+                                                    </p>
+                                                    <p className="text-[11px] sm:text-xs text-muted-foreground">
+                                                        Pay using your Maya
+                                                        wallet
+                                                    </p>
+                                                </div>
+                                            </button>
+                                        </div>
+
+                                        {errors.payment_method_type && (
+                                            <p className="text-destructive text-xs mb-3">
+                                                {errors.payment_method_type}
+                                            </p>
+                                        )}
+                                        {(errors as Record<string, string>)
+                                            .payment && (
+                                            <p className="text-destructive text-xs mb-3">
+                                                {
+                                                    (
+                                                        errors as Record<
+                                                            string,
+                                                            string
+                                                        >
+                                                    ).payment
+                                                }
+                                            </p>
+                                        )}
+
+                                        <button
+                                            type="submit"
+                                            disabled={
+                                                processing ||
+                                                !data.payment_method_type
+                                            }
+                                            className="w-full mt-2 bg-primary text-primary-foreground hover:opacity-90 font-semibold py-2.5 sm:py-3 rounded-lg text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
+                                        >
+                                            {processing
+                                                ? "Redirecting..."
+                                                : `Pay ${fmt(pricing.total_amount)} via ${data.payment_method_type === "gcash" ? "GCash" : data.payment_method_type === "paymaya" ? "Maya" : "..."} →`}
+                                        </button>
+                                    </form>
+                                </div>
                             </div>
                         )}
                     </div>
 
-                    {/* Step 4: Done */}
-                    <div className="w-full shrink-0 flex flex-col items-center justify-center px-6 pb-20">
-                        <div className="w-16 h-16 rounded-full bg-green-600/20 border-2 border-green-500 flex items-center justify-center text-3xl mb-4">
+                    {/* Step 3: Done */}
+                    <div className="w-full shrink-0 flex flex-col items-center justify-center px-4 sm:px-6 pb-16 sm:pb-20">
+                        <div className="w-14 h-14 sm:w-16 sm:h-16 rounded-full bg-emerald-500/10 border-2 border-emerald-500 flex items-center justify-center text-2xl sm:text-3xl mb-4">
                             ✓
                         </div>
-                        <p className="text-green-500 text-xs font-semibold tracking-wide uppercase mb-2">
+                        <p className="text-emerald-500 text-[11px] sm:text-xs font-semibold tracking-wide uppercase mb-2">
                             Membership activated
                         </p>
-                        <h1 className="text-3xl font-bold mb-2">
+                        <h1 className="text-2xl sm:text-3xl font-bold mb-2 text-center">
                             You're all set, {firstName}!
                         </h1>
-                        <p className="text-neutral-400 mb-8 text-center">
+                        <p className="text-xs sm:text-sm text-muted-foreground mb-6 sm:mb-8 text-center">
                             Your {selectedPlan?.name} membership is now active.
                             Let's get moving.
                         </p>
 
-                        <div className="w-full max-w-md rounded-2xl border border-neutral-800 bg-neutral-900/60 p-6 space-y-3 mb-8">
-                            <div className="flex justify-between text-sm">
-                                <span className="text-neutral-400">Plan</span>
-                                <span className="text-amber-400 font-medium">
+                        <div className="w-full max-w-md rounded-xl sm:rounded-2xl border border-border bg-card p-5 sm:p-6 space-y-3 mb-6 sm:mb-8">
+                            <div className="flex justify-between text-xs sm:text-sm">
+                                <span className="text-muted-foreground">
+                                    Plan
+                                </span>
+                                <span className="text-primary font-medium">
                                     {selectedPlan?.name}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm border-t border-neutral-800 pt-3">
-                                <span className="text-neutral-400">
+                            <div className="flex justify-between text-xs sm:text-sm border-t border-border pt-3">
+                                <span className="text-muted-foreground">
                                     Valid until
                                 </span>
-                                <span className="text-amber-400 font-medium">
+                                <span className="text-primary font-medium">
                                     {nextBillingLabel}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm border-t border-neutral-800 pt-3">
-                                <span className="text-neutral-400">
+                            <div className="flex justify-between text-xs sm:text-sm border-t border-border pt-3">
+                                <span className="text-muted-foreground">
                                     Next billing date
                                 </span>
-                                <span className="text-amber-400 font-medium">
+                                <span className="text-primary font-medium">
                                     {nextBillingLabel}
                                 </span>
                             </div>
-                            <div className="flex justify-between text-sm border-t border-neutral-800 pt-3">
-                                <span className="text-neutral-400">Status</span>
-                                <span className="text-green-400 font-medium">
+                            <div className="flex justify-between text-xs sm:text-sm border-t border-border pt-3">
+                                <span className="text-muted-foreground">
+                                    Status
+                                </span>
+                                <span className="text-emerald-400 font-medium">
                                     Active
                                 </span>
                             </div>
@@ -472,7 +457,7 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
 
                         <Link
                             href="/dashboard"
-                            className="bg-amber-500 hover:bg-amber-400 text-black font-semibold px-6 py-3 rounded-full flex items-center gap-2"
+                            className="bg-primary text-primary-foreground hover:opacity-90 font-semibold px-6 py-2.5 sm:py-3 rounded-full text-sm sm:text-base flex items-center gap-2 transition-opacity"
                         >
                             Go to my dashboard →
                         </Link>
