@@ -1,29 +1,27 @@
-import { Form, Head, usePage } from '@inertiajs/react';
-import { Link } from '@inertiajs/react';
-import ProfileController from '@/actions/App/Http/Controllers/Settings/ProfileController';
-import DeleteUser from '@/components/delete-user';
-import Heading from '@/components/heading';
-import InputError from '@/components/input-error';
-import { Button } from '@/components/ui/button';
-import { Input } from '@/components/ui/input';
-import { Label } from '@/components/ui/label';
-import { edit } from '@/routes/profile';
-import type { Auth } from '@/types';
-import { send } from '@/routes/verification';
+import { Form, Head, usePage } from "@inertiajs/react";
+import { Link } from "@inertiajs/react";
+import ProfileController from "@/actions/App/Http/Controllers/Settings/ProfileController";
+import DeleteUser from "@/components/delete-user";
+import Heading from "@/components/heading";
+import InputError from "@/components/input-error";
+import { Button } from "@/components/ui/button";
+import { Input } from "@/components/ui/input";
+import { Label } from "@/components/ui/label";
+import { edit } from "@/routes/profile";
+import type { Auth } from "@/types";
+import { send } from "@/routes/verification";
 
 type PageProps = {
     auth: Auth;
 };
 
-export default function Profile(
-    {
-        mustVerifyEmail,
-        status,
-    }: {
-        mustVerifyEmail: boolean;
-        status?: string;
-    },
-) {
+export default function Profile({
+    mustVerifyEmail,
+    status,
+}: {
+    mustVerifyEmail: boolean;
+    status?: string;
+}) {
     const { auth } = usePage<PageProps>().props;
 
     return (
@@ -90,8 +88,8 @@ export default function Profile(
                             {mustVerifyEmail &&
                                 auth.user.email_verified_at === null && (
                                     <div>
-                                        <p className="text-muted-foreground -mt-4 text-sm">
-                                            Your email address is unverified.{' '}
+                                        <p className="text-muted-foreground -mt-4 text-[13px] sm:text-sm">
+                                            Your email address is unverified.{" "}
                                             <Link
                                                 href={send()}
                                                 as="button"
@@ -103,8 +101,8 @@ export default function Profile(
                                         </p>
 
                                         {status ===
-                                            'verification-link-sent' && (
-                                            <div className="mt-2 text-sm font-medium text-green-600">
+                                            "verification-link-sent" && (
+                                            <div className="mt-2 text-[13px] font-medium text-emerald-600 sm:text-sm dark:text-emerald-500">
                                                 A new verification link has been
                                                 sent to your email address.
                                             </div>
@@ -112,10 +110,11 @@ export default function Profile(
                                     </div>
                                 )}
 
-                            <div className="flex items-center gap-4">
+                            <div className="flex flex-col items-start gap-4 sm:flex-row sm:items-center">
                                 <Button
                                     disabled={processing}
                                     data-test="update-profile-button"
+                                    className="w-full sm:w-auto"
                                 >
                                     Save
                                 </Button>
@@ -133,7 +132,7 @@ export default function Profile(
 Profile.layout = {
     breadcrumbs: [
         {
-            title: 'Profile settings',
+            title: "Profile settings",
             href: edit(),
         },
     ],

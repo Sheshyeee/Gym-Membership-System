@@ -202,9 +202,9 @@ export default function Dashboard({
                     />
                 </div>
 
-                <div className="grid grid-cols-1 items-stretch gap-4 lg:grid-cols-[1.6fr_1fr]">
-                    {/* Attendance overview — stretches to match Recent activity's height */}
-                    <Panel className="flex h-full flex-col">
+                <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.6fr_1fr]">
+                    {/* Attendance overview — fixed height, matches Recent activity */}
+                    <Panel className="flex h-[320px] flex-col sm:h-[360px]">
                         <div className="mb-3 flex items-start justify-between">
                             <div>
                                 <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
@@ -216,7 +216,7 @@ export default function Dashboard({
                             </div>
                         </div>
 
-                        <div className="relative min-h-28 w-full flex-1 sm:min-h-36">
+                        <div className="relative min-h-0 w-full flex-1">
                             <svg
                                 viewBox="0 0 100 100"
                                 preserveAspectRatio="none"
@@ -279,10 +279,8 @@ export default function Dashboard({
                         </div>
                     </Panel>
 
-                    {/* Recent activity — capped list with its own scroll so it
-                        never forces the page (or the attendance card) taller
-                        than a reasonable height */}
-                    <Panel className="flex h-full max-h-[420px] flex-col lg:max-h-none">
+                    {/* Recent activity — same fixed height as the chart, own scroll */}
+                    <Panel className="flex h-[320px] flex-col sm:h-[360px]">
                         <h2 className="text-foreground text-[13px] font-semibold sm:text-[14px]">
                             Recent activity
                         </h2>
@@ -292,7 +290,7 @@ export default function Dashboard({
                                 No scans yet today.
                             </p>
                         ) : (
-                            <div className="scrollbar-thin divide-sidebar-border/50 dark:divide-sidebar-border/50 mt-2 flex flex-1 flex-col divide-y overflow-y-auto">
+                            <div className="scrollbar-thin divide-sidebar-border/50 dark:divide-sidebar-border/50 mt-2 flex min-h-0 flex-1 flex-col divide-y overflow-y-auto">
                                 {liveActivity.map((item) => (
                                     <div
                                         key={item.id}

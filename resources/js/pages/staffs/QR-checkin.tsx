@@ -1,4 +1,4 @@
-import { JSX, useCallback, useEffect, useRef, useState } from "react";
+import { useCallback, useEffect, useRef, useState, type ReactElement } from "react";
 import { Head } from "@inertiajs/react";
 import { Html5Qrcode, Html5QrcodeScannerState } from "html5-qrcode";
 import {
@@ -7,6 +7,7 @@ import {
     AlertTriangle,
     Camera,
     RotateCw,
+    QrCode,
 } from "lucide-react";
 import { dashboard } from "@/routes";
 import { cn } from "@/lib/utils";
@@ -20,6 +21,7 @@ type ScanResult = {
 };
 
 type CameraOption = { id: string; label: string };
+type CameraState = "idle" | "requesting" | "ready" | "error";
 
 const SCANNER_ID = "qr-reader";
 const DECODE_COOLDOWN_MS = 3000;
@@ -59,7 +61,7 @@ function Panel({
 }
 
 export default function QRCheckIn() {
-    const [scanning, setScanning] = useState(false);
+    const [cameraState, setCameraState] = useState<CameraState>("idle");
     const [lastResult, setLastResult] = useState<ScanResult | null>(null);
     const [error, setError] = useState<string | null>(null);
     const [cameras, setCameras] = useState<CameraOption[]>([]);
@@ -140,50 +142,61 @@ export default function QRCheckIn() {
         [handleDecoded],
     );
 
+    // Camera no longer auto-starts on mount — some mobile browsers (iOS
+    // Safari, in-app webviews) silently block getUserMedia unless it's
+    // triggered directly by a user tap. Requesting it from a click handler
+    // avoids that and also gives us an intentional "camera is off" state
+    // instead of a broken-looking blank box.
+    const handleStartCamera = useCallback(async () => {
+        setError(null);
+        setCameraState("requesting");
+
+        try {
+            if (!scannerRef.current) {
+                scannerRef.current = new Html5Qrcode(SCANNER_ID);
+            }
+
+            const devices = await Html5Qrcode.getCameras();
+            if (!mountedRef.current) return;
+
+            if (devices && devices.length > 0) {
+                const options = devices.map((d) => ({
+                    id: d.id,
+                    label: d.label || "Camera",
+                }));
+                const initialIndex = pickInitialCameraIndex(options);
+                setCameras(options);
+                setCameraIndex(initialIndex);
+                await startWithCamera(options[initialIndex].id);
+            } else {
+                // Fallback if enumeration returns nothing.
+                await scannerRef.current.start(
+                    { facingMode: "environment" },
+                    {
+                        fps: 10,
+                        qrbox: (w: number, h: number) => {
+                            const size = Math.floor(Math.min(w, h) * 0.7);
+                            return { width: size, height: size };
+                        },
+                    },
+                    (decodedText) => handleDecoded(decodedText),
+                    () => {},
+                );
+            }
+
+            if (mountedRef.current) setCameraState("ready");
+        } catch {
+            if (mountedRef.current) {
+                setError(
+                    "Could not access camera. Check browser permissions and try again.",
+                );
+                setCameraState("error");
+            }
+        }
+    }, [handleDecoded, startWithCamera]);
+
     useEffect(() => {
         mountedRef.current = true;
-        const scanner = new Html5Qrcode(SCANNER_ID);
-        scannerRef.current = scanner;
-
-        (async () => {
-            try {
-                const devices = await Html5Qrcode.getCameras();
-                if (!mountedRef.current) return;
-
-                if (devices && devices.length > 0) {
-                    const options = devices.map((d) => ({
-                        id: d.id,
-                        label: d.label || "Camera",
-                    }));
-                    const initialIndex = pickInitialCameraIndex(options);
-                    setCameras(options);
-                    setCameraIndex(initialIndex);
-                    await startWithCamera(options[initialIndex].id);
-                } else {
-                    await scanner.start(
-                        { facingMode: "environment" },
-                        {
-                            fps: 10,
-                            qrbox: (w: number, h: number) => {
-                                const size = Math.floor(Math.min(w, h) * 0.7);
-                                return { width: size, height: size };
-                            },
-                        },
-                        (decodedText) => handleDecoded(decodedText),
-                        () => {},
-                    );
-                }
-
-                if (mountedRef.current) setScanning(true);
-            } catch {
-                if (mountedRef.current) {
-                    setError(
-                        "Could not access camera. Check browser permissions.",
-                    );
-                }
-            }
-        })();
-
         return () => {
             mountedRef.current = false;
             safeStop();
@@ -201,7 +214,7 @@ export default function QRCheckIn() {
             await safeStop();
             await startWithCamera(cameras[nextIndex].id);
             setCameraIndex(nextIndex);
-            setScanning(true);
+            setCameraState("ready");
         } catch {
             setError("Could not switch camera.");
         } finally {
@@ -209,13 +222,13 @@ export default function QRCheckIn() {
         }
     }, [cameras, cameraIndex, switching, safeStop, startWithCamera]);
 
-    const statusStyles: Record<
+    const statusStyles: Record
         ScanResult["result"],
         {
             border: string;
             bg: string;
             text: string;
-            icon: JSX.Element;
+            icon: ReactElement;
             label: string;
         }
     > = {
@@ -237,7 +250,9 @@ export default function QRCheckIn() {
             border: "border-amber-500/30",
             bg: "bg-amber-500/10",
             text: "text-amber-500",
-            icon: <AlertTriangle className="size-4 text-amber-500 sm:size-5" />,
+            icon: (
+                <AlertTriangle className="size-4 text-amber-500 sm:size-5" />
+            ),
             label: "Already Scanned",
         },
     };
@@ -271,7 +286,7 @@ export default function QRCheckIn() {
                             <span
                                 className={cn(
                                     "inline-flex items-center gap-1.5",
-                                    scanning
+                                    cameraState === "ready"
                                         ? "text-emerald-500"
                                         : "text-muted-foreground",
                                 )}
@@ -279,17 +294,19 @@ export default function QRCheckIn() {
                                 <span
                                     className={cn(
                                         "size-1.5 rounded-full",
-                                        scanning
+                                        cameraState === "ready"
                                             ? "bg-emerald-500"
                                             : "bg-muted-foreground/50",
                                     )}
                                 />
-                                {scanning
-                                    ? "Scanner ready"
-                                    : "Starting camera…"}
+                                {cameraState === "ready" && "Scanner ready"}
+                                {cameraState === "requesting" &&
+                                    "Requesting camera access…"}
+                                {cameraState === "idle" && "Camera is off"}
+                                {cameraState === "error" && "Camera unavailable"}
                             </span>
 
-                            {cameras.length > 1 && (
+                            {cameraState === "ready" && cameras.length > 1 && (
                                 <button
                                     type="button"
                                     onClick={handleFlipCamera}
@@ -320,13 +337,54 @@ export default function QRCheckIn() {
             object-fit: cover !important;
         }
     `}</style>
+
+                            {cameraState !== "ready" && (
+                                <div className="bg-background/95 absolute inset-0 flex flex-col items-center justify-center gap-3 p-4 text-center">
+                                    {cameraState === "requesting" ? (
+                                        <>
+                                            <div className="border-muted-foreground/30 border-t-primary size-8 animate-spin rounded-full border-2" />
+                                            <p className="text-muted-foreground text-[12px] sm:text-[13px]">
+                                                Requesting camera access…
+                                            </p>
+                                        </>
+                                    ) : (
+                                        <>
+                                            <div className="bg-primary/10 flex size-12 items-center justify-center rounded-full">
+                                                {cameraState === "error" ? (
+                                                    <AlertTriangle className="size-5 text-red-500" />
+                                                ) : (
+                                                    <QrCode className="text-primary size-5" />
+                                                )}
+                                            </div>
+                                            <div>
+                                                <p className="text-foreground text-[13px] font-medium sm:text-[14px]">
+                                                    {cameraState === "error"
+                                                        ? "Camera access failed"
+                                                        : "Camera is off"}
+                                                </p>
+                                                <p className="text-muted-foreground mt-0.5 max-w-[24ch] text-[11px] sm:text-[12px]">
+                                                    {cameraState === "error"
+                                                        ? error
+                                                        : "Tap below to start scanning member codes."}
+                                                </p>
+                                            </div>
+                                            <button
+                                                type="button"
+                                                onClick={handleStartCamera}
+                                                className="bg-primary text-primary-foreground inline-flex items-center gap-1.5 rounded-md px-3.5 py-2 text-[12px] font-medium transition-opacity hover:opacity-90 sm:text-[13px]"
+                                            >
+                                                <Camera className="size-3.5" />
+                                                {cameraState === "error"
+                                                    ? "Try again"
+                                                    : "Start camera"}
+                                            </button>
+                                        </>
+                                    )}
+                                </div>
+                            )}
                         </div>
 
-                        {error ? (
-                            <p className="mt-3 text-center text-[11px] text-red-500 sm:text-[12px]">
-                                {error}
-                            </p>
-                        ) : (
+                        {cameraState === "ready" && (
                             <p className="text-muted-foreground mt-3 text-center text-[10px] sm:text-[11px]">
                                 Position the member QR code inside the frame
                             </p>
@@ -340,8 +398,8 @@ export default function QRCheckIn() {
                                 Fast entry, zero friction.
                             </p>
                             <p className="text-muted-foreground mt-1 text-[11px] sm:text-[12px]">
-                                Verify active memberships in under a second and
-                                keep your lobby moving.
+                                Verify active memberships in under a second
+                                and keep your lobby moving.
                             </p>
                         </Panel>
 
