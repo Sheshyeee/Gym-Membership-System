@@ -226,7 +226,7 @@ export default function Dashboard({
                         <div className="pointer-events-none absolute -right-12 -top-16 h-48 w-48 rounded-full bg-primary/25 blur-3xl" />
 
                         {currentMembership ? (
-                            <div className="relative flex flex-row items-center gap-4 sm:flex-row-reverse sm:items-center sm:justify-between sm:gap-6">
+                            <div className="relative flex flex-row-reverse items-center justify-between gap-4 sm:gap-6">
                                 {/* Progress ring — left on mobile, right on sm+ (flex-row-reverse) */}
                                 <div className="flex shrink-0 flex-col items-center self-center">
                                     <div className="relative flex h-16 w-16 items-center justify-center sm:h-28 sm:w-28">
@@ -384,7 +384,7 @@ export default function Dashboard({
                     </div>
 
                     {/* Quick access — mother card holding 3 individually-carded buttons, horizontal at every breakpoint */}
-                    <div className="rounded-2xl border border-border bg-card p-3 sm:p-4 lg:[grid-area:quick]">
+                    <div className="self-start rounded-2xl border border-border bg-card p-3 sm:p-4 lg:[grid-area:quick] lg:self-start">
                         <div className="grid grid-cols-3 gap-2">
                             {quickLinks.map((q) => {
                                 const Icon = q.icon;
