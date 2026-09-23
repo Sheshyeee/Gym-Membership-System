@@ -136,14 +136,18 @@ function timeAgo(dateString: string | null) {
 
 // ---------------------------------------------------------------------------
 // Shared card shell.
-// KEY FIX #1: `h-full flex flex-col` — every Panel now fills the height of
-// its grid row (rows use items-stretch below) instead of sizing to its own
-// content and leaving a hole under it. Children that should "absorb" extra
-// space use `flex-1` or `mt-auto`, so a sparse card (e.g. an empty-state
-// gauge) spreads its content across the full card instead of bunching at
-// the top with dead air underneath.
-// Mobile-first: rounded-2xl + tighter padding reads more like a modern
-// mobile app card; it steps down to the denser desktop rhythm at sm/lg.
+//
+// ROOT CAUSE OF THE OVERSIZED CARDS (previous version): CSS Grid's default
+// `align-items` is `stretch`, so every card in a grid row was silently
+// stretched to match the *tallest* sibling — then `h-full`/`flex-1` inside
+// the card compounded it by stretching the chart/empty-state to fill that
+// borrowed height. A short card (an empty-state message, a donut) ended up
+// with a bordered box several times its content's actual size.
+//
+// FIX: Panel no longer forces `h-full`. It sizes to its own content. Height
+// matching between cards is now done deliberately — only where two cards are
+// meant to occupy the same visual column (see the page layout below) — not
+// as a blanket grid default.
 // ---------------------------------------------------------------------------
 
 function Panel({
@@ -156,7 +160,7 @@ function Panel({
     return (
         <div
             className={cn(
-                "border-sidebar-border/70 dark:border-sidebar-border bg-card flex h-full flex-col rounded-2xl border p-3 sm:rounded-lg sm:p-4",
+                "border-sidebar-border/70 dark:border-sidebar-border bg-card flex flex-col rounded-2xl border p-3 sm:rounded-xl sm:p-4",
                 className,
             )}
         >
@@ -211,7 +215,7 @@ function HeroCard({
     return (
         <Panel className="relative justify-between gap-3 overflow-hidden xl:col-span-2">
             <Dumbbell
-                className="pointer-events-none absolute -right-6 -bottom-6 size-24 rotate-12 text-orange-500/10 sm:size-32 dark:text-orange-400/10"
+                className="pointer-events-none absolute -right-6 -bottom-6 size-24 rotate-12 text-orange-500/10 sm:size-28 dark:text-orange-400/10"
                 strokeWidth={1.5}
             />
 
@@ -219,7 +223,7 @@ function HeroCard({
                 <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                     {today}
                 </span>
-                <h1 className="text-lg leading-snug font-semibold tracking-tight sm:text-xl lg:text-2xl">
+                <h1 className="text-lg leading-snug font-semibold tracking-tight sm:text-xl">
                     Run your gym at full strength
                 </h1>
                 <p className="text-muted-foreground max-w-sm text-[12px] leading-relaxed sm:text-[13px]">
@@ -248,6 +252,9 @@ function HeroCard({
     );
 }
 
+// KPI cards are deliberately compact and shorter than the hero — a welcome
+// banner with a paragraph naturally needs more room than a label + number,
+// and forcing them to match only recreates the oversized-card problem.
 function StatCard({
     icon: Icon,
     iconClassName,
@@ -262,12 +269,12 @@ function StatCard({
     growth: number | null;
 }) {
     return (
-        <Panel className="flex-row items-center justify-between gap-3">
+        <Panel className="flex-row items-center justify-between gap-3 self-start">
             <div className="flex flex-col gap-1">
                 <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                     {label}
                 </span>
-                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl lg:text-2xl">
+                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl">
                     {value}
                 </span>
                 <GrowthBadge growth={growth} />
@@ -295,26 +302,25 @@ function RevenueChart({
     growth: number | null;
 }) {
     return (
-        <Panel className="xl:col-span-2">
+        <Panel>
             <PanelHeader title="Revenue performance" subtitle="This year" />
 
-            <div className="mb-2.5 flex items-baseline gap-2 sm:mb-3">
-                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl lg:text-2xl">
+            <div className="mb-2 flex items-baseline gap-2">
+                <span className="text-lg font-semibold tracking-tight tabular-nums sm:text-xl">
                     ₱{total.toLocaleString()}
                 </span>
                 <GrowthBadge growth={growth} suffix=" vs last month" />
             </div>
 
-            {/* KEY FIX: flex-1 instead of a fixed h-48/h-56 — the chart now
-                grows to fill whatever height this row ends up being (matched
-                to Attendance overview via items-stretch), so there's no gap
-                between the chart and the card's bottom edge. min-h-0 lets it
-                shrink correctly inside the flex column. */}
-            <div className="min-h-0 w-full flex-1">
+            {/* Fixed, content-appropriate height — not flex-1 stretched to
+                match an unrelated sibling. Tall enough for the axis labels
+                to breathe, short enough that the card doesn't dwarf its
+                actual information density. */}
+            <div className="h-36 w-full sm:h-44">
                 <ResponsiveContainer width="100%" height="100%">
                     <AreaChart
                         data={data}
-                        margin={{ top: 8, right: 4, left: -20, bottom: 0 }}
+                        margin={{ top: 8, right: 4, left: -18, bottom: 0 }}
                     >
                         <defs>
                             <linearGradient
@@ -353,12 +359,12 @@ function RevenueChart({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
                             tickFormatter={formatCompact}
-                            width={32}
+                            width={30}
                         />
                         <Tooltip
                             formatter={(value, name) => [
@@ -412,7 +418,7 @@ function AttendanceOverview({
         <Panel>
             <PanelHeader title="Attendance overview" subtitle="Today" />
 
-            <div className="mb-2.5 grid grid-cols-2 gap-3 sm:mb-3">
+            <div className="mb-2.5 grid grid-cols-2 gap-3">
                 <div className="flex flex-col gap-1">
                     <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check-ins
@@ -437,9 +443,9 @@ function AttendanceOverview({
                 </div>
             </div>
 
-            {/* flex-1 + min-h-0: bar chart fills remaining height so it
-                matches the Revenue chart's row instead of leaving a gap. */}
-            <div className="min-h-0 w-full flex-1">
+            {/* Compact fixed height — a 7-bar week chart doesn't need the
+                same vertical room as the 12-point revenue trend. */}
+            <div className="h-16 w-full">
                 <ResponsiveContainer width="100%" height="100%">
                     <BarChart
                         data={week}
@@ -450,7 +456,7 @@ function AttendanceOverview({
                             axisLine={false}
                             tickLine={false}
                             tick={{
-                                fontSize: 10,
+                                fontSize: 9.5,
                                 fill: "currentColor",
                                 opacity: 0.5,
                             }}
@@ -470,8 +476,8 @@ function AttendanceOverview({
                         />
                         <Bar
                             dataKey="count"
-                            radius={[4, 4, 0, 0]}
-                            maxBarSize={20}
+                            radius={[3, 3, 0, 0]}
+                            maxBarSize={16}
                         >
                             {week.map((day) => (
                                 <Cell
@@ -489,7 +495,7 @@ function AttendanceOverview({
 
             <Link
                 href="/attendance"
-                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-3 flex w-full shrink-0 items-center justify-center gap-1 rounded-md border py-1.5 text-[10px] font-medium transition-colors sm:text-[11px]"
+                className="border-sidebar-border/70 dark:border-sidebar-border text-muted-foreground hover:text-foreground mt-2.5 flex w-full items-center justify-center gap-1 rounded-md border py-1.5 text-[10px] font-medium transition-colors sm:text-[11px]"
             >
                 View attendance analytics
                 <span aria-hidden>›</span>
@@ -509,11 +515,8 @@ function MemberActivityDonut({
         <Panel>
             <PanelHeader title="Member activity" subtitle="Current status" />
 
-            {/* flex-1 + items-center: centers the donut+legend vertically in
-                whatever height this row is stretched to, instead of pinning
-                it to the top and leaving blank space below. */}
-            <div className="flex flex-1 items-center gap-3 sm:gap-4">
-                <div className="relative size-24 shrink-0 sm:size-28">
+            <div className="flex items-center gap-3 sm:gap-4">
+                <div className="relative size-20 shrink-0 sm:size-24">
                     <ResponsiveContainer width="100%" height="100%">
                         <PieChart>
                             <Pie
@@ -540,16 +543,16 @@ function MemberActivityDonut({
                         </PieChart>
                     </ResponsiveContainer>
                     <div className="absolute inset-0 flex flex-col items-center justify-center">
-                        <span className="text-base font-semibold tabular-nums sm:text-lg">
+                        <span className="text-sm font-semibold tabular-nums sm:text-base">
                             {total.toLocaleString()}
                         </span>
-                        <span className="text-muted-foreground text-[8px] sm:text-[9px]">
-                            Total members
+                        <span className="text-muted-foreground text-[8px]">
+                            Total
                         </span>
                     </div>
                 </div>
 
-                <ul className="flex flex-1 flex-col gap-2">
+                <ul className="flex flex-1 flex-col gap-1.5">
                     {breakdown.map((segment) => (
                         <li
                             key={segment.label}
@@ -609,61 +612,55 @@ function RetentionGauge({
         <Panel>
             <PanelHeader title="Retention health" subtitle="Monthly" />
 
-            {/* This is the card that was previously mostly empty. flex-1 +
-                justify-center makes the gauge (or the empty state) center
-                itself in whatever height the row stretches to, and the
-                footer below is pinned to the bottom with mt-auto — so the
-                card's content is spread edge-to-edge instead of clumped at
-                the top with a hole underneath. */}
-            <div className="relative flex flex-1 flex-col items-center justify-center overflow-hidden">
-                {status === "neutral" ? (
-                    <div className="flex flex-col items-center gap-1 text-center">
-                        <span className="text-2xl font-semibold tabular-nums opacity-30 sm:text-3xl">
-                            —
+            {/* This is the card that was a near-empty giant box before. It's
+                now an intentional compact empty state: a fixed, modest
+                height (not the full stretched row) with its message
+                centered inside it. */}
+            {status === "neutral" ? (
+                <div className="flex h-16 flex-col items-center justify-center gap-1 text-center">
+                    <span className="text-xl font-semibold tabular-nums opacity-30">
+                        —
+                    </span>
+                    <span className="text-muted-foreground max-w-[22ch] text-[10px] leading-snug sm:text-[11px]">
+                        Not enough data yet to calculate retention
+                    </span>
+                </div>
+            ) : (
+                <div className="relative h-16 w-full">
+                    <ResponsiveContainer width="100%" height="100%">
+                        <RadialBarChart
+                            data={data}
+                            startAngle={180}
+                            endAngle={0}
+                            innerRadius="70%"
+                            outerRadius="100%"
+                            cx="50%"
+                            cy="100%"
+                            barSize={12}
+                        >
+                            <RadialBar
+                                dataKey="value"
+                                cornerRadius={6}
+                                background={{
+                                    fill: "currentColor",
+                                    fillOpacity: 0.08,
+                                }}
+                                max={100}
+                            />
+                        </RadialBarChart>
+                    </ResponsiveContainer>
+                    <div className="absolute inset-x-0 bottom-0 flex flex-col items-center">
+                        <span className="text-lg font-semibold tabular-nums">
+                            {rate}
                         </span>
-                        <span className="text-muted-foreground max-w-[16ch] text-[10px] leading-snug sm:text-[11px]">
-                            Not enough data yet to calculate retention
+                        <span className="text-muted-foreground text-[8px]">
+                            member retention
                         </span>
                     </div>
-                ) : (
-                    <>
-                        <div className="h-24 w-full sm:h-28">
-                            <ResponsiveContainer width="100%" height="100%">
-                                <RadialBarChart
-                                    data={data}
-                                    startAngle={180}
-                                    endAngle={0}
-                                    innerRadius="70%"
-                                    outerRadius="100%"
-                                    cx="50%"
-                                    cy="100%"
-                                    barSize={14}
-                                >
-                                    <RadialBar
-                                        dataKey="value"
-                                        cornerRadius={7}
-                                        background={{
-                                            fill: "currentColor",
-                                            fillOpacity: 0.08,
-                                        }}
-                                        max={100}
-                                    />
-                                </RadialBarChart>
-                            </ResponsiveContainer>
-                        </div>
-                        <div className="absolute inset-x-0 bottom-1 flex flex-col items-center">
-                            <span className="text-lg font-semibold tabular-nums sm:text-xl">
-                                {rate}
-                            </span>
-                            <span className="text-muted-foreground text-[8px] sm:text-[9px]">
-                                member retention
-                            </span>
-                        </div>
-                    </>
-                )}
-            </div>
+                </div>
+            )}
 
-            <div className="mt-auto flex items-center justify-between pt-2.5 sm:pt-3">
+            <div className="mt-2.5 flex items-center justify-between">
                 {status === "neutral" ? (
                     <span className="text-muted-foreground text-[10px] sm:text-[11px]">
                         Check back after 30 days
@@ -703,12 +700,14 @@ function LiveFinancialActivity({
                 }
             />
 
-            {/* flex-1 + justify-center on the empty state keeps it centered
-                in the full card height rather than floating a small block of
-                text near the top and leaving a gap below it. */}
-            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-1 flex-col divide-y">
+            {/* No forced height here — the list's height is simply the sum
+                of its rows. It is naturally taller than Member activity
+                beside it, which is correct: it has more information, so it
+                is allowed more space (point 9), rather than either card
+                being stretched to fake-match the other. */}
+            <ul className="divide-sidebar-border/50 dark:divide-sidebar-border/50 flex flex-col divide-y">
                 {items.length === 0 && (
-                    <li className="text-muted-foreground flex flex-1 items-center justify-center text-[12px]">
+                    <li className="text-muted-foreground py-8 text-center text-[12px]">
                         No payments yet
                     </li>
                 )}
@@ -747,6 +746,20 @@ function LiveFinancialActivity({
 
 // ---------------------------------------------------------------------------
 // Page
+//
+// LAYOUT LOGIC: cards are grouped by content weight, not by arbitrary row
+// position, and every grid uses `items-start` to opt out of CSS Grid's
+// default stretch — this is what actually stops a short card's border from
+// being inflated to match a taller neighbor.
+//
+//   Row 1  Hero (tall: heading + copy)  +  3 compact KPI chips
+//   Row 2  Revenue chart (needs width + height for a 12-point trend)
+//          beside a stacked column of Attendance + Retention — two compact
+//          cards whose combined height fills the same visual column instead
+//          of either one being force-stretched to match the chart.
+//   Row 3  Member activity (compact donut) beside Live financial activity
+//          (naturally taller — it's a list). No stretch: Live financial is
+//          allowed to be taller because it has more content, per spec.
 // ---------------------------------------------------------------------------
 
 export default function Overview({
@@ -760,13 +773,9 @@ export default function Overview({
     return (
         <>
             <Head title="Overview" />
-            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-2.5 p-2.5 sm:gap-4 sm:p-4 lg:gap-4 lg:p-6">
-                {/* Row 1 — hero + primary stats.
-                    KEY FIX #2: items-stretch (the default — no items-start)
-                    so every card in this row is the same height as the
-                    tallest one, instead of the stat cards floating short
-                    next to the taller HeroCard. */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-5">
+            <div className="mx-auto flex w-full max-w-[1440px] flex-1 flex-col gap-2.5 p-2.5 sm:gap-4 sm:p-4 lg:p-6">
+                {/* Row 1 */}
+                <div className="grid grid-cols-2 items-start gap-2.5 sm:gap-4 xl:grid-cols-5">
                     <HeroCard
                         checkInsToday={attendanceOverview.checkInsToday}
                         paymentSuccessRate={stats.paymentSuccessRate}
@@ -793,41 +802,46 @@ export default function Overview({
                     />
                 </div>
 
-                {/* Row 2 — revenue trend + attendance, stretched to equal
-                    height so the two charts fill their row edge-to-edge. */}
-                <div className="grid grid-cols-1 gap-2.5 sm:gap-4 xl:grid-cols-3">
-                    <RevenueChart
-                        data={revenuePerformance}
-                        total={revenuePerformance.reduce(
-                            (sum, point) => sum + (point.revenue ?? 0),
-                            0,
-                        )}
-                        growth={stats.monthlyRevenueGrowth}
-                    />
-                    <AttendanceOverview
-                        checkInsToday={attendanceOverview.checkInsToday}
-                        checkInsGrowth={attendanceOverview.checkInsGrowth}
-                        peakHour={attendanceOverview.peakHour}
-                        week={attendanceOverview.week}
-                    />
+                {/* Row 2 — revenue chart gets the width; Attendance +
+                    Retention stack in the remaining column so their combined
+                    height uses the space instead of leaving it empty. */}
+                <div className="grid grid-cols-1 items-start gap-2.5 sm:gap-4 xl:grid-cols-3">
+                    <div className="xl:col-span-2">
+                        <RevenueChart
+                            data={revenuePerformance}
+                            total={revenuePerformance.reduce(
+                                (sum, point) => sum + (point.revenue ?? 0),
+                                0,
+                            )}
+                            growth={stats.monthlyRevenueGrowth}
+                        />
+                    </div>
+                    <div className="flex flex-col gap-2.5 sm:gap-4">
+                        <AttendanceOverview
+                            checkInsToday={attendanceOverview.checkInsToday}
+                            checkInsGrowth={attendanceOverview.checkInsGrowth}
+                            peakHour={attendanceOverview.peakHour}
+                            week={attendanceOverview.week}
+                        />
+                        <RetentionGauge
+                            rate={retentionHealth.rate}
+                            change={retentionHealth.change}
+                            label={retentionHealth.label}
+                            status={retentionHealth.status}
+                        />
+                    </div>
                 </div>
 
-                {/* Row 3 — member mix, retention, live payments. Stretched to
-                    equal height: Retention health (the sparse one) now
-                    centers its gauge/empty-state across the full card
-                    instead of leaving a block of dead space beneath it. */}
-                <div className="grid grid-cols-2 gap-2.5 sm:gap-4 xl:grid-cols-4">
+                {/* Row 3 — Member activity is compact by nature; Live
+                    financial activity is allowed to be taller because it
+                    holds more information. Neither is stretched to match
+                    the other. */}
+                <div className="grid grid-cols-1 items-start gap-2.5 sm:gap-4 xl:grid-cols-3">
                     <MemberActivityDonut
                         total={memberActivity.total}
                         breakdown={memberActivity.breakdown}
                     />
-                    <RetentionGauge
-                        rate={retentionHealth.rate}
-                        change={retentionHealth.change}
-                        label={retentionHealth.label}
-                        status={retentionHealth.status}
-                    />
-                    <div className="col-span-2 xl:col-span-2">
+                    <div className="xl:col-span-2">
                         <LiveFinancialActivity items={liveFinancialActivity} />
                     </div>
                 </div>

@@ -183,9 +183,9 @@ export default function Member({
                             {stats.monthly_signups.map((m) => (
                                 <div
                                     key={m.label}
-                                    className="flex-1 rounded-t bg-orange-500/70"
+                                    className="flex-1 rounded-t bg-orange-500/70 transition-all"
                                     style={{
-                                        height: `${(m.count / maxSignups) * 100}%`,
+                                        height: `${Math.max((m.count / maxSignups) * 100, m.count > 0 ? 6 : 2)}%`,
                                     }}
                                     title={`${m.label}: ${m.count}`}
                                 />
@@ -275,14 +275,11 @@ export default function Member({
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center gap-3">
                                                     <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
-                                                        {memberInitials(
-                                                            member,
-                                                        )}
+                                                        {memberInitials(member)}
                                                     </div>
                                                     <div>
                                                         <p className="font-medium text-foreground">
-                                                            {member.name ||
-                                                                "—"}
+                                                            {member.name || "—"}
                                                         </p>
                                                         <p className="text-xs text-muted-foreground">
                                                             {member.email}
@@ -398,13 +395,12 @@ export default function Member({
 
                         <div className="mt-auto flex items-center justify-between gap-3 border-t border-border px-4 py-3 text-[11px] text-muted-foreground sm:px-5 sm:text-xs">
                             <span>
-                                Showing {members.from ?? 0}-{members.to ?? 0}{" "}
-                                of {members.total} members
+                                Showing {members.from ?? 0}-{members.to ?? 0} of{" "}
+                                {members.total} members
                             </span>
                             <div className="flex items-center gap-2">
                                 <span>
-                                    {members.current_page}/
-                                    {members.last_page}
+                                    {members.current_page}/{members.last_page}
                                 </span>
                                 {members.prev_page_url && (
                                     <Link
