@@ -7,6 +7,7 @@ use App\Http\Controllers\AdminPlansController;
 use App\Http\Controllers\AdminRevenueAnalyticsController;
 use App\Http\Controllers\AdminSettingsController;
 use App\Http\Controllers\AdminStaffController;
+use App\Http\Controllers\Auth\GoogleAuthController;
 use App\Http\Controllers\NotificationController;
 use App\Http\Controllers\DashboardController;
 use App\Http\Controllers\MemberActivityController;
@@ -29,6 +30,9 @@ use App\Http\Controllers\StaffProfileSettingsController;
 use Illuminate\Support\Facades\Route;
 
 Route::inertia('/', 'welcome')->name('home');
+
+Route::get('/auth/google/redirect', [GoogleAuthController::class, 'redirect'])->name('auth.google.redirect');
+Route::get('/auth/google/callback', [GoogleAuthController::class, 'callback'])->name('auth.google.callback');
 
 Route::middleware(['auth', 'verified'])->group(function () {
 

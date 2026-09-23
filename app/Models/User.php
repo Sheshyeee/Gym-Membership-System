@@ -31,7 +31,7 @@ use Laravel\Fortify\TwoFactorAuthenticatable;
  * @property Carbon|null $created_at
  * @property Carbon|null $updated_at
  */
-#[Fillable(['name', 'email', 'password', 'onboarding_skipped_at', 'staff_role', 'phone', 'deactivated_at', 'qr_token'])]
+#[Fillable(['name', 'email', 'google_id', 'avatar', 'password', 'onboarding_skipped_at', 'staff_role', 'phone', 'deactivated_at', 'qr_token'])]
 #[Hidden(['password', 'two_factor_secret', 'two_factor_recovery_codes', 'remember_token'])]
 class User extends Authenticatable
 {
