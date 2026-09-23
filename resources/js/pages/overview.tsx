@@ -233,7 +233,7 @@ function HeroCard({
                 </p>
             </div>
 
-            <div className="relative -mx-3 flex items-center gap-1.5 overflow-x-auto px-3 pb-0.5 sm:mx-0 sm:flex-wrap sm:gap-2 sm:overflow-visible sm:px-0">
+            <div className="scrollbar-thin relative -mx-3 flex items-center gap-1.5 overflow-x-auto px-3 pb-0.5 sm:mx-0 sm:flex-wrap sm:gap-2 sm:overflow-visible sm:px-0">
                 <Link
                     href="/members"
                     className="bg-primary text-primary-foreground inline-flex shrink-0 items-center gap-1.5 rounded-md px-3 py-1.5 text-[12px] font-medium transition-opacity hover:opacity-90 sm:px-3.5 sm:py-2 sm:text-[13px]"
