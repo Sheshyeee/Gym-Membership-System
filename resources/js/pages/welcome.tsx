@@ -10,7 +10,6 @@ import {
     Check,
     CreditCard,
     Flame,
-    TriangleAlert,
     Users,
 } from "lucide-react";
 
@@ -84,7 +83,7 @@ export default function Welcome() {
 
     return (
         <>
-            <Head title="My Gymrat — Run your gym at full strength" />
+            <Head title="My Gymrat — Membership Redefined" />
 
             <div className="min-h-screen bg-background text-foreground">
                 {/* Nav */}
@@ -92,7 +91,13 @@ export default function Welcome() {
                     <div className="mx-auto flex h-16 max-w-6xl items-center justify-between px-4 sm:px-6">
                         <AppLogo />
 
-                        <nav className="hidden items-center gap-8 text-sm text-muted-foreground md:flex">
+                        <nav className="hidden flex-1 items-center justify-center gap-8 text-sm text-muted-foreground md:flex">
+                            <a
+                                href="#"
+                                className="transition hover:text-foreground"
+                            >
+                                Home
+                            </a>
                             <a
                                 href="#features"
                                 className="transition hover:text-foreground"
@@ -111,6 +116,12 @@ export default function Welcome() {
                             >
                                 How it works
                             </a>
+                            <a
+                                href="#contact"
+                                className="transition hover:text-foreground"
+                            >
+                                Contact
+                            </a>
                         </nav>
 
                         <div className="flex items-center gap-2 sm:gap-3">
@@ -119,14 +130,14 @@ export default function Welcome() {
                             {auth.user ? (
                                 <Link
                                     href={dashboard()}
-                                    className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
+                                    className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90"
                                 >
                                     Dashboard
                                 </Link>
                             ) : (
                                 <LoginDialog
                                     trigger={
-                                        <button className="rounded-lg bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
+                                        <button className="rounded-full bg-primary px-4 py-2 text-sm font-medium text-primary-foreground transition hover:opacity-90">
                                             Get started
                                         </button>
                                     }
@@ -137,30 +148,116 @@ export default function Welcome() {
                 </header>
 
                 {/* Hero */}
-                <section className="relative overflow-hidden">
-                    <div className="mx-auto grid max-w-6xl gap-10 px-4 pt-10 pb-16 sm:gap-14 sm:px-6 sm:pt-16 sm:pb-24 lg:grid-cols-[1.05fr_0.95fr] lg:items-center lg:gap-16">
-                        <div>
-                            <div className="inline-flex items-center gap-2 rounded-full border border-border bg-card px-3 py-1 text-xs text-muted-foreground">
-                                <Flame className="h-3.5 w-3.5 text-primary" />
-                                Built around the streak, not the spreadsheet
+                <section className="relative overflow-hidden border-b border-border/60">
+                    <div className="relative mx-auto max-w-6xl px-4 pt-10 sm:px-6 lg:pt-14">
+                        {/* decorative dot grid, desktop only */}
+                        <div
+                            className="pointer-events-none absolute top-20 right-0 hidden h-[28rem] w-[42%] lg:block"
+                            style={{
+                                backgroundImage:
+                                    "radial-gradient(color-mix(in oklch, var(--foreground) 14%, transparent) 1.5px, transparent 1.5px)",
+                                backgroundSize: "22px 22px",
+                            }}
+                        />
+
+                        {/* Giant headline */}
+                        <h1 className="relative z-10 text-center text-[2.75rem] leading-[0.85] font-black tracking-tight uppercase sm:text-6xl md:text-7xl lg:text-left lg:text-[5.5rem] xl:text-[6.5rem]">
+                            Membership
+                            <br />
+                            Redefined
+                        </h1>
+
+                        {/* Photo row — pulled up over the headline on desktop */}
+                        <div className="relative z-20 mt-8 lg:-mt-16 lg:grid lg:grid-cols-[0.85fr_1.3fr_0.9fr] lg:items-end lg:gap-6">
+                            {/* Polaroid collage — desktop only */}
+                            <div className="relative hidden h-72 lg:block">
+                                <img
+                                    src="https://images.unsplash.com/photo-1707538320664-1fca7c3c7770?q=80&w=500&auto=format&fit=crop"
+                                    alt="Member resting between sets"
+                                    className="absolute top-12 left-0 h-40 w-32 -rotate-6 rounded-lg border-4 border-card object-cover shadow-xl shadow-black/20"
+                                />
+                                <img
+                                    src="https://images.unsplash.com/photo-1758875570185-eaed16371474?q=80&w=500&auto=format&fit=crop"
+                                    alt="Trainer coaching a member"
+                                    className="absolute top-0 left-24 h-44 w-36 rotate-3 rounded-lg border-4 border-card object-cover shadow-xl shadow-black/20"
+                                />
                             </div>
 
-                            <h1 className="mt-5 text-[2.75rem] leading-[0.92] font-black tracking-tight uppercase sm:mt-6 sm:text-6xl md:text-7xl lg:text-8xl">
-                                Show up.
-                                <br />
-                                Every day.
-                            </h1>
+                            {/* Main photo + badge */}
+                            <div className="relative mx-auto w-full max-w-sm lg:mx-0 lg:max-w-none">
+                                <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-border">
+                                    <img
+                                        src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1400&auto=format&fit=crop"
+                                        alt="Athlete lifting a barbell mid check-in"
+                                        className="h-full w-full object-cover grayscale-[15%] contrast-110"
+                                    />
+                                    <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
+                                    <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
+                                    <p className="absolute right-4 bottom-3 text-[10px] text-background/70 mix-blend-difference">
+                                        Photo: Victor Freitas / Unsplash
+                                    </p>
+                                </div>
 
-                            <p className="mt-6 max-w-md text-base text-muted-foreground sm:text-lg">
+                                {/* Spinning badge */}
+                                <div className="absolute -top-6 -right-6 h-24 w-24 sm:h-28 sm:w-28 lg:-top-8 lg:-right-8 lg:h-32 lg:w-32">
+                                    <svg
+                                        viewBox="0 0 100 100"
+                                        className="h-full w-full animate-[spin_18s_linear_infinite] motion-reduce:animate-none"
+                                    >
+                                        <circle
+                                            cx="50"
+                                            cy="50"
+                                            r="49"
+                                            strokeWidth="1"
+                                            className="fill-card stroke-border"
+                                        />
+                                        <path
+                                            id="badgeCircle"
+                                            d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"
+                                            fill="none"
+                                        />
+                                        <text
+                                            className="fill-primary font-semibold uppercase"
+                                            style={{
+                                                fontSize: "6.2px",
+                                                letterSpacing: "2px",
+                                            }}
+                                        >
+                                            <textPath
+                                                href="#badgeCircle"
+                                                startOffset="0%"
+                                            >
+                                                Stronger every day • Powered by
+                                                Gymrat •{" "}
+                                            </textPath>
+                                        </text>
+                                    </svg>
+                                    <div className="absolute inset-0 flex items-center justify-center">
+                                        <Flame className="h-5 w-5 text-primary sm:h-6 sm:w-6" />
+                                    </div>
+                                </div>
+                            </div>
+
+                            {/* Text stack — desktop only */}
+                            <div className="hidden flex-col gap-0.5 pb-4 text-2xl font-bold lg:flex xl:text-3xl">
+                                <p>Every check-in.</p>
+                                <p>Every streak.</p>
+                                <p className="text-primary">One dashboard.</p>
+                            </div>
+                        </div>
+
+                        {/* Copy + CTA */}
+                        <div className="relative z-20 mx-auto mt-10 max-w-xl pb-14 text-center sm:pb-20 lg:mx-0 lg:max-w-md lg:pb-24 lg:text-left">
+                            <p className="text-muted-foreground sm:text-lg">
                                 My Gymrat runs the front desk, the streaks, and
                                 the renewals — so members keep coming back, and
                                 you can see exactly why.
                             </p>
 
-                            <div className="mt-8 flex flex-wrap items-center gap-3">
+                            <div className="mt-6 flex flex-wrap items-center justify-center gap-3 lg:justify-start">
                                 <LoginDialog
                                     trigger={
-                                        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+                                        <button className="inline-flex items-center gap-2 rounded-full bg-primary px-5 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
                                             Get started
                                             <ArrowRight className="h-4 w-4" />
                                         </button>
@@ -168,13 +265,13 @@ export default function Welcome() {
                                 />
                                 <a
                                     href="#how-it-works"
-                                    className="inline-flex items-center gap-2 rounded-lg border border-border px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-muted/60"
+                                    className="inline-flex items-center gap-2 rounded-full border border-border px-5 py-3 text-sm font-semibold text-foreground transition hover:bg-muted/60"
                                 >
                                     See how it works
                                 </a>
                             </div>
 
-                            <div className="mt-10 flex flex-wrap gap-x-8 gap-y-3 text-sm text-muted-foreground">
+                            <div className="mt-8 flex flex-wrap justify-center gap-x-6 gap-y-2 text-sm text-muted-foreground lg:justify-start">
                                 <span className="flex items-center gap-2">
                                     <Check className="h-4 w-4 text-primary" />{" "}
                                     Attendance & streaks
@@ -189,99 +286,13 @@ export default function Welcome() {
                                 </span>
                             </div>
                         </div>
-
-                        {/* Hero photo */}
-                        <div className="relative mx-auto w-full max-w-sm lg:max-w-none">
-                            <div className="pointer-events-none absolute -top-10 -right-10 h-64 w-64 rounded-full bg-primary/25 blur-3xl" />
-                            <div className="pointer-events-none absolute -bottom-10 -left-10 h-56 w-56 rounded-full bg-primary/15 blur-3xl" />
-
-                            <div className="relative aspect-[4/5] overflow-hidden rounded-3xl border border-border">
-                                <img
-                                    src="https://images.unsplash.com/photo-1517838277536-f5f99be501cd?q=80&w=1400&auto=format&fit=crop&ixlib=rb-4.1.0"
-                                    alt="Athlete lifting a barbell mid check-in"
-                                    className="h-full w-full object-cover grayscale-[15%] contrast-110"
-                                />
-                                <div className="absolute inset-0 bg-gradient-to-t from-background via-background/10 to-transparent" />
-                                <div className="absolute inset-0 bg-primary/10 mix-blend-overlay" />
-                                <p className="absolute right-4 bottom-3 text-[10px] text-background/70 mix-blend-difference">
-                                    Photo: Victor Freitas / Unsplash
-                                </p>
-                            </div>
-
-                            {/* Spinning badge */}
-                            <div className="absolute -top-4 -left-4 h-20 w-20 sm:-top-6 sm:-left-6 sm:h-28 sm:w-28 lg:-top-8 lg:-left-8 lg:h-32 lg:w-32">
-                                <svg
-                                    viewBox="0 0 100 100"
-                                    className="h-full w-full animate-[spin_18s_linear_infinite] motion-reduce:animate-none"
-                                >
-                                    <circle
-                                        cx="50"
-                                        cy="50"
-                                        r="49"
-                                        strokeWidth="1"
-                                        className="fill-card stroke-border"
-                                    />
-                                    <path
-                                        id="badgeCircle"
-                                        d="M 50,50 m -37,0 a 37,37 0 1,1 74,0 a 37,37 0 1,1 -74,0"
-                                        fill="none"
-                                    />
-                                    <text
-                                        className="fill-primary font-semibold uppercase"
-                                        style={{
-                                            fontSize: "6.5px",
-                                            letterSpacing: "2px",
-                                        }}
-                                    >
-                                        <textPath
-                                            href="#badgeCircle"
-                                            startOffset="0%"
-                                        >
-                                            Stronger every day • Keep the streak
-                                            •{" "}
-                                        </textPath>
-                                    </text>
-                                </svg>
-                                <div className="absolute inset-0 flex items-center justify-center">
-                                    <Flame className="h-5 w-5 text-primary sm:h-7 sm:w-7" />
-                                </div>
-                            </div>
-
-                            {/* Streak chip */}
-                            <div className="absolute -bottom-6 left-4 flex items-center gap-3 rounded-xl border border-border bg-card p-3 shadow-xl shadow-black/30 sm:left-6">
-                                <Flame className="h-5 w-5 text-primary" />
-                                <div>
-                                    <p className="text-sm leading-none font-semibold">
-                                        18-day streak
-                                    </p>
-                                    <p className="mt-1 text-[11px] text-muted-foreground">
-                                        Best this month
-                                    </p>
-                                </div>
-                            </div>
-
-                            {/* Renewal chip */}
-                            <div className="absolute -right-3 -bottom-6 hidden w-48 rounded-xl border border-border bg-card p-3 shadow-xl shadow-black/30 sm:block">
-                                <div className="flex items-start gap-2">
-                                    <TriangleAlert className="mt-0.5 h-4 w-4 shrink-0 text-amber-400" />
-                                    <div>
-                                        <p className="text-xs font-medium text-amber-400">
-                                            Plan expiring in 3 days
-                                        </p>
-                                        <p className="mt-0.5 text-[11px] text-muted-foreground">
-                                            Renew now to keep your streak
-                                        </p>
-                                    </div>
-                                </div>
-                            </div>
-                        </div>
                     </div>
                 </section>
 
                 {/* Features */}
                 <section
                     id="features"
-                    className="border-t border-border/60 bg-muted/20"
+                    className="border-b border-border/60 bg-muted/20"
                 >
                     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
                         <div className="max-w-xl">
@@ -319,7 +330,7 @@ export default function Welcome() {
                 </section>
 
                 {/* Streaks */}
-                <section id="streaks" className="border-t border-border/60">
+                <section id="streaks" className="border-b border-border/60">
                     <div className="mx-auto grid max-w-6xl gap-10 px-4 py-14 sm:px-6 sm:py-20 lg:grid-cols-2 lg:items-center">
                         <div>
                             <p className="text-sm font-medium text-primary">
@@ -408,7 +419,7 @@ export default function Welcome() {
                 {/* How it works */}
                 <section
                     id="how-it-works"
-                    className="border-t border-border/60 bg-muted/20"
+                    className="border-b border-border/60 bg-muted/20"
                 >
                     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
                         <div className="max-w-xl">
@@ -439,7 +450,7 @@ export default function Welcome() {
                 </section>
 
                 {/* CTA */}
-                <section className="border-t border-border/60">
+                <section className="border-b border-border/60">
                     <div className="mx-auto max-w-6xl px-4 py-14 sm:px-6 sm:py-20">
                         <div className="relative overflow-hidden rounded-2xl border border-border bg-card p-7 text-center sm:p-16">
                             <div className="pointer-events-none absolute -top-16 -right-16 h-64 w-64 rounded-full bg-primary/20 blur-3xl" />
@@ -454,7 +465,7 @@ export default function Welcome() {
                             <div className="relative mt-8 flex justify-center">
                                 <LoginDialog
                                     trigger={
-                                        <button className="inline-flex items-center gap-2 rounded-lg bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
+                                        <button className="inline-flex items-center gap-2 rounded-full bg-primary px-6 py-3 text-sm font-semibold text-primary-foreground transition hover:opacity-90">
                                             Get started
                                             <ArrowRight className="h-4 w-4" />
                                         </button>
@@ -466,7 +477,7 @@ export default function Welcome() {
                 </section>
 
                 {/* Footer */}
-                <footer className="border-t border-border/60">
+                <footer id="contact" className="border-b border-border/60">
                     <div className="mx-auto flex max-w-6xl flex-col items-center gap-4 px-4 py-10 text-sm text-muted-foreground sm:flex-row sm:justify-between sm:px-6">
                         <AppLogo />
                         <p>
