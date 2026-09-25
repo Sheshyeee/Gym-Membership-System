@@ -102,15 +102,19 @@ class OverviewController extends Controller
         $lastYearStart = $startOfYear->copy()->subYear();
         $lastYearEnd = $startOfYear->copy()->subDay();
 
+        $monthExpr = \Illuminate\Support\Facades\DB::getDriverName() === 'pgsql'
+            ? 'EXTRACT(MONTH FROM paid_at)::int'
+            : 'MONTH(paid_at)';
+
         $thisYear = Invoice::where('status', 'paid')
             ->whereBetween('paid_at', [$startOfYear, $now])
-            ->selectRaw('MONTH(paid_at) as month, SUM(amount) as total')
+            ->selectRaw("{$monthExpr} as month, SUM(amount) as total")
             ->groupBy('month')
             ->pluck('total', 'month');
 
         $lastYear = Invoice::where('status', 'paid')
             ->whereBetween('paid_at', [$lastYearStart, $lastYearEnd])
-            ->selectRaw('MONTH(paid_at) as month, SUM(amount) as total')
+            ->selectRaw("{$monthExpr} as month, SUM(amount) as total")
             ->groupBy('month')
             ->pluck('total', 'month');
 
@@ -124,7 +128,6 @@ class OverviewController extends Controller
             ];
         })->values()->all();
     }
-
     /**
      * Donut: active / expiring soon / expired, using the exact same rule
      * AdminMemberController uses — this is what makes it match the Members
