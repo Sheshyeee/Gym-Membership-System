@@ -8,8 +8,9 @@ return new class extends Migration
 {
     public function up(): void
     {
-        // --- Refund fields + status enum ---
+        $driver = DB::getDriverName();
 
+        // --- Refund fields ---
         Schema::table('invoices', function ($table) {
             if (!Schema::hasColumn('invoices', 'processor_refund_id')) {
                 $table->string('processor_refund_id')->nullable()->after('processor_payment_id');
@@ -22,16 +23,33 @@ return new class extends Migration
             }
         });
 
-        DB::statement("ALTER TABLE invoices MODIFY status ENUM('pending', 'paid', 'failed', 'expired', 'refunding', 'refunded') NOT NULL DEFAULT 'pending'");
+        // --- Status enum ---
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE invoices ALTER COLUMN status TYPE VARCHAR(20)");
+            DB::statement("ALTER TABLE invoices ALTER COLUMN status SET DEFAULT 'pending'");
+            DB::statement("ALTER TABLE invoices ALTER COLUMN status SET NOT NULL");
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_status_check CHECK (status IN ('pending', 'paid', 'failed', 'expired', 'refunding', 'refunded'))");
+        } else {
+            DB::statement("ALTER TABLE invoices MODIFY status ENUM('pending', 'paid', 'failed', 'expired', 'refunding', 'refunded') NOT NULL DEFAULT 'pending'");
+        }
 
         // --- Payment method enum + retry count ---
-        // Align the enum with what the app actually validates/sends
-        // (gcash / paymaya) and drop 'card' since it's not implemented.
-        // Widen first so 'paymaya' is a valid value before the UPDATE,
-        // then migrate 'maya' rows over, then narrow the enum down.
-        DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'paymaya', 'card') NOT NULL");
-        DB::statement("UPDATE invoices SET payment_method_type = 'paymaya' WHERE payment_method_type = 'maya'");
-        DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'paymaya') NOT NULL");
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE invoices ALTER COLUMN payment_method_type TYPE VARCHAR(20)");
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_payment_method_type_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_payment_method_type_check CHECK (payment_method_type IN ('gcash', 'maya', 'paymaya', 'card'))");
+
+            DB::statement("UPDATE invoices SET payment_method_type = 'paymaya' WHERE payment_method_type = 'maya'");
+
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_payment_method_type_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_payment_method_type_check CHECK (payment_method_type IN ('gcash', 'paymaya'))");
+            DB::statement("ALTER TABLE invoices ALTER COLUMN payment_method_type SET NOT NULL");
+        } else {
+            DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'paymaya', 'card') NOT NULL");
+            DB::statement("UPDATE invoices SET payment_method_type = 'paymaya' WHERE payment_method_type = 'maya'");
+            DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'paymaya') NOT NULL");
+        }
 
         if (!Schema::hasColumn('invoices', 'retry_count')) {
             Schema::table('invoices', function ($table) {
@@ -42,21 +60,36 @@ return new class extends Migration
 
     public function down(): void
     {
-        // --- Payment method enum + retry count ---
+        $driver = DB::getDriverName();
 
+        // --- Payment method enum + retry count ---
         if (Schema::hasColumn('invoices', 'retry_count')) {
             Schema::table('invoices', function ($table) {
                 $table->dropColumn('retry_count');
             });
         }
 
-        DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'paymaya', 'card') NOT NULL");
-        DB::statement("UPDATE invoices SET payment_method_type = 'maya' WHERE payment_method_type = 'paymaya'");
-        DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'card') NOT NULL");
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_payment_method_type_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_payment_method_type_check CHECK (payment_method_type IN ('gcash', 'maya', 'paymaya', 'card'))");
 
-        // --- Refund fields + status enum ---
+            DB::statement("UPDATE invoices SET payment_method_type = 'maya' WHERE payment_method_type = 'paymaya'");
 
-        DB::statement("ALTER TABLE invoices MODIFY status ENUM('pending', 'paid', 'failed', 'expired') NOT NULL DEFAULT 'pending'");
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_payment_method_type_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_payment_method_type_check CHECK (payment_method_type IN ('gcash', 'maya', 'card'))");
+        } else {
+            DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'paymaya', 'card') NOT NULL");
+            DB::statement("UPDATE invoices SET payment_method_type = 'maya' WHERE payment_method_type = 'paymaya'");
+            DB::statement("ALTER TABLE invoices MODIFY payment_method_type ENUM('gcash', 'maya', 'card') NOT NULL");
+        }
+
+        // --- Status enum ---
+        if ($driver === 'pgsql') {
+            DB::statement("ALTER TABLE invoices DROP CONSTRAINT IF EXISTS invoices_status_check");
+            DB::statement("ALTER TABLE invoices ADD CONSTRAINT invoices_status_check CHECK (status IN ('pending', 'paid', 'failed', 'expired'))");
+        } else {
+            DB::statement("ALTER TABLE invoices MODIFY status ENUM('pending', 'paid', 'failed', 'expired') NOT NULL DEFAULT 'pending'");
+        }
 
         Schema::table('invoices', function ($table) {
             $table->dropColumn(array_filter([
