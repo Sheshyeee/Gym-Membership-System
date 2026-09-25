@@ -20,7 +20,7 @@ class AdminPaymentController extends Controller
         $status = (string) $request->query('status', 'all');
 
         $invoices = Invoice::query()
-            ->with(['user:id,name', 'plan:id,name'])
+            ->with(['user:id,name,avatar', 'plan:id,name'])
             ->when($search !== '', function ($query) use ($search) {
                 $query->where(function ($query) use ($search) {
                     $query->where('id', 'like', "%{$search}%")
@@ -36,6 +36,7 @@ class AdminPaymentController extends Controller
                 // human-facing transaction number in the schema yet.
                 'transaction_id' => 'TXN-' . str_pad((string) $invoice->id, 6, '0', STR_PAD_LEFT),
                 'member' => $invoice->user->name ?? 'Unknown',
+                'member_avatar' => $invoice->user->avatar ?? null,
                 'plan' => $invoice->plan->name ?? '—',
                 'amount' => $invoice->amount,
                 'currency' => $invoice->currency,

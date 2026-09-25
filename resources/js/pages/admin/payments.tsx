@@ -3,6 +3,7 @@ import { useEffect, useState } from "react";
 import { Badge } from "@/components/ui/badge";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Select,
     SelectContent,
@@ -45,6 +46,7 @@ type InvoiceRow = {
     id: number;
     transaction_id: string;
     member: string;
+    member_avatar: string | null;
     plan: string;
     amount: number;
     currency: string;
@@ -167,6 +169,36 @@ function initials(name: string) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+}
+
+// AvatarImage (Radix) falls back to AvatarFallback automatically when the
+// src is missing or fails to load — no manual onError state needed.
+// referrerPolicy="no-referrer" keeps Google-account photo URLs
+// (lh3.googleusercontent.com) from failing to load due to cross-origin
+// Referer headers.
+function MemberAvatar({
+    name,
+    avatar,
+    className,
+}: {
+    name: string;
+    avatar: string | null;
+    className: string;
+}) {
+    return (
+        <Avatar className={className}>
+            {avatar && (
+                <AvatarImage
+                    src={avatar}
+                    alt={name}
+                    referrerPolicy="no-referrer"
+                />
+            )}
+            <AvatarFallback className="bg-muted text-xs font-medium">
+                {initials(name)}
+            </AvatarFallback>
+        </Avatar>
+    );
 }
 
 export default function Payments({
@@ -330,8 +362,8 @@ export default function Payments({
                                             className="py-6 text-center text-sm text-muted-foreground"
                                         >
                                             No payouts recorded yet. Once
-                                            PayMongo sends a payout webhook —
-                                            or you hit "Sync now" — settlements
+                                            PayMongo sends a payout webhook — or
+                                            you hit "Sync now" — settlements
                                             will show up here.
                                         </TableCell>
                                     </TableRow>
@@ -543,9 +575,13 @@ export default function Payments({
                                         </TableCell>
                                         <TableCell>
                                             <div className="flex items-center gap-2">
-                                                <div className="flex h-7 w-7 items-center justify-center rounded-full bg-muted text-xs font-medium">
-                                                    {initials(invoice.member)}
-                                                </div>
+                                                <MemberAvatar
+                                                    name={invoice.member}
+                                                    avatar={
+                                                        invoice.member_avatar
+                                                    }
+                                                    className="h-7 w-7"
+                                                />
                                                 {invoice.member}
                                             </div>
                                         </TableCell>
@@ -562,9 +598,7 @@ export default function Payments({
                                             <Badge
                                                 variant="outline"
                                                 className={
-                                                    statusStyles[
-                                                        invoice.status
-                                                    ]
+                                                    statusStyles[invoice.status]
                                                 }
                                             >
                                                 {statusLabels[invoice.status]}
@@ -599,17 +633,19 @@ export default function Payments({
                                     >
                                         <div className="flex items-start justify-between gap-2">
                                             <div className="flex min-w-0 items-center gap-2">
-                                                <div className="flex h-7 w-7 shrink-0 items-center justify-center rounded-full bg-muted text-[10px] font-medium">
-                                                    {initials(invoice.member)}
-                                                </div>
+                                                <MemberAvatar
+                                                    name={invoice.member}
+                                                    avatar={
+                                                        invoice.member_avatar
+                                                    }
+                                                    className="h-7 w-7 shrink-0"
+                                                />
                                                 <div className="min-w-0">
                                                     <p className="truncate text-[12px] font-medium text-foreground">
                                                         {invoice.member}
                                                     </p>
                                                     <p className="truncate text-[10px] text-muted-foreground">
-                                                        {
-                                                            invoice.transaction_id
-                                                        }{" "}
+                                                        {invoice.transaction_id}{" "}
                                                         · {invoice.plan}
                                                     </p>
                                                 </div>

@@ -51,6 +51,7 @@ class AdminMemberController extends Controller
             'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
             'name' => $user->name,
             'email' => $user->email,
+            'avatar' => $user->avatar,
             'plan' => $subscription?->plan?->name,
             'status' => $this->resolveStatus($subscription),
             'valid_until' => optional($subscription?->current_period_end)->format('M j, Y'),

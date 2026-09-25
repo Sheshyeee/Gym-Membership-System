@@ -71,6 +71,7 @@ class AdminStaffController extends Controller
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
+            'avatar' => $user->avatar,
             'role' => $user->staff_role,
             'phone' => $user->phone,
             'is_active' => $user->isActive(),

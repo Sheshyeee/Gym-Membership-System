@@ -3,7 +3,7 @@ import { useState } from "react";
 import { router } from "@inertiajs/react";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
-import { Avatar, AvatarFallback } from "@/components/ui/avatar";
+import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
 import {
     Table,
     TableBody,
@@ -19,6 +19,7 @@ interface StaffMember {
     id: number;
     name: string;
     email: string;
+    avatar: string | null;
     role: string;
     phone: string | null;
     is_active: boolean;
@@ -52,6 +53,34 @@ function StatusBadge({ active }: { active: boolean }) {
         >
             {active ? "Active" : "Inactive"}
         </Badge>
+    );
+}
+
+// Shared avatar for staff members. AvatarImage (Radix) already falls back to
+// AvatarFallback automatically when the src is missing or fails to load, so
+// no manual onError state is needed here. referrerPolicy="no-referrer"
+// keeps Google-account photo URLs (lh3.googleusercontent.com) from failing
+// to load due to cross-origin Referer headers.
+function StaffAvatar({
+    member,
+    className,
+}: {
+    member: StaffMember;
+    className: string;
+}) {
+    return (
+        <Avatar className={className}>
+            {member.avatar && (
+                <AvatarImage
+                    src={member.avatar}
+                    alt={member.name}
+                    referrerPolicy="no-referrer"
+                />
+            )}
+            <AvatarFallback className="bg-orange-500/15 text-xs font-semibold text-orange-600 dark:text-orange-300">
+                {initials(member.name)}
+            </AvatarFallback>
+        </Avatar>
     );
 }
 
@@ -138,11 +167,10 @@ export default function Staff({ staff }: { staff: StaffMember[] }) {
                                     <TableRow key={member.id}>
                                         <TableCell>
                                             <div className="flex items-center gap-3">
-                                                <Avatar className="h-8 w-8">
-                                                    <AvatarFallback className="bg-orange-500/15 text-xs font-semibold text-orange-600 dark:text-orange-300">
-                                                        {initials(member.name)}
-                                                    </AvatarFallback>
-                                                </Avatar>
+                                                <StaffAvatar
+                                                    member={member}
+                                                    className="h-8 w-8"
+                                                />
                                                 <div>
                                                     <p className="font-medium text-foreground">
                                                         {member.name}
@@ -210,11 +238,10 @@ export default function Staff({ staff }: { staff: StaffMember[] }) {
                             <li key={member.id} className="px-4 py-3.5">
                                 <div className="flex items-start justify-between gap-3">
                                     <div className="flex min-w-0 items-center gap-3">
-                                        <Avatar className="h-9 w-9 shrink-0">
-                                            <AvatarFallback className="bg-orange-500/15 text-xs font-semibold text-orange-600 dark:text-orange-300">
-                                                {initials(member.name)}
-                                            </AvatarFallback>
-                                        </Avatar>
+                                        <StaffAvatar
+                                            member={member}
+                                            className="h-9 w-9 shrink-0"
+                                        />
                                         <div className="min-w-0">
                                             <p className="truncate text-[13px] font-medium text-foreground">
                                                 {member.name}

@@ -10,6 +10,7 @@ interface MemberRow {
     code: string;
     name: string;
     email: string;
+    avatar: string | null;
     plan: string | null;
     status: MemberStatus;
     valid_until: string | null;
@@ -62,6 +63,42 @@ function memberInitials(member: MemberRow) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+}
+
+// Renders the member's avatar when one is set (e.g. a Google account photo),
+// falling back to initials when there's no avatar or the image fails to
+// load. `referrerPolicy="no-referrer"` matters here: Google's
+// lh3.googleusercontent.com avatar URLs commonly fail to load when the
+// browser sends a cross-origin Referer header, which otherwise shows up as
+// a broken image icon.
+function Avatar({
+    member,
+    className,
+}: {
+    member: MemberRow;
+    className: string;
+}) {
+    const [broken, setBroken] = useState(false);
+
+    if (member.avatar && !broken) {
+        return (
+            <img
+                src={member.avatar}
+                alt={member.name || member.email}
+                referrerPolicy="no-referrer"
+                onError={() => setBroken(true)}
+                className={`shrink-0 rounded-full object-cover ${className}`}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={`flex shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-semibold text-indigo-600 dark:text-indigo-300 ${className}`}
+        >
+            {memberInitials(member)}
+        </div>
+    );
 }
 
 function StatusPill({ status }: { status: MemberStatus }) {
@@ -294,9 +331,10 @@ export default function Member({
                                         >
                                             <td className="px-5 py-3">
                                                 <div className="flex items-center gap-3">
-                                                    <div className="flex h-8 w-8 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
-                                                        {memberInitials(member)}
-                                                    </div>
+                                                    <Avatar
+                                                        member={member}
+                                                        className="h-8 w-8"
+                                                    />
                                                     <div>
                                                         <p className="font-medium text-foreground">
                                                             {member.name || "—"}
@@ -379,9 +417,10 @@ export default function Member({
                                 >
                                     <div className="flex items-start justify-between gap-3">
                                         <div className="flex min-w-0 items-center gap-3">
-                                            <div className="flex h-9 w-9 shrink-0 items-center justify-center rounded-full bg-indigo-500/15 text-xs font-semibold text-indigo-600 dark:text-indigo-300">
-                                                {memberInitials(member)}
-                                            </div>
+                                            <Avatar
+                                                member={member}
+                                                className="h-9 w-9"
+                                            />
                                             <div className="min-w-0">
                                                 <p className="truncate text-[13px] font-medium text-foreground">
                                                     {member.name || "—"}
