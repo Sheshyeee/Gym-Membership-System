@@ -177,13 +177,13 @@ class PaymongoWebhookController extends Controller
 
     protected function handlePaymentPaid(?array $resource): void
     {
-        $paymentId = $resource['id'] ?? null; // <-- this line was missing
+        $paymentId = $resource['id'] ?? null;
         $sourceId = $resource['attributes']['source']['id'] ?? null;
         $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
 
         $invoice = match (true) {
-            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
             $paymentIntentId !== null => Invoice::where('processor_payment_intent_id', $paymentIntentId)->first(),
+            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
             default => null,
         };
 
@@ -244,8 +244,8 @@ class PaymongoWebhookController extends Controller
         $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
 
         $invoice = match (true) {
-            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
             $paymentIntentId !== null => Invoice::where('processor_payment_intent_id', $paymentIntentId)->first(),
+            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
             default => null,
         };
 
