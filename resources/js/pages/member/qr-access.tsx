@@ -9,10 +9,11 @@ import {
     Download,
 } from "lucide-react";
 import { dashboard } from "@/routes";
-import { useRef } from "react";
+import { useRef, useState } from "react";
 
 type Member = {
     name: string;
+    avatar: string | null;
     initials: string;
     memberId: string;
     qrToken: string;
@@ -20,6 +21,33 @@ type Member = {
     status: string;
     validUntil: string | null;
 };
+
+// Shows the account's photo (e.g. from Google sign-in) on the pass card when
+// present, falling back to the initials circle if there's no avatar or it
+// fails to load. referrerPolicy="no-referrer" keeps Google's avatar URLs
+// (lh3.googleusercontent.com) from failing due to cross-origin Referer
+// headers.
+function PassAvatar({ member }: { member: Member }) {
+    const [broken, setBroken] = useState(false);
+
+    if (member.avatar && !broken) {
+        return (
+            <img
+                src={member.avatar}
+                alt={member.name}
+                referrerPolicy="no-referrer"
+                onError={() => setBroken(true)}
+                className="h-10 w-10 shrink-0 rounded-full object-cover sm:h-11 sm:w-11"
+            />
+        );
+    }
+
+    return (
+        <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary sm:h-11 sm:w-11">
+            {member.initials}
+        </div>
+    );
+}
 
 export default function QrAccess({ member }: { member: Member }) {
     const isActive = member.status === "active";
@@ -103,9 +131,7 @@ export default function QrAccess({ member }: { member: Member }) {
                             </div>
 
                             <div className="relative mb-5 flex items-center gap-3 sm:mb-6">
-                                <div className="flex h-10 w-10 shrink-0 items-center justify-center rounded-full bg-primary/20 text-sm font-semibold text-primary sm:h-11 sm:w-11">
-                                    {member.initials}
-                                </div>
+                                <PassAvatar member={member} />
                                 <div className="min-w-0 flex-1">
                                     <p className="truncate font-semibold text-foreground">
                                         {member.name}

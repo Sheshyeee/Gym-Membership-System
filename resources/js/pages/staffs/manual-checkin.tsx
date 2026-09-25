@@ -17,6 +17,7 @@ interface SearchResult {
     code: string;
     name: string;
     email: string;
+    avatar: string | null;
     plan: string | null;
     status: MemberStatus;
     is_active: boolean;
@@ -26,6 +27,7 @@ interface RecentCheckIn {
     id: number;
     user_id: number;
     name: string;
+    avatar: string | null;
     time: string;
 }
 
@@ -68,6 +70,48 @@ function initials(name: string) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+}
+
+// Renders a real avatar photo when one is available (e.g. a Google account
+// picture), falling back to the colored-initials circle used everywhere else
+// in this file. referrerPolicy="no-referrer" keeps Google's avatar URLs
+// (lh3.googleusercontent.com) from failing to load due to cross-origin
+// Referer headers. Each call site keeps its own `broken` state since the
+// same component is reused across a list.
+function PersonAvatar({
+    name,
+    avatar,
+    className,
+}: {
+    name: string;
+    avatar: string | null;
+    className: string;
+}) {
+    const [broken, setBroken] = useState(false);
+
+    if (avatar && !broken) {
+        return (
+            <img
+                src={avatar}
+                alt={name}
+                referrerPolicy="no-referrer"
+                onError={() => setBroken(true)}
+                className={cn("shrink-0 rounded-full object-cover", className)}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={cn(
+                "flex shrink-0 items-center justify-center rounded-full font-semibold",
+                colorFor(name),
+                className,
+            )}
+        >
+            {initials(name)}
+        </div>
+    );
 }
 
 function csrfToken() {
@@ -266,16 +310,11 @@ export default function ManualCheckIn({
                                                 className="border-sidebar-border/70 dark:border-sidebar-border bg-background flex flex-col gap-2.5 rounded-lg border p-2.5 sm:flex-row sm:items-center sm:justify-between sm:gap-3"
                                             >
                                                 <div className="flex min-w-0 items-center gap-2.5">
-                                                    <div
-                                                        className={cn(
-                                                            "flex size-8 shrink-0 items-center justify-center rounded-full text-[11px] font-semibold sm:size-9 sm:text-[12px]",
-                                                            colorFor(
-                                                                member.name,
-                                                            ),
-                                                        )}
-                                                    >
-                                                        {initials(member.name)}
-                                                    </div>
+                                                    <PersonAvatar
+                                                        name={member.name}
+                                                        avatar={member.avatar}
+                                                        className="size-8 text-[11px] sm:size-9 sm:text-[12px]"
+                                                    />
                                                     <div className="min-w-0">
                                                         <p className="text-foreground truncate text-[12px] font-medium sm:text-[13px]">
                                                             {member.name}
@@ -384,14 +423,11 @@ export default function ManualCheckIn({
                                         className="hover:bg-accent flex items-center justify-between rounded-md px-1 py-1.5 transition-colors"
                                     >
                                         <div className="flex items-center gap-2.5">
-                                            <div
-                                                className={cn(
-                                                    "flex size-7 items-center justify-center rounded-full text-[10px] font-semibold sm:size-8",
-                                                    colorFor(c.name),
-                                                )}
-                                            >
-                                                {initials(c.name)}
-                                            </div>
+                                            <PersonAvatar
+                                                name={c.name}
+                                                avatar={c.avatar}
+                                                className="size-7 text-[10px] sm:size-8"
+                                            />
                                             <div>
                                                 <p className="text-foreground text-[12px] font-medium sm:text-[13px]">
                                                     {c.name}

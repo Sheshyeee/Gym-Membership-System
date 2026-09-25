@@ -17,6 +17,7 @@ class QRAccessController extends Controller
         return inertia('member/qr-access', [
             'member' => [
                 'name' => $user->name,
+                'avatar' => $user->avatar,
                 'initials' => collect(explode(' ', $user->name))
                     ->map(fn($part) => strtoupper(substr($part, 0, 1)))
                     ->take(2)

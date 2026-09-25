@@ -49,6 +49,7 @@ class StaffManualCheckInController extends Controller
             'code' => 'MEM-' . str_pad((string) $user->id, 5, '0', STR_PAD_LEFT),
             'name' => $user->name,
             'email' => $user->email,
+            'avatar' => $user->avatar,
             'plan' => $user->latestSubscription?->plan?->name,
             'status' => $this->resolveStatus($user->latestSubscription),
             'is_active' => $user->isActive(),
@@ -74,7 +75,7 @@ class StaffManualCheckInController extends Controller
 
     private function recentCheckIns()
     {
-        return Attendance::with('user:id,name')
+        return Attendance::with('user:id,name,avatar')
             ->where('status', 'success')
             ->whereDate('scanned_at', Carbon::today())
             ->orderByDesc('scanned_at')
@@ -84,6 +85,7 @@ class StaffManualCheckInController extends Controller
                 'id' => $a->id,
                 'user_id' => $a->user_id,
                 'name' => $a->user->name ?? 'Unknown',
+                'avatar' => $a->user->avatar ?? null,
                 'time' => $a->scanned_at->timezone('Asia/Manila')->format('g:i A'),
             ]);
     }

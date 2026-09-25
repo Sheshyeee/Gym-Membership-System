@@ -21,6 +21,7 @@ type User = {
     name: string;
     email: string;
     phone: string | null;
+    avatar: string | null;
 };
 
 function initials(name: string) {
@@ -30,6 +31,33 @@ function initials(name: string) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+}
+
+// Shows the account's photo (e.g. from Google sign-in) when present, falling
+// back to the gradient initials circle if there's no avatar or it fails to
+// load. referrerPolicy="no-referrer" keeps Google's avatar URLs
+// (lh3.googleusercontent.com) from failing due to cross-origin Referer
+// headers.
+function ProfileAvatar({ user }: { user: User }) {
+    const [broken, setBroken] = useState(false);
+
+    if (user.avatar && !broken) {
+        return (
+            <img
+                src={user.avatar}
+                alt={user.name}
+                referrerPolicy="no-referrer"
+                onError={() => setBroken(true)}
+                className="size-11 shrink-0 rounded-full object-cover sm:size-14"
+            />
+        );
+    }
+
+    return (
+        <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-[13px] font-bold text-white sm:size-14 sm:text-base">
+            {initials(user.name)}
+        </div>
+    );
 }
 
 export default function ProfileSettings({
@@ -63,9 +91,7 @@ export default function ProfileSettings({
                 <div className="border-sidebar-border/70 dark:border-sidebar-border bg-card rounded-xl border p-3 sm:p-4">
                     <div className="flex items-start justify-between gap-2">
                         <div className="flex min-w-0 items-center gap-3 sm:gap-4">
-                            <div className="flex size-11 shrink-0 items-center justify-center rounded-full bg-gradient-to-br from-orange-500 to-amber-600 text-[13px] font-bold text-white sm:size-14 sm:text-base">
-                                {initials(user.name)}
-                            </div>
+                            <ProfileAvatar user={user} />
                             <div className="min-w-0">
                                 <h2 className="text-foreground truncate text-[15px] font-semibold sm:text-lg">
                                     {user.name}

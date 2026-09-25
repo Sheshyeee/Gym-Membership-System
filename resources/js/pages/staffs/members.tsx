@@ -16,6 +16,7 @@ interface MemberRow {
     code: string;
     name: string;
     email: string;
+    avatar: string | null;
     plan: string | null;
     status: MemberStatus;
     valid_until: string | null;
@@ -66,6 +67,42 @@ function initialsOf(nameOrEmail: string) {
         .slice(0, 2)
         .join("")
         .toUpperCase();
+}
+
+// Real avatar photo (e.g. Google account picture) when present, falling
+// back to the orange initials circle used elsewhere on this page.
+// referrerPolicy="no-referrer" keeps Google's avatar URLs
+// (lh3.googleusercontent.com) from failing to load due to cross-origin
+// Referer headers.
+function MemberAvatar({
+    member,
+    className,
+}: {
+    member: MemberRow;
+    className: string;
+}) {
+    const [broken, setBroken] = useState(false);
+    const label = member.name || member.email;
+
+    if (member.avatar && !broken) {
+        return (
+            <img
+                src={member.avatar}
+                alt={label}
+                referrerPolicy="no-referrer"
+                onError={() => setBroken(true)}
+                className={`shrink-0 rounded-full object-cover ${className}`}
+            />
+        );
+    }
+
+    return (
+        <div
+            className={`flex shrink-0 items-center justify-center rounded-full bg-orange-500/15 font-semibold text-orange-500 ${className}`}
+        >
+            {initialsOf(label)}
+        </div>
+    );
 }
 
 function StatusBadge({ status }: { status: MemberStatus }) {
@@ -211,9 +248,10 @@ export default function StaffMembers({
                                 onClick={() => openMember(member.id)}
                                 className="hover:bg-muted/40 flex w-full items-center gap-3 px-3 py-2.5 text-left"
                             >
-                                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[11px] font-semibold text-orange-500">
-                                    {initialsOf(member.name || member.email)}
-                                </div>
+                                <MemberAvatar
+                                    member={member}
+                                    className="size-8 text-[11px]"
+                                />
                                 <div className="min-w-0 flex-1">
                                     <div className="flex items-center justify-between gap-2">
                                         <p className="text-foreground truncate text-[12px] font-medium">
@@ -275,12 +313,10 @@ export default function StaffMembers({
                                     >
                                         <td className="px-4 py-2.5">
                                             <div className="flex items-center gap-2.5">
-                                                <div className="flex size-8 shrink-0 items-center justify-center rounded-full bg-orange-500/15 text-[10px] font-semibold text-orange-500">
-                                                    {initialsOf(
-                                                        member.name ||
-                                                            member.email,
-                                                    )}
-                                                </div>
+                                                <MemberAvatar
+                                                    member={member}
+                                                    className="size-8 text-[10px]"
+                                                />
                                                 <div className="min-w-0">
                                                     <p className="text-foreground truncate font-medium">
                                                         {member.name || "—"}

@@ -17,6 +17,7 @@ class MemberProfileController extends Controller
                 'name' => $user->name,
                 'email' => $user->email,
                 'phone' => $user->phone,
+                'avatar' => $user->avatar,
             ],
             'hasSubscription' => (bool) $subscription,
             'planName' => $subscription?->plan->name,
