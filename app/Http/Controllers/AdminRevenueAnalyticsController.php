@@ -147,14 +147,20 @@ class AdminRevenueAnalyticsController extends Controller
 
     private function bucketedRevenue(Carbon $start, Carbon $end, string $granularity): array
     {
-        // ASSUMPTION: MySQL/MariaDB (DATE_FORMAT). On Postgres, swap for
-        // TO_CHAR(paid_at, 'YYYY-MM-DD') / TO_CHAR(paid_at, 'YYYY-MM').
-        $format = $granularity === 'day' ? '%Y-%m-%d' : '%Y-%m';
+        $driver = DB::getDriverName();
+
+        if ($driver === 'pgsql') {
+            $format = $granularity === 'day' ? 'YYYY-MM-DD' : 'YYYY-MM';
+            $bucketExpr = "TO_CHAR(paid_at, '{$format}')";
+        } else {
+            $format = $granularity === 'day' ? '%Y-%m-%d' : '%Y-%m';
+            $bucketExpr = "DATE_FORMAT(paid_at, '{$format}')";
+        }
 
         $rows = Invoice::query()
             ->where('status', 'paid')
             ->whereBetween('paid_at', [$start, $end])
-            ->selectRaw("DATE_FORMAT(paid_at, '{$format}') as bucket, SUM(amount - COALESCE(refund_amount, 0)) as net")
+            ->selectRaw("{$bucketExpr} as bucket, SUM(amount - COALESCE(refund_amount, 0)) as net")
             ->groupBy('bucket')
             ->pluck('net', 'bucket');
 
