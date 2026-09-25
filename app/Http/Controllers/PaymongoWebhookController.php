@@ -241,16 +241,24 @@ class PaymongoWebhookController extends Controller
     protected function handlePaymentFailed(?array $resource): void
     {
         $sourceId = $resource['attributes']['source']['id'] ?? null;
-        if (! $sourceId) {
+        $paymentIntentId = $resource['attributes']['payment_intent_id'] ?? null;
+
+        $invoice = match (true) {
+            $sourceId !== null => Invoice::where('processor_source_id', $sourceId)->first(),
+            $paymentIntentId !== null => Invoice::where('processor_payment_intent_id', $paymentIntentId)->first(),
+            default => null,
+        };
+
+        if (! $invoice) {
+            Log::warning('payment.failed webhook with no matching invoice', [
+                'source_id' => $sourceId,
+                'payment_intent_id' => $paymentIntentId,
+            ]);
             return;
         }
 
-        $invoice = Invoice::where('processor_source_id', $sourceId)->first();
-        $invoice?->update(['status' => 'failed']);
-
-        if ($invoice) {
-            StaffAlert::send(new StaffPaymentFailed($invoice));
-        }
+        $invoice->update(['status' => 'failed']);
+        StaffAlert::send(new StaffPaymentFailed($invoice));
     }
 
     protected function verifySignature(Request $request): bool

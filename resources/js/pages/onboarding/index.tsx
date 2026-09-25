@@ -1,5 +1,5 @@
 import { Head, Link, useForm, usePage, router } from "@inertiajs/react";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { OnboardingStepper } from "@/components/OnboardingStepper";
 
 type PricingBreakdown = {
@@ -24,16 +24,35 @@ type Plan = {
     };
 };
 
+// Sent by OnboardingController::renderMayaAttach whenever the user picks
+// Maya. Unlike GCash (which gets a checkout_url straight from the backend),
+// Maya requires attaching a PaymentMethod to this PaymentIntent from the
+// browser using the *public* key before we get a URL to redirect to.
+type MayaPayment = {
+    invoice_id: number;
+    payment_intent_id: string;
+    client_key: string;
+    public_key: string;
+    return_url: string;
+};
+
 // Welcome step removed — the flow now opens directly on plan selection.
 type Step = 1 | 2 | 3;
 
 export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
-    const { auth } = usePage().props as any;
+    const { auth, mayaPayment } = usePage().props as any as {
+        auth: any;
+        mayaPayment: MayaPayment | null;
+    };
     const firstName = auth?.user?.name?.split(" ")[0] ?? "there";
 
     const [step, setStep] = useState<Step>(1);
     const [cycle, setCycle] = useState<"monthly" | "annual">("monthly");
     const [selectedPlan, setSelectedPlan] = useState<Plan | null>(null);
+
+    const [mayaBusy, setMayaBusy] = useState(false);
+    const [mayaError, setMayaError] = useState<string | null>(null);
+    const [mayaAttempt, setMayaAttempt] = useState(0);
 
     const { data, setData, post, processing, errors } = useForm({
         plan_id: null as number | null,
@@ -50,14 +69,126 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
     function submitPayment(e: React.FormEvent) {
         e.preventDefault();
         if (!data.payment_method_type) return;
+        setMayaError(null);
 
-        // This triggers a real redirect to GCash/Maya's site (Inertia::location
-        // on the backend), so there's no onSuccess step-advance here — the user
-        // leaves this page entirely and comes back via /onboarding/payment/return.
+        // GCash: the backend responds with Inertia::location(...), a real
+        // browser redirect to GCash's site — the page navigates away, so
+        // there's no onSuccess step here.
+        //
+        // Maya: the backend responds with Inertia::render(...) carrying a
+        // fresh `mayaPayment` prop. preserveState keeps step/selectedPlan
+        // intact while the attach effect below picks up that prop and does
+        // the actual redirect once it has a real auth URL.
         post("/onboarding/complete", {
             preserveScroll: true,
+            preserveState: true,
+            onSuccess: () => setMayaAttempt((n) => n + 1),
         });
     }
+
+    // Runs whenever the backend hands us a new PaymentIntent to attach to
+    // (initial submit, or a retry after a failed/expired attempt).
+    useEffect(() => {
+        if (!mayaPayment) return;
+
+        let cancelled = false;
+        setMayaBusy(true);
+        setMayaError(null);
+
+        async function authorizeMaya() {
+            const authHeader = `Basic ${btoa(`${mayaPayment!.public_key}:`)}`;
+
+            try {
+                // 1. Create the PaymentMethod. No card data needed for an
+                //    e-wallet, so this is safe to do with the public key.
+                const pmRes = await fetch(
+                    "https://api.paymongo.com/v1/payment_methods",
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: authHeader,
+                        },
+                        body: JSON.stringify({
+                            data: { attributes: { type: "paymaya" } },
+                        }),
+                    },
+                );
+                const pmJson = await pmRes.json();
+                if (!pmRes.ok) {
+                    throw new Error(
+                        pmJson?.errors?.[0]?.detail ??
+                            "Could not start Maya checkout.",
+                    );
+                }
+
+                // 2. Attach it to the PaymentIntent our backend already
+                //    created. This is what actually produces the
+                //    authorization redirect URL.
+                const attachRes = await fetch(
+                    `https://api.paymongo.com/v1/payment_intents/${mayaPayment!.payment_intent_id}/attach`,
+                    {
+                        method: "POST",
+                        headers: {
+                            "Content-Type": "application/json",
+                            Authorization: authHeader,
+                        },
+                        body: JSON.stringify({
+                            data: {
+                                attributes: {
+                                    client_key: mayaPayment!.client_key,
+                                    payment_method: pmJson.data.id,
+                                    return_url: mayaPayment!.return_url,
+                                },
+                            },
+                        }),
+                    },
+                );
+                const attachJson = await attachRes.json();
+                if (!attachRes.ok) {
+                    throw new Error(
+                        attachJson?.errors?.[0]?.detail ??
+                            "Maya declined this payment.",
+                    );
+                }
+
+                if (cancelled) return;
+
+                const redirectUrl =
+                    attachJson.data.attributes.next_action?.redirect?.url;
+                const status = attachJson.data.attributes.status;
+
+                if (redirectUrl) {
+                    // Cross-domain hand-off to Maya's own auth page.
+                    window.location.href = redirectUrl;
+                } else if (status === "succeeded") {
+                    // Rare, but possible: no auth step needed at all.
+                    router.visit(mayaPayment!.return_url);
+                } else {
+                    throw new Error(
+                        "Maya didn't return an authorization link. Please try again.",
+                    );
+                }
+            } catch (err) {
+                if (!cancelled) {
+                    setMayaError(
+                        err instanceof Error
+                            ? err.message
+                            : "Something went wrong starting Maya checkout.",
+                    );
+                }
+            } finally {
+                if (!cancelled) setMayaBusy(false);
+            }
+        }
+
+        authorizeMaya();
+
+        return () => {
+            cancelled = true;
+        };
+        // eslint-disable-next-line react-hooks/exhaustive-deps
+    }, [mayaPayment?.payment_intent_id, mayaAttempt]);
 
     const fmt = (n: number) => `₱${(n / 100).toLocaleString()}`;
 
@@ -385,16 +516,22 @@ export default function OnboardingIndex({ plans }: { plans: Plan[] }) {
                                                 }
                                             </p>
                                         )}
+                                        {mayaError && (
+                                            <p className="text-destructive text-xs mb-3">
+                                                {mayaError}
+                                            </p>
+                                        )}
 
                                         <button
                                             type="submit"
                                             disabled={
                                                 processing ||
+                                                mayaBusy ||
                                                 !data.payment_method_type
                                             }
                                             className="w-full mt-2 bg-primary text-primary-foreground hover:opacity-90 font-semibold py-2.5 sm:py-3 rounded-lg text-sm sm:text-base flex items-center justify-center gap-2 disabled:opacity-50 transition-opacity"
                                         >
-                                            {processing
+                                            {processing || mayaBusy
                                                 ? "Redirecting..."
                                                 : `Pay ${fmt(pricing.total_amount)} via ${data.payment_method_type === "gcash" ? "GCash" : data.payment_method_type === "paymaya" ? "Maya" : "..."} →`}
                                         </button>

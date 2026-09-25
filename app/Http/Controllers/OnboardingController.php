@@ -22,13 +22,8 @@ class OnboardingController extends Controller
 
     public function index()
     {
-        $plans = Plan::where('is_active', true)->get();
-
         return Inertia::render('onboarding/index', [
-            'plans' => $plans->map(fn(Plan $plan) => [
-                ...$plan->toArray(),
-                'pricing' => $this->pricing->breakdown($plan),
-            ]),
+            'plans' => $this->planPayload(),
         ]);
     }
 
@@ -38,8 +33,6 @@ class OnboardingController extends Controller
 
         return redirect()->route('dashboard');
     }
-
-
 
     public function complete(Request $request)
     {
@@ -129,7 +122,21 @@ class OnboardingController extends Controller
         }
     }
 
+    /**
+     * Dispatch to the right processor workflow. GCash still runs on PayMongo's
+     * Sources API; Maya was migrated to the Payment Intent workflow and no
+     * longer accepts a Source at all, so it needs its own path.
+     */
     protected function handleWalletPayment(Invoice $invoice, string $type, int $amount)
+    {
+        return match ($type) {
+            'gcash' => $this->handleGcashPayment($invoice, $amount),
+            'paymaya' => $this->handleMayaPayment($invoice, $amount),
+            default => throw new RuntimeException("Unsupported payment method: {$type}"),
+        };
+    }
+
+    protected function handleGcashPayment(Invoice $invoice, int $amount)
     {
         // If we already created a source for this invoice (e.g. a retry that
         // reused the pending invoice above, same method), don't mint a
@@ -150,7 +157,7 @@ class OnboardingController extends Controller
 
         $source = $this->payments->createSource(
             amount: $amount,
-            type: $type,
+            type: 'gcash',
             redirectSuccessUrl: route('onboarding.payment.return', ['invoice' => $invoice->id]),
             redirectFailedUrl: route('onboarding.payment.return', ['invoice' => $invoice->id, 'failed' => 1]),
             idempotencyKey: "source-create-{$invoice->id}",
@@ -160,28 +167,61 @@ class OnboardingController extends Controller
 
         $checkoutUrl = $source['attributes']['redirect']['checkout_url'];
 
-        // Cross-domain redirect (to GCash/Maya's own site) needs a full browser
+        // Cross-domain redirect (to GCash's own site) needs a full browser
         // navigation, not an Inertia XHR visit.
         return Inertia::location($checkoutUrl);
     }
 
-    protected function handleCardPayment(Invoice $invoice, int $amount)
+    /**
+     * Maya has no Sources endpoint anymore. The redirect/auth URL only exists
+     * once a PaymentMethod is attached to a PaymentIntent, and attaching
+     * requires the public key — so that step happens client-side. This just
+     * hands the frontend a PaymentIntent to attach to.
+     */
+    protected function handleMayaPayment(Invoice $invoice, int $amount)
     {
+        // Reuse an intent that's still waiting on a payment method instead of
+        // minting a second one on retry (same idea as the source guard above).
+        if ($invoice->processor_payment_intent_id) {
+            $existing = $this->payments->retrievePaymentIntent($invoice->processor_payment_intent_id);
+            $status = $existing['attributes']['status'] ?? null;
+
+            if (in_array($status, ['awaiting_payment_method', 'awaiting_next_action'], true)) {
+                return $this->renderMayaAttach($invoice, $existing);
+            }
+            // Otherwise (succeeded/processing/expired) fall through and create a fresh one.
+        }
+
         $intent = $this->payments->createPaymentIntent(
             amount: $amount,
+            paymentMethodAllowed: ['paymaya'],
             idempotencyKey: "intent-create-{$invoice->id}",
         );
 
         $invoice->update(['processor_payment_intent_id' => $intent['id']]);
 
-        // Hand the frontend what it needs to tokenize + confirm via PayMongo.js.
+        return $this->renderMayaAttach($invoice, $intent);
+    }
+
+    protected function renderMayaAttach(Invoice $invoice, array $intent)
+    {
         return Inertia::render('onboarding/index', [
-            'plans' => Plan::where('is_active', true)->get(),
-            'cardPayment' => [
+            'plans' => $this->planPayload(),
+            'mayaPayment' => [
                 'invoice_id' => $invoice->id,
+                'payment_intent_id' => $intent['id'],
                 'client_key' => $intent['attributes']['client_key'],
                 'public_key' => config('services.paymongo.public_key'),
+                'return_url' => route('onboarding.payment.return', ['invoice' => $invoice->id]),
             ],
+        ]);
+    }
+
+    protected function planPayload()
+    {
+        return Plan::where('is_active', true)->get()->map(fn(Plan $plan) => [
+            ...$plan->toArray(),
+            'pricing' => $this->pricing->breakdown($plan),
         ]);
     }
 
@@ -198,12 +238,12 @@ class OnboardingController extends Controller
             'status' => $isPaid ? 'paid' : $invoice->status,
         ]);
     }
+
     /**
      * Where GCash/Maya redirect the user back to after they approve/decline.
      * This does NOT confirm payment — the webhook does that. This just shows
      * the user a "processing" screen while we wait for the webhook.
      */
-
     public function paymentReturn(Request $request, Invoice $invoice)
     {
         if ($invoice->user_id !== $request->user()->id) {

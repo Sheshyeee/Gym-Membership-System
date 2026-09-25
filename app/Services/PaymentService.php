@@ -85,7 +85,7 @@ class PaymentService
    * Create a PaymentIntent for card payments.
    * The frontend uses PayMongo.js to tokenize the card and confirm this intent.
    */
-  public function createPaymentIntent(int $amount, string $idempotencyKey): array
+  public function createPaymentIntent(int $amount, array $paymentMethodAllowed, string $idempotencyKey): array
   {
     $response = $this->client()
       ->withHeaders(['Idempotency-Key' => $idempotencyKey])
@@ -94,7 +94,7 @@ class PaymentService
           'attributes' => [
             'amount' => $amount,
             'currency' => 'PHP',
-            'payment_method_allowed' => ['card'],
+            'payment_method_allowed' => $paymentMethodAllowed,
             'capture_type' => 'automatic',
           ],
         ],
