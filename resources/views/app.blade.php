@@ -42,21 +42,22 @@
         (function() {
             const meta = document.getElementById('theme-color-meta');
 
-            // Match these to your --background oklch values converted to hex.
-            const LIGHT = '#ffffff';
-            const DARK = '#0d0d0d';
-
             function syncThemeColor() {
-                const isDark = document.documentElement.classList.contains('dark');
-                meta.setAttribute('content', isDark ? DARK : LIGHT);
+                // Read the actual rendered background color of <html>, resolved
+                // from your oklch CSS vars into real rgb() — guarantees an exact
+                // match with what Safari sees at the page edges, no guessing hex values.
+                const computed = getComputedStyle(document.documentElement).backgroundColor;
+                meta.setAttribute('content', computed);
             }
 
-            syncThemeColor();
+            // Run after styles are actually applied, not just after the class flips
+            requestAnimationFrame(syncThemeColor);
 
-            new MutationObserver(syncThemeColor).observe(document.documentElement, {
-                attributes: true,
-                attributeFilter: ['class'],
-            });
+            new MutationObserver(() => requestAnimationFrame(syncThemeColor))
+                .observe(document.documentElement, {
+                    attributes: true,
+                    attributeFilter: ['class']
+                });
         })();
     </script>
 
