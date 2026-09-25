@@ -198,9 +198,11 @@ export function AppSidebarHeader({
 
     return (
         <>
-            {/* Mobile header */}
+            {/* Mobile header — padded into the top safe area so the logo/icons
+                clear the status bar / notch / Dynamic Island once the page is
+                running edge-to-edge (standalone PWA / viewport-fit=cover). */}
             <header
-                className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border/50 bg-background px-4 md:hidden"
+                className="flex shrink-0 items-center justify-between border-b border-sidebar-border/50 bg-background px-4 md:hidden"
                 style={{
                     paddingTop: "env(safe-area-inset-top, 0px)",
                     height: "calc(3.5rem + env(safe-area-inset-top, 0px))",

@@ -62,6 +62,11 @@
 }
 
 :root {
+    /* Safe-area tokens: 0px on desktop, real inset values on notched phones
+       (only nonzero when the page is running edge-to-edge, e.g. standalone PWA). */
+    --safe-top: env(safe-area-inset-top, 0px);
+    --safe-bottom: env(safe-area-inset-bottom, 0px);
+
     --background: oklch(1 0 0);
     --foreground: oklch(0.145 0 0);
     --card: oklch(1 0 0);
@@ -152,9 +157,8 @@
 }
 
 @layer base {
-    :root {
-        --safe-top: env(safe-area-inset-top, 0px);
-        --safe-bottom: env(safe-area-inset-bottom, 0px);
+    * {
+        @apply border-border;
     }
 
     html,
@@ -164,7 +168,8 @@
 
     body {
         @apply bg-background text-foreground;
-        overscroll-behavior-y: none; /* stops the rubber-band flash revealing white behind the page on iOS */
+        /* Stops the iOS rubber-band overscroll flashing white/black behind the page */
+        overscroll-behavior-y: none;
     }
 
     /*
