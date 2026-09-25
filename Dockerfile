@@ -1,13 +1,18 @@
 FROM php:8.4-fpm
 
-# System deps + PHP extensions
+# Vite build-time env vars (public values, safe to hardcode — these end up
+# in the browser bundle anyway, they are not secrets)
+ENV VITE_REVERB_APP_KEY=m9isj37qeaowgylev7he
+ENV VITE_REVERB_HOST=gym-reverb.onrender.com
+ENV VITE_REVERB_PORT=443
+ENV VITE_REVERB_SCHEME=https
+
 RUN apt-get update && apt-get install -y \
     git curl zip unzip nginx supervisor \
     libpng-dev libonig-dev libxml2-dev libzip-dev libpq-dev \
     && docker-php-ext-install pdo_pgsql mbstring exif pcntl bcmath gd zip \
     && rm -rf /var/lib/apt/lists/*
 
-# Install Node.js (needed for Vite/React build)
 RUN curl -fsSL https://deb.nodesource.com/setup_20.x | bash - \
     && apt-get install -y nodejs
 
@@ -17,11 +22,9 @@ WORKDIR /var/www
 
 COPY . .
 
-# PHP deps first — Wayfinder needs vendor/ and artisan working
 RUN composer install --no-dev --no-interaction --prefer-dist --optimize-autoloader \
     && chown -R www-data:www-data /var/www/storage /var/www/bootstrap/cache
 
-# Now Node deps + frontend build (Wayfinder can now call `php artisan` successfully)
 RUN npm ci && npm run build
 
 COPY docker/nginx.conf /etc/nginx/sites-available/default
