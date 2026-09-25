@@ -8,6 +8,7 @@ import {
     DialogTrigger,
 } from "@/components/ui/dialog";
 import { Button } from "@/components/ui/button";
+import { Flame } from "lucide-react";
 
 type Props = {
     trigger: React.ReactNode;
@@ -17,17 +18,23 @@ export default function LoginDialog({ trigger }: Props) {
     return (
         <Dialog>
             <DialogTrigger asChild>{trigger}</DialogTrigger>
-            <DialogContent className="sm:max-w-sm">
-                <DialogHeader>
-                    <DialogTitle>Log in</DialogTitle>
+            <DialogContent className="border-border bg-card sm:max-w-sm">
+                <DialogHeader className="items-start text-left">
+                    <div className="flex h-10 w-10 items-center justify-center rounded-lg bg-primary/10 text-primary">
+                        <Flame className="h-5 w-5" />
+                    </div>
+                    <DialogTitle className="mt-3">
+                        Get started with My Gymrat
+                    </DialogTitle>
                     <DialogDescription>
-                        Continue with your Google account to access your dashboard.
+                        Continue with Google to check in, track your streak, and
+                        manage your membership.
                     </DialogDescription>
                 </DialogHeader>
 
                 <Button
                     variant="outline"
-                    className="w-full"
+                    className="w-full border-border hover:bg-muted/60"
                     onClick={() => {
                         window.location.href = "/auth/google/redirect";
                     }}
@@ -52,6 +59,10 @@ export default function LoginDialog({ trigger }: Props) {
                     </svg>
                     Continue with Google
                 </Button>
+
+                <p className="text-center text-[11px] text-muted-foreground">
+                    By continuing, you agree to keep your streak alive.
+                </p>
             </DialogContent>
         </Dialog>
     );

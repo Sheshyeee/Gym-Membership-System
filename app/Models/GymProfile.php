@@ -23,7 +23,7 @@ class GymProfile extends Model
         }
 
         /** @var \Illuminate\Filesystem\FilesystemAdapter $disk */
-        $disk = Storage::disk('public');
+        $disk = Storage::disk('s3');
 
         return $disk->url($this->cover_path);
     }

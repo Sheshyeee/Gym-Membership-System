@@ -47,9 +47,16 @@ class AdminSettingsController extends Controller
 
         if ($request->hasFile('cover')) {
             if ($gymProfile->cover_path) {
-                Storage::disk('public')->delete($gymProfile->cover_path);
+                Storage::disk('s3')->delete($gymProfile->cover_path);
             }
-            $validated['cover_path'] = $request->file('cover')->store('gym', 'public');
+
+            $validated['cover_path'] = $request->file('cover')->store('gym', 's3');
+
+            // Bucket may be private by default — make just this object
+            // publicly readable so <img src> can load it directly. If your
+            // bucket policy already makes the whole "gym/" prefix public,
+            // this line is harmless but not required.
+            Storage::disk('s3')->setVisibility($validated['cover_path'], 'public');
         }
 
         $gymProfile->update([
