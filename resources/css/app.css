@@ -152,12 +152,19 @@
 }
 
 @layer base {
-    * {
-        @apply border-border;
+    :root {
+        --safe-top: env(safe-area-inset-top, 0px);
+        --safe-bottom: env(safe-area-inset-bottom, 0px);
+    }
+
+    html,
+    body {
+        height: 100%;
     }
 
     body {
         @apply bg-background text-foreground;
+        overscroll-behavior-y: none; /* stops the rubber-band flash revealing white behind the page on iOS */
     }
 
     /*

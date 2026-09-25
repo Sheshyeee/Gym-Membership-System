@@ -199,7 +199,13 @@ export function AppSidebarHeader({
     return (
         <>
             {/* Mobile header */}
-            <header className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border/50 bg-background px-4 md:hidden">
+            <header
+                className="flex h-14 shrink-0 items-center justify-between border-b border-sidebar-border/50 bg-background px-4 md:hidden"
+                style={{
+                    paddingTop: "env(safe-area-inset-top, 0px)",
+                    height: "calc(3.5rem + env(safe-area-inset-top, 0px))",
+                }}
+            >
                 <AppLogo />
 
                 <div className="flex items-center gap-1">
